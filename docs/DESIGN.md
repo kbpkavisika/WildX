@@ -36,3 +36,62 @@ The palette is mostly white and ink, with green as the identity and very little 
 - **Presence.** `online #3DBE6B` is only for the avatar dot and the pulsing "Live" dot. Never use it as text.
 - **Map.** Ground `#F4F6EF`, park land `#E6EED9` inside a dashed pine boundary, water `#CFE2E6` with labels in `#3B6A74`, roads as 5px white strokes. Patrol tracks use `track-1…4` (pine, coral deep, violet `#6A4FB6`, ochre `#A87A00`). Each track is always paired with a numbered marker, so colour is never the only cue.
 
+## Typography
+
+**Geist** (Google Fonts, weights 400/500/600/700) is the only typeface, with `system-ui` as the fallback.
+
+| Token | Size / line | Weight | Use |
+|---|---|---|---|
+| page-title | 32 / 38, −0.02em | 600 | One per page: "Dashboard", "Active patrols" |
+| hero-number | 36 / 40, −0.03em | 600 | The headline figure of a chart card |
+| metric | 28 / 34, −0.02em | 500 | Metric strip values |
+| wordmark | 23 / 28, −0.03em | 600 | "WildX" next to the mark |
+| card-title | 20 / 28 | 500 | Card headings. Never bold |
+| form-title | 16 / 24 | 600 | Inline form heading |
+| nav | 15 / 20 | 400 (500 active) | Sidebar items, page subtitle |
+| body | 14 / 20 | 400 | Default text, table cells, sub-nav |
+| label | 14 / 20 | 500 | Buttons, list item names |
+| field-label | 13 / 18 | 500 | Form labels, quiet buttons, filter pills |
+| caption | 12 / 16 | 400 | Meta lines, chips, counts, column headers |
+
+Page subtitles are 15px `ink-body`, with the key figure in a 600-weight `ink` span: "**4 teams** in the field."
+
+## Layout
+
+- **Shell.** A 248px sidebar with a 1px `line` right border, then a fluid column holding a top bar and the main area. The two wrap on narrow screens, with the sidebar stacking above.
+- **Top bar.** 16px × 28px padding, bottom border, a 280px search field with a `⌘ K` hint on the left, and 40px circular icon buttons (Help, Notifications) on the right. There is no user menu here: the user lives at the bottom of the sidebar.
+- **Main.** Padded `space-7` (28px), with a `space-5` (20px) gap between blocks, capped at 1240px. The Active patrols map page drops the cap and lets the map grow to fill all remaining height (minimum 640px).
+- **Page header.** Title and subtitle on the left, the primary action (48px button) on the right.
+- **Cards.** Padded 22px × 24px, with an 18px gap inside. Rows of cards use flex-wrap with weighted bases (e.g. `3 1 420px` beside `2 1 340px`) so they reflow to one column without breakpoints.
+- **Metric strip.** An auto-fit grid of 180px-minimum cells, split by 1px `line` dividers under a top rule.
+- **Tables.** CSS grid rows (`1.7fr 0.8fr 1fr 1.4fr 1.1fr 0.9fr 0.9fr 36px`) with 12px row padding and `#F0F1EC` row dividers. They scroll horizontally below 980px.
+- **Forms.** An auto-fit grid of 200px-minimum fields with a 16px gap. Actions are right-aligned.
+- **Spacing scale.** 4 · 8 · 12 · 16 · 20 · 24 · 28px on a 4px base.
+
+## Elevation & Depth
+
+WildX is flat. Depth comes from 1px `line` borders and white space, not shadows or tinted page backgrounds.
+
+- Cards, inputs, controls and the sidebar all use a 1px border with no shadow.
+- The **only shadow** is on elements floating over the map: the "In the field" panel uses `0 8px 24px rgba(22, 32, 27, 0.08)`. Legend and zoom controls over the map use a border only.
+- The highlighted chart bar gets a solid `0 6px 0` coral-deep lip, which reads as a raised tab rather than a blur.
+- Map markers sit on a 3px white stroke. A selected track gets a 5px stroke, full opacity and an 18px halo at 20% of its colour; unselected tracks drop to 3px at 50%.
+
+## Shapes
+
+Corners are soft and consistent by size. The bigger the element, the rounder the corner.
+
+| Token | Radius | Use |
+|---|---|---|
+| xs | 6px | Status chips, kbd hint |
+| sm | 8px | Quiet buttons, filter pills, calendar arrows, zoom group |
+| field | 10px | Inputs, search, sub-nav items, map legend, logo tile |
+| md | 12px | Buttons, nav pills, schedule items, list rows |
+| lg | 14px | Chart bars, map panel, inline form |
+| xl | 18px | Cards, the map container |
+| full | 9999px | Avatars, top-bar icon buttons, count badges, status dots |
+
+**Iconography.** Outline icons on a 24px grid, drawn at 18–20px (14px in small controls), 1.8px stroke with round caps and joins, in `currentColor`. They are Lucide-style.
+
+**Logo.** A 34px pine tile (10px radius) holding two crossing lime leaves that form an X. The second leaf is at 60% opacity so the overlap reads. The wordmark is "Wild" in ink and "X" in pine, set in Geist at `wordmark`.
+
