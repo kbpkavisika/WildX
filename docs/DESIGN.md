@@ -1,3 +1,282 @@
+---
+version: alpha
+name: WildX
+description: Calm, field-ready interface for wildlife operations in Udawalawe National Park — patrols, incidents, sensors, alerts and community reports.
+colors:
+  primary: "#1F4D43"
+  primary-hover: "#173B33"
+  on-primary: "#FFFFFF"
+  secondary: "#D5EE9B"
+  secondary-soft: "#E9F1DA"
+  tertiary: "#FF7A59"
+  tertiary-deep: "#E8603F"
+  neutral: "#FFFFFF"
+  surface: "#FFFFFF"
+  surface-muted: "#F6F6F3"
+  surface-sunken: "#F2F1EE"
+  surface-form: "#F7F8F4"
+  line: "#E4E7E0"
+  line-strong: "#DADDD4"
+  ink: "#16201B"
+  ink-body: "#3B433E"
+  ink-muted: "#6B726C"
+  ink-faint: "#9AA19B"
+  positive: "#2F7A2E"
+  positive-bg: "#E8F6E6"
+  positive-line: "#BFE3B9"
+  negative: "#B42E22"
+  negative-bg: "#FDECEA"
+  negative-line: "#F3C1BA"
+  responding: "#C2410C"
+  butter: "#FCE98C"
+  orchid: "#F8D6F3"
+  online: "#3DBE6B"
+  map-land: "#E6EED9"
+  map-ground: "#F4F6EF"
+  map-water: "#CFE2E6"
+  map-water-label: "#3B6A74"
+  track-1: "#1F4D43"
+  track-2: "#E8603F"
+  track-3: "#6A4FB6"
+  track-4: "#A87A00"
+typography:
+  page-title:
+    fontFamily: Geist
+    fontSize: 32px
+    fontWeight: 600
+    lineHeight: 38px
+    letterSpacing: -0.02em
+  hero-number:
+    fontFamily: Geist
+    fontSize: 36px
+    fontWeight: 600
+    lineHeight: 40px
+    letterSpacing: -0.03em
+  metric:
+    fontFamily: Geist
+    fontSize: 28px
+    fontWeight: 500
+    lineHeight: 34px
+    letterSpacing: -0.02em
+  wordmark:
+    fontFamily: Geist
+    fontSize: 23px
+    fontWeight: 600
+    lineHeight: 28px
+    letterSpacing: -0.03em
+  card-title:
+    fontFamily: Geist
+    fontSize: 20px
+    fontWeight: 500
+    lineHeight: 28px
+  form-title:
+    fontFamily: Geist
+    fontSize: 16px
+    fontWeight: 600
+    lineHeight: 24px
+  nav:
+    fontFamily: Geist
+    fontSize: 15px
+    fontWeight: 400
+    lineHeight: 20px
+  body:
+    fontFamily: Geist
+    fontSize: 14px
+    fontWeight: 400
+    lineHeight: 20px
+  label:
+    fontFamily: Geist
+    fontSize: 14px
+    fontWeight: 500
+    lineHeight: 20px
+  field-label:
+    fontFamily: Geist
+    fontSize: 13px
+    fontWeight: 500
+    lineHeight: 18px
+  caption:
+    fontFamily: Geist
+    fontSize: 12px
+    fontWeight: 400
+    lineHeight: 16px
+rounded:
+  xs: 6px
+  sm: 8px
+  field: 10px
+  md: 12px
+  lg: 14px
+  xl: 18px
+  full: 9999px
+spacing:
+  base: 4px
+  space-1: 4px
+  space-2: 8px
+  space-3: 12px
+  space-4: 16px
+  space-5: 20px
+  space-6: 24px
+  space-7: 28px
+  sidebar-width: 248px
+  content-max: 1240px
+components:
+  card:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.xl}"
+    padding: 24px
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.on-primary}"
+    typography: "{typography.label}"
+    rounded: "{rounded.md}"
+    height: 48px
+    padding: 0 20px
+  button-primary-hover:
+    backgroundColor: "{colors.primary-hover}"
+  button-primary-small:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.md}"
+    height: 40px
+    padding: 0 18px
+  button-secondary:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: 40px
+    padding: 0 16px
+  button-quiet:
+    backgroundColor: "{colors.surface-muted}"
+    textColor: "{colors.ink}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.sm}"
+    height: 32px
+    padding: 0 12px
+  icon-button:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.full}"
+    size: 40px
+  nav-item:
+    backgroundColor: transparent
+    textColor: "{colors.ink-body}"
+    typography: "{typography.nav}"
+    rounded: "{rounded.md}"
+    height: 44px
+    padding: 0 14px
+  nav-item-active:
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    height: 44px
+  nav-subitem:
+    backgroundColor: transparent
+    textColor: "{colors.ink-body}"
+    typography: "{typography.body}"
+    rounded: "{rounded.field}"
+    height: 38px
+    padding: 0 12px
+  nav-subitem-active:
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
+    height: 38px
+  count-badge:
+    backgroundColor: "{colors.tertiary}"
+    textColor: "{colors.on-primary}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.full}"
+    height: 22px
+  chip-positive:
+    backgroundColor: "{colors.positive-bg}"
+    textColor: "{colors.positive}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.xs}"
+    padding: 2px 6px
+  chip-negative:
+    backgroundColor: "{colors.negative-bg}"
+    textColor: "{colors.negative}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.xs}"
+    padding: 2px 6px
+  chip-neutral:
+    backgroundColor: "{colors.surface-muted}"
+    textColor: "{colors.ink-body}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.xs}"
+    padding: 2px 6px
+  chip-done:
+    backgroundColor: "{colors.secondary-soft}"
+    textColor: "{colors.primary}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.xs}"
+    padding: 2px 6px
+  filter-pill:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-body}"
+    rounded: "{rounded.sm}"
+    height: 32px
+    padding: 0 12px
+  filter-pill-active:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.sm}"
+    height: 32px
+  search-field:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.field}"
+    height: 40px
+    width: 280px
+  input:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.field}"
+    height: 40px
+    padding: 0 12px
+  schedule-item-patrol:
+    backgroundColor: "{colors.butter}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    padding: 12px
+  schedule-item-maintenance:
+    backgroundColor: "{colors.orchid}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    padding: 12px
+  chart-bar:
+    backgroundColor: "{colors.surface-sunken}"
+    textColor: "{colors.ink-body}"
+    rounded: "{rounded.lg}"
+  chart-bar-highlight:
+    backgroundColor: "{colors.tertiary}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.lg}"
+  avatar:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.secondary}"
+    rounded: "{rounded.full}"
+    size: 36px
+  avatar-small:
+    backgroundColor: "{colors.secondary-soft}"
+    textColor: "{colors.primary}"
+    rounded: "{rounded.full}"
+    size: 28px
+  map-panel:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.lg}"
+    width: 340px
+    padding: 12px 8px
+  map-list-row-selected:
+    backgroundColor: "{colors.surface-sunken}"
+    rounded: "{rounded.md}"
+    padding: 12px
+  logo-tile:
+    backgroundColor: "{colors.primary}"
+    rounded: 10px
+    size: 34px
+---
+
 # WildX
 
 ## Overview
@@ -95,3 +374,44 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
 
 **Logo.** A 34px pine tile (10px radius) holding two crossing lime leaves that form an X. The second leaf is at 60% opacity so the overlap reads. The wordmark is "Wild" in ink and "X" in pine, set in Geist at `wordmark`.
 
+## Components
+
+- **Sidebar.**
+  - Order: logo, then the park switcher (bordered 12px button: map icon tile, "Udawalawe NP / 30,821 ha", chevron), then the nav, then the user card pinned to the bottom above a top border (pine avatar with lime initials and an online dot, name, role, up/down chevron).
+  - Nav items are 44px pills with a 20px icon and 12px gap. The active item gets the lime fill and 500 weight.
+  - Expandable groups (Patrols → Active patrols, All patrols; Sensors → Collars, Camera traps) show a chevron. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
+  - Alerts carries a coral count badge.
+- **Buttons.**
+  - Primary: pine, 48px tall in page headers, 40px in forms, with a leading plus icon for create actions.
+  - Secondary: white with a `line` border.
+  - Quiet: 32px `surface-muted` with a border, for Today, Filter, Full map and more-options.
+  - Icon-only buttons always have an `aria-label`.
+- **Status chip.** Caption text, 2px × 6px padding, xs radius, with the tinted fill, border and text trio. Variants: positive, negative, neutral (Scheduled), done (Completed).
+- **Metric cell.** A body-size label, then a `metric` value with an optional chip beside it.
+- **Bar chart.** Six rounded bars in `surface-sunken` with the value inside at the top. One coral highlighted bar. A dotted `ink-faint` average line with a pine "Avg 6" tag. Month labels underneath, with the highlighted month in ink 600.
+- **Schedule.** A week strip (today in a lime-soft circle), dashed day dividers, and butter or orchid items with a white 34px icon tile, a title, "time · owner", and a more button.
+- **Live map (Active patrols).**
+  - The map fills the card edge to edge.
+  - Floating on top: the **In the field** panel top-right (340px, white, lg radius, the one shadow), the legend bottom-left (team position, track, incident, park boundary) and zoom +/− bottom-right.
+  - Each panel row has a 24px numbered marker in the track colour, the patrol name (label), "leader · last ping" (caption, muted) and a status dot + word. The selected row uses the `surface-sunken` fill.
+  - Incidents are red triangles with a white "!". An overdue team gets a dashed red ring around its marker.
+  - A pulsing green **Live** chip sits next to the page title.
+- **Patrols table (All patrols).**
+  - Filter pills (All / Active / Scheduled / Completed with counts; the active pill is ink-filled).
+  - Columns: Patrol (name + ID), Mode, Sector, Leader · team (28px initials avatar), Schedule (day + time), Distance (covered / planned), Status chip, and a more-options button.
+- **New patrol form.**
+  - An inline panel on `surface-form` with an lg radius, a "New patrol" title and a close button.
+  - Fields: patrol type, sector, mode, team leader, team size, date, start, end, planned distance (km), vehicle / call sign, check-in interval, and objective and route notes (textarea).
+  - Cancel and Create patrol buttons, right-aligned.
+
+## Do's and Don'ts
+
+- **Do** keep everything on white and separate with 1px `line` borders. **Don't** add drop shadows to cards or tint the page background.
+- **Do** use at most one coral element per card. **Don't** use coral for decoration or for a second "important" thing.
+- **Do** reserve lime for "where you are" (active nav, today). **Don't** use it as a button colour.
+- **Do** keep card titles at weight 500. **Don't** bold them.
+- **Do** pair every colour cue with a number, icon or word (track markers, status dots + text). **Don't** rely on colour alone.
+- **Do** keep pages focused: one job per page, as with Active vs All patrols. **Don't** stack unrelated widgets or cram live detail (progress bars, IDs, vehicles) into compact lists.
+- **Do** keep white text off coral unless it is 12px+ semibold. **Don't** use `online` green or `ink-faint` for readable text.
+- **Do** write short, specific copy with middle-dot joins and 24-hour times. **Don't** use emoji, exclamation marks or title case.
+- **Do** design each screen and state as its own static artboard. **Don't** build in-page interactivity into the design files.
