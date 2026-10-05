@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WildX · Active patrols</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#1F4D43}a:hover{color:#173B33}
+button,input,select,textarea{font:inherit}
+.wx-nav{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:12px;border:0;width:100%;text-align:left;cursor:pointer;font-size:15px}
+.wx-sub{display:flex;align-items:center;height:38px;padding:0 12px;border-radius:10px;border:0;width:100%;text-align:left;cursor:pointer;font-size:14px}
+.wx-nav:not([aria-current="page"]):hover,.wx-sub[aria-current="false"]:hover,.wx-patrol[aria-pressed="false"]:hover{background:#F6F6F3 !important}
+.wx-label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:#3B433E}
+.wx-field{height:40px;padding:0 12px;border:1px solid #DADDD4;border-radius:10px;background:#FFFFFF;color:#16201B;font-size:14px;font-weight:400;box-sizing:border-box;width:100%}
+.wx-row{display:grid;grid-template-columns:1.7fr 0.8fr 1fr 1.4fr 1.1fr 0.9fr 0.9fr 36px;gap:12px;align-items:center}
+@media (prefers-reduced-motion:no-preference){.wx-live{animation:wxpulse 1.6s ease-in-out infinite}}
+@keyframes wxpulse{50%{opacity:.35}}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #1F4D43;outline-offset:2px}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #FFFFFF; font-family: 'Geist', system-ui, sans-serif; color: #16201B; font-size: 14px">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; padding: 22px 16px; box-sizing: border-box; border-right: 1px solid #E2E5DC">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px; height: 36px">
+<div style="width: 34px; height: 34px; border-radius: 10px; background: #1F4D43; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4C11 4.5 19 11 20 20C13 19.5 5 13 4 4Z" fill="#D5EE9B"></path><path d="M20 4C19.5 11 13 19 4 20C4.5 13 11 5 20 4Z" fill="#D5EE9B" fill-opacity="0.6"></path></svg>
+</div>
+<span style="font-size: 23px; font-weight: 600; letter-spacing: -0.03em; color: #16201B">Wild<span style="font-weight: 700; color: #1F4D43">X</span></span>
+</div>
+
+<button style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #E2E5DC; border-radius: 12px; background: #FFFFFF; cursor: pointer; text-align: left">
+<span style="width: 36px; height: 36px; border-radius: 10px; background: #F3F4EF; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"></path><path d="M9 4v13M15 7v13"></path></svg></span>
+<span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 600; color: #16201B">Udawalawe NP</span><span style="font-size: 12px; color: #6B726C">30,821 ha</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+<button aria-current="false" class="wx-nav" style="background: transparent; color: #3B433E; font-weight: 400">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Dashboard</button>
+<button aria-expanded="true" class="wx-nav" style="background: transparent; color: #16201B; font-weight: 500">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"></circle><circle cx="18" cy="5" r="2"></circle><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"></path></svg><span style="flex-grow: 1">Patrols</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 15l-6-6-6 6"></path></svg></button>
+<div style="display: flex; flex-direction: column; gap: 2px; margin-left: 24px; padding-left: 14px; border-left: 1px solid #DADDD4">
+<button aria-current="page" class="wx-sub" style="background: #D5EE9B; color: #16201B; font-weight: 500"><span style="flex-grow: 1">Active patrols</span><span style="font-size: 12px; color: #6B726C">4</span></button>
+<button aria-current="false" class="wx-sub" style="background: transparent; color: #3B433E; font-weight: 400"><span style="flex-grow: 1">All patrols</span><span style="font-size: 12px; color: #6B726C">9</span></button>
+</div>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 16.5h-19z"></path><path d="M12 10v4M12 17v.01"></path></svg>Incidents</a>
+<a href="#" aria-expanded="true" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a7 7 0 0 1 14 0M8.5 12.5a3.5 3.5 0 0 1 7 0"></path><circle cx="12" cy="12.5" r="1"></circle><path d="M12 13.5V20"></path></svg><span style="flex-grow: 1">Sensors</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 15l-6-6-6 6"></path></svg></a>
+<div style="display: flex; flex-direction: column; gap: 2px; margin-left: 24px; padding-left: 14px; border-left: 1px solid #DADDD4">
+<a href="#" style="display: flex; align-items: center; height: 38px; padding: 0 12px; border-radius: 10px; color: #3B433E; text-decoration: none; font-size: 14px"><span style="flex-grow: 1">Collars</span><span style="font-size: 12px; color: #6B726C">12</span></a>
+<a href="#" style="display: flex; align-items: center; height: 38px; padding: 0 12px; border-radius: 10px; color: #3B433E; text-decoration: none; font-size: 14px"><span style="flex-grow: 1">Camera traps</span><span style="font-size: 12px; color: #6B726C">31</span></a>
+</div>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span style="flex-grow: 1">Alerts</span>
+<span style="min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #FF7A59; color: #FFFFFF; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center">3</span></a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Community reports</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Analytics</a>
+</div>
+
+<button style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 10px; border: 0; border-top: 1px solid #E2E5DC; background: transparent; cursor: pointer; text-align: left">
+<span style="position: relative; width: 36px; height: 36px; border-radius: 50%; background: #1F4D43; color: #D5EE9B; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">HJ<span style="position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%; background: #3DBE6B; border: 2px solid #FFFFFF"></span></span>
+<span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">H. M. Jayasekara</span><span style="font-size: 12px; color: #6B726C">Park manager</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B726C" stroke-width="2" stroke-linecap="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"></path></svg>
+</button>
+</nav>
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 28px; border-bottom: 1px solid #E2E5DC">
+<label style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px 0 12px; border: 1px solid #E2E5DC; border-radius: 10px; background: #FFFFFF; width: 280px; max-width: 100%; box-sizing: border-box; margin-right: auto">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B726C" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input type="search" placeholder="Search" aria-label="Search" style="border: 0; outline: none; background: transparent; flex-grow: 1; min-width: 0; font-size: 14px; color: #16201B">
+<span style="font-size: 12px; color: #6B726C; background: #F3F4EF; border-radius: 6px; padding: 2px 6px">⌘ K</span>
+</label>
+<button aria-label="Help" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #E2E5DC; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.01"></path></svg></button>
+<button aria-label="Notifications" style="position: relative; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #E2E5DC; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span style="position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: #FF7A59; border: 2px solid #FFFFFF"></span></button>
+</header>
+
+<main style="flex-grow: 1; padding: 28px; display: flex; flex-direction: column; gap: 20px; width: 100%; box-sizing: border-box">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 12px"><h1 style="margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em">Active patrols</h1><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #2F7A2E; background: #E8F6E6; border: 1px solid #BFE3B9; border-radius: 6px; padding: 2px 8px"><span class="wx-live" style="width: 7px; height: 7px; border-radius: 50%; background: #3DBE6B"></span>Live</span></div>
+<p style="margin: 0; font-size: 15px; color: #3B433E"><strong style="font-weight: 600; color: #16201B">4 teams</strong> in the field. Positions update every 60 s, last at 20:15.</p>
+</div>
+<section aria-label="Live patrol map" style="position: relative; flex-grow: 1; min-height: 640px; background: #F4F6EF; border: 1px solid #E4E7E0; border-radius: 18px; overflow: hidden">
+<svg viewBox="-10 -60 900 560" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style="position: absolute; inset: 0; display: block" role="img" aria-label="Park map with live patrol positions">
+<path d="M-10 -60H890V500H-10Z" fill="#F4F6EF"></path>
+<path d="M70 80L250 46L430 60L590 126L612 268L540 372L330 392L140 362L52 246Z" fill="#E6EED9" stroke="#1F4D43" stroke-width="1.5" stroke-dasharray="6 5"></path>
+<path d="M150 104C200 78 300 88 342 126C364 156 322 192 272 188C222 184 202 158 162 152C132 148 126 118 150 104Z" fill="#CFE2E6"></path>
+<path d="M-10 214C150 224 300 244 890 236" fill="none" stroke="#FFFFFF" stroke-width="5"></path>
+<path d="M320 500L362 256L424 -60" fill="none" stroke="#FFFFFF" stroke-width="5"></path>
+<path d="M18 30h16v12H18zM40 24h12v12H40zM22 50h12v10H22zM46 44h14v12H46z" fill="#DADDD4"></path>
+<text x="248" y="142" font-size="12" fill="#3B6A74" font-family="Geist, sans-serif" text-anchor="middle">Udawalawe reservoir</text>
+<text x="28" y="80" font-size="11" fill="#6B726C" font-family="Geist, sans-serif">Sevanagala</text>
+<text x="96" y="306" font-size="11" fill="#6B726C" font-family="Geist, sans-serif">Mau Ara</text>
+<text x="486" y="352" font-size="11" fill="#6B726C" font-family="Geist, sans-serif">Hambegamuwa</text>
+<text x="520" y="108" font-size="11" fill="#6B726C" font-family="Geist, sans-serif">Thanamalwila</text>
+
+<polyline points="462,340 478,304 510,292 530,262 520,238" fill="none" stroke="#1F4D43" stroke-width="3" stroke-opacity="0.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+<polyline points="86,256 128,242 168,264 208,250 236,272" fill="none" stroke="#E8603F" stroke-width="5" stroke-opacity="1" stroke-linecap="round" stroke-linejoin="round"></polyline>
+<polyline points="598,150 604,190 606,230 594,272" fill="none" stroke="#6A4FB6" stroke-width="3" stroke-opacity="0.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+<polyline points="72,118 96,96 128,74" fill="none" stroke="#A87A00" stroke-width="3" stroke-opacity="0.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 6"></polyline>
+
+<path d="M256 282L267 300H245Z" fill="#B42E22"></path>
+<path d="M256 288v5M256 296v.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"></path>
+
+<circle cx="520" cy="238" r="18" fill="#1F4D43" fill-opacity="0"></circle>
+<circle cx="236" cy="272" r="18" fill="#E8603F" fill-opacity="0.2"></circle>
+<circle cx="594" cy="272" r="18" fill="#6A4FB6" fill-opacity="0"></circle>
+<circle cx="128" cy="74" r="18" fill="#A87A00" fill-opacity="0"></circle>
+<circle cx="128" cy="74" r="14" fill="none" stroke="#B42E22" stroke-width="1.5" stroke-dasharray="3 3"></circle>
+
+<circle cx="520" cy="238" r="10" fill="#1F4D43" stroke="#FFFFFF" stroke-width="3"></circle>
+<circle cx="236" cy="272" r="10" fill="#E8603F" stroke="#FFFFFF" stroke-width="3"></circle>
+<circle cx="594" cy="272" r="10" fill="#6A4FB6" stroke="#FFFFFF" stroke-width="3"></circle>
+<circle cx="128" cy="74" r="10" fill="#A87A00" stroke="#FFFFFF" stroke-width="3"></circle>
+<text x="520" y="242" font-size="11" font-weight="600" fill="#FFFFFF" font-family="Geist, sans-serif" text-anchor="middle">1</text>
+<text x="236" y="276" font-size="11" font-weight="600" fill="#FFFFFF" font-family="Geist, sans-serif" text-anchor="middle">2</text>
+<text x="594" y="276" font-size="11" font-weight="600" fill="#FFFFFF" font-family="Geist, sans-serif" text-anchor="middle">3</text>
+<text x="128" y="78" font-size="11" font-weight="600" fill="#FFFFFF" font-family="Geist, sans-serif" text-anchor="middle">4</text>
+</svg>
+<div style="position: absolute; top: 16px; right: 16px; width: 340px; max-width: calc(100% - 32px); box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; padding: 12px 8px; background: #FFFFFF; border: 1px solid #E4E7E0; border-radius: 14px; box-shadow: 0 8px 24px rgba(22, 32, 27, 0.08)">
+<span style="font-size: 13px; color: #6B726C; padding: 4px 12px 6px; display: flex"><span style="margin-right: auto">In the field</span><span>4</span></span>
+<button aria-pressed="false" class="wx-patrol" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box">
+<span style="width: 24px; height: 24px; border-radius: 50%; background: #1F4D43; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">1</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">Night patrol · Hambegamuwa</span><span style="font-size: 12px; color: #6B726C">K. Bandara · 2 min ago</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: #2F7A2E"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2F7A2E"></span>On route</span>
+</button>
+<button aria-pressed="true" class="wx-patrol" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: #F3F4EF; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box">
+<span style="width: 24px; height: 24px; border-radius: 50%; background: #E8603F; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">2</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">Anti-poaching · Mau Ara</span><span style="font-size: 12px; color: #6B726C">R. Fernando · 30 s ago</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: #C2410C"><span style="width: 7px; height: 7px; border-radius: 50%; background: #C2410C"></span>Responding</span>
+</button>
+<button aria-pressed="false" class="wx-patrol" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box">
+<span style="width: 24px; height: 24px; border-radius: 50%; background: #6A4FB6; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">3</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">Boundary fence · Thanamalwila</span><span style="font-size: 12px; color: #6B726C">S. Perera · 1 min ago</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: #2F7A2E"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2F7A2E"></span>On route</span>
+</button>
+<button aria-pressed="false" class="wx-patrol" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box">
+<span style="width: 24px; height: 24px; border-radius: 50%; background: #A87A00; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">4</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">HEC response · Sevanagala</span><span style="font-size: 12px; color: #6B726C">N. Wijeratne · 18 min ago</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: #B42E22"><span style="width: 7px; height: 7px; border-radius: 50%; background: #B42E22"></span>Overdue</span>
+</button>
+</div>
+<div style="position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; border: 1px solid #E4E7E0; border-radius: 10px; background: #FFFFFF; overflow: hidden">
+<button aria-label="Zoom in" style="width: 34px; height: 34px; border: 0; border-bottom: 1px solid #E4E7E0; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+<button aria-label="Zoom out" style="width: 34px; height: 34px; border: 0; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
+</div>
+<div style="position: absolute; left: 16px; bottom: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 8px 12px; border: 1px solid #E4E7E0; border-radius: 10px; background: #FFFFFF; font-size: 12px; color: #3B433E">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #1F4D43; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #DADDD4"></span>Team position</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 16px; border-top: 3px solid #1F4D43; border-radius: 2px"></span>Track</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 3L22 21H2Z" fill="#B42E22"></path></svg>Incident</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 16px; border-top: 1.5px dashed #1F4D43"></span>Park boundary</span>
+</div>
+</section>
+</main>
+</div>
+</div>
+</body>
+</html>
