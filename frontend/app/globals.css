@@ -45,6 +45,39 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-primary-hover: var(--primary-hover);
+  --color-ink: var(--ink);
+  --color-ink-body: var(--ink-body);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-lime: var(--lime);
+  --color-lime-soft: var(--lime-soft);
+  --color-coral: var(--coral);
+  --color-coral-deep: var(--coral-deep);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-form: var(--surface-form);
+  --color-line: var(--border);
+  --color-line-strong: var(--line-strong);
+  --color-positive: var(--positive);
+  --color-positive-bg: var(--positive-bg);
+  --color-positive-line: var(--positive-line);
+  --color-negative: var(--negative);
+  --color-negative-bg: var(--negative-bg);
+  --color-negative-line: var(--negative-line);
+  --color-responding: var(--responding);
+  --color-butter: var(--butter);
+  --color-orchid: var(--orchid);
+  --color-online: var(--online);
+  --color-map-land: var(--map-land);
+  --color-map-ground: var(--map-ground);
+  --color-map-water: var(--map-water);
+  --color-map-water-label: var(--map-water-label);
+  --color-track-1: var(--track-1);
+  --color-track-2: var(--track-2);
+  --color-track-3: var(--track-3);
+  --color-track-4: var(--track-4);
+
 }
 
 :root {
@@ -81,6 +114,37 @@
   --sidebar-accent-foreground: #16201b;
   --sidebar-border: #e4e7e0;
   --sidebar-ring: #1f4d43;
+
+  --ink: #16201b;
+  --ink-body: #3b433e;
+  --ink-muted: #6b726c;
+  --ink-faint: #9aa19b;
+  --lime: #d5ee9b;
+  --lime-soft: #e9f1da;
+  --coral: #ff7a59;
+  --coral-deep: #e8603f;
+  --surface-muted: #f6f6f3;
+  --surface-sunken: #f2f1ee;
+  --surface-form: #f7f8f4;
+  --line-strong: #dadDd4;
+  --positive: #2f7a2e;
+  --positive-bg: #e8f6e6;
+  --positive-line: #bfe3b9;
+  --negative: #b42e22;
+  --negative-bg: #fdecea;
+  --negative-line: #f3c1ba;
+  --responding: #c2410c;
+  --butter: #fce98c;
+  --orchid: #f8d6f3;
+  --online: #3dbe6b;
+  --map-land: #e6eed9;
+  --map-ground: #f4f6ef;
+  --map-water: #cfe2e6;
+  --map-water-label: #3b6a74;
+  --track-1: #1f4d43;
+  --track-2: #e8603f;
+  --track-3: #6a4fb6;
+  --track-4: #a87a00;
 }
 
 .dark {
