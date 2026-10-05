@@ -2,8 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -38,13 +36,15 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --radius-3xl: 26px;
+  --radius-4xl: 30px;
+
   --color-primary-hover: var(--primary-hover);
   --color-ink: var(--ink);
   --color-ink-body: var(--ink-body);
@@ -78,6 +78,45 @@
   --color-track-3: var(--track-3);
   --color-track-4: var(--track-4);
 
+  --text-page-title: 32px;
+  --text-page-title--line-height: 38px;
+  --text-page-title--letter-spacing: -0.02em;
+  --text-page-title--font-weight: 600;
+  --text-hero-number: 36px;
+  --text-hero-number--line-height: 40px;
+  --text-hero-number--letter-spacing: -0.03em;
+  --text-hero-number--font-weight: 600;
+  --text-metric: 28px;
+  --text-metric--line-height: 34px;
+  --text-metric--letter-spacing: -0.02em;
+  --text-metric--font-weight: 500;
+  --text-wordmark: 23px;
+  --text-wordmark--line-height: 28px;
+  --text-wordmark--letter-spacing: -0.03em;
+  --text-wordmark--font-weight: 600;
+  --text-card-title: 20px;
+  --text-card-title--line-height: 28px;
+  --text-card-title--font-weight: 500;
+  --text-form-title: 16px;
+  --text-form-title--line-height: 24px;
+  --text-form-title--font-weight: 600;
+  --text-nav: 15px;
+  --text-nav--line-height: 20px;
+  --text-body: 14px;
+  --text-body--line-height: 20px;
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+  --text-label--font-weight: 500;
+  --text-field-label: 13px;
+  --text-field-label--line-height: 18px;
+  --text-field-label--font-weight: 500;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+
+  --spacing-sidebar: 248px;
+  --container-content: 1240px;
+
+  --shadow-float: 0 8px 24px rgba(22, 32, 27, 0.08);
 }
 
 :root {
@@ -147,39 +186,6 @@
   --track-4: #a87a00;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
 
 @layer base {
   * {
