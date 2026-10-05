@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WildX · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#1F4D43}a:hover{color:#173B33}
+button,input,select,textarea{font:inherit}
+.wx-nav{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:12px;border:0;width:100%;text-align:left;cursor:pointer;font-size:15px}
+.wx-sub{display:flex;align-items:center;height:38px;padding:0 12px;border-radius:10px;border:0;width:100%;text-align:left;cursor:pointer;font-size:14px}
+.wx-nav:not([aria-current="page"]):hover,.wx-sub[aria-current="false"]:hover,.wx-patrol[aria-pressed="false"]:hover{background:#F6F6F3 !important}
+.wx-label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:#3B433E}
+.wx-field{height:40px;padding:0 12px;border:1px solid #DADDD4;border-radius:10px;background:#FFFFFF;color:#16201B;font-size:14px;font-weight:400;box-sizing:border-box;width:100%}
+.wx-row{display:grid;grid-template-columns:1.7fr 0.8fr 1fr 1.4fr 1.1fr 0.9fr 0.9fr 36px;gap:12px;align-items:center}
+@media (prefers-reduced-motion:no-preference){.wx-live{animation:wxpulse 1.6s ease-in-out infinite}}
+@keyframes wxpulse{50%{opacity:.35}}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #1F4D43;outline-offset:2px}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #FFFFFF; font-family: 'Geist', system-ui, sans-serif; color: #16201B; font-size: 14px">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; padding: 22px 16px; box-sizing: border-box; border-right: 1px solid #E2E5DC">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px; height: 36px">
+<div style="width: 34px; height: 34px; border-radius: 10px; background: #1F4D43; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4C11 4.5 19 11 20 20C13 19.5 5 13 4 4Z" fill="#D5EE9B"></path><path d="M20 4C19.5 11 13 19 4 20C4.5 13 11 5 20 4Z" fill="#D5EE9B" fill-opacity="0.6"></path></svg>
+</div>
+<span style="font-size: 23px; font-weight: 600; letter-spacing: -0.03em; color: #16201B">Wild<span style="font-weight: 700; color: #1F4D43">X</span></span>
+</div>
+
+<button style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #E2E5DC; border-radius: 12px; background: #FFFFFF; cursor: pointer; text-align: left">
+<span style="width: 36px; height: 36px; border-radius: 10px; background: #F3F4EF; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"></path><path d="M9 4v13M15 7v13"></path></svg></span>
+<span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 600; color: #16201B">Udawalawe NP</span><span style="font-size: 12px; color: #6B726C">30,821 ha</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+<button aria-current="page" class="wx-nav" style="background: #D5EE9B; color: #16201B; font-weight: 500">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Dashboard</button>
+<button aria-expanded="true" class="wx-nav" style="background: transparent; color: #3B433E; font-weight: 400">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2"></circle><circle cx="18" cy="5" r="2"></circle><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"></path></svg><span style="flex-grow: 1">Patrols</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 15l-6-6-6 6"></path></svg></button>
+<div style="display: flex; flex-direction: column; gap: 2px; margin-left: 24px; padding-left: 14px; border-left: 1px solid #DADDD4">
+<button aria-current="false" class="wx-sub" style="background: transparent; color: #3B433E; font-weight: 400"><span style="flex-grow: 1">Active patrols</span><span style="font-size: 12px; color: #6B726C">4</span></button>
+<button aria-current="false" class="wx-sub" style="background: transparent; color: #3B433E; font-weight: 400"><span style="flex-grow: 1">All patrols</span><span style="font-size: 12px; color: #6B726C">9</span></button>
+</div>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 16.5h-19z"></path><path d="M12 10v4M12 17v.01"></path></svg>Incidents</a>
+<a href="#" aria-expanded="true" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a7 7 0 0 1 14 0M8.5 12.5a3.5 3.5 0 0 1 7 0"></path><circle cx="12" cy="12.5" r="1"></circle><path d="M12 13.5V20"></path></svg><span style="flex-grow: 1">Sensors</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 15l-6-6-6 6"></path></svg></a>
+<div style="display: flex; flex-direction: column; gap: 2px; margin-left: 24px; padding-left: 14px; border-left: 1px solid #DADDD4">
+<a href="#" style="display: flex; align-items: center; height: 38px; padding: 0 12px; border-radius: 10px; color: #3B433E; text-decoration: none; font-size: 14px"><span style="flex-grow: 1">Collars</span><span style="font-size: 12px; color: #6B726C">12</span></a>
+<a href="#" style="display: flex; align-items: center; height: 38px; padding: 0 12px; border-radius: 10px; color: #3B433E; text-decoration: none; font-size: 14px"><span style="flex-grow: 1">Camera traps</span><span style="font-size: 12px; color: #6B726C">31</span></a>
+</div>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span style="flex-grow: 1">Alerts</span>
+<span style="min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #FF7A59; color: #FFFFFF; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center">3</span></a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Community reports</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 12px; color: #3B433E; text-decoration: none; font-size: 15px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Analytics</a>
+</div>
+
+<button style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 10px; border: 0; border-top: 1px solid #E2E5DC; background: transparent; cursor: pointer; text-align: left">
+<span style="position: relative; width: 36px; height: 36px; border-radius: 50%; background: #1F4D43; color: #D5EE9B; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">HJ<span style="position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%; background: #3DBE6B; border: 2px solid #FFFFFF"></span></span>
+<span style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">H. M. Jayasekara</span><span style="font-size: 12px; color: #6B726C">Park manager</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B726C" stroke-width="2" stroke-linecap="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"></path></svg>
+</button>
+</nav>
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 28px; border-bottom: 1px solid #E2E5DC">
+<label style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px 0 12px; border: 1px solid #E2E5DC; border-radius: 10px; background: #FFFFFF; width: 280px; max-width: 100%; box-sizing: border-box; margin-right: auto">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B726C" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input type="search" placeholder="Search" aria-label="Search" style="border: 0; outline: none; background: transparent; flex-grow: 1; min-width: 0; font-size: 14px; color: #16201B">
+<span style="font-size: 12px; color: #6B726C; background: #F3F4EF; border-radius: 6px; padding: 2px 6px">⌘ K</span>
+</label>
+<button aria-label="Help" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #E2E5DC; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.01"></path></svg></button>
+<button aria-label="Notifications" style="position: relative; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #E2E5DC; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span style="position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: #FF7A59; border: 2px solid #FFFFFF"></span></button>
+</header>
+
+<main style="padding: 28px; display: flex; flex-direction: column; gap: 20px; max-width: 1240px; width: 100%; box-sizing: border-box">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px; margin-right: auto">
+<h1 style="margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em">Dashboard</h1>
+<p style="margin: 0; font-size: 15px; color: #3B433E"><strong style="font-weight: 600; color: #16201B">Good evening,</strong> here's what's happening in Udawalawe today.</p>
+</div>
+<button style="display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 20px; border: 0; border-radius: 12px; background: #1F4D43; color: #FFFFFF; font-size: 15px; font-weight: 500; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Report incident</button>
+</div>
+
+<section aria-label="Park activity" style="background: #FFFFFF; border: 1px solid #E4E7E0; border-radius: 18px; padding: 22px 24px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 4px; margin-right: auto">
+<h2 style="margin: 0; font-size: 20px; font-weight: 500">Park activity</h2>
+<span style="font-size: 13px; color: #3B433E">8 Oct, 2026</span>
+</div>
+<button style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #E7E9E3; border-radius: 8px; background: #F6F6F3; font-size: 13px; color: #16201B; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"></path></svg>Today</button>
+<button style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #E7E9E3; border-radius: 8px; background: #F6F6F3; font-size: 13px; color: #16201B; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Filter</button>
+<button aria-label="More options" style="width: 32px; height: 32px; border: 1px solid #E7E9E3; border-radius: 8px; background: #F6F6F3; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="#16201B"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border-top: 1px solid #E7E9E3">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 4px 0; border-right: 1px solid #E7E9E3">
+<span style="font-size: 14px; color: #3B433E">Active alerts</span>
+<div style="display: flex; align-items: center; gap: 12px"><span style="font-size: 28px; font-weight: 500; letter-spacing: -0.02em">3</span><span style="font-size: 12px; color: #B42E22; background: #FDECEA; border: 1px solid #F3C1BA; border-radius: 6px; padding: 2px 6px">+1 today</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 4px; border-right: 1px solid #E7E9E3">
+<span style="font-size: 14px; color: #3B433E">Collars reporting</span>
+<div style="display: flex; align-items: center; gap: 12px"><span style="font-size: 28px; font-weight: 500; letter-spacing: -0.02em">12<span style="color: #9AA19B">/13</span></span><span style="font-size: 12px; color: #B42E22; background: #FDECEA; border: 1px solid #F3C1BA; border-radius: 6px; padding: 2px 6px">1 offline</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 4px; border-right: 1px solid #E7E9E3">
+<span style="font-size: 14px; color: #3B433E">Patrols active</span>
+<div style="display: flex; align-items: center; gap: 12px"><span style="font-size: 28px; font-weight: 500; letter-spacing: -0.02em">4</span><span style="font-size: 12px; color: #2F7A2E; background: #E8F6E6; border: 1px solid #BFE3B9; border-radius: 6px; padding: 2px 6px">On schedule</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 18px 0 4px 20px">
+<span style="font-size: 14px; color: #3B433E">Images to review</span>
+<div style="display: flex; align-items: center; gap: 12px"><span style="font-size: 28px; font-weight: 500; letter-spacing: -0.02em; color: #1F4D43">48</span><span style="font-size: 12px; color: #2F7A2E; background: #E8F6E6; border: 1px solid #BFE3B9; border-radius: 6px; padding: 2px 6px">−12 today</span></div>
+</div>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+
+<section aria-label="Incidents this season" style="flex: 3 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7E0; border-radius: 18px; padding: 22px 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center"><h2 style="margin: 0; font-size: 20px; font-weight: 500; margin-right: auto">Human–elephant conflict</h2>
+<button aria-label="More options" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#16201B"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg></button></div>
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px; margin-right: auto">
+<span style="font-size: 36px; font-weight: 600; letter-spacing: -0.03em">37 incidents</span>
+<span style="font-size: 14px; color: #3B433E">May – Oct, 2026</span>
+</div>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #3B433E"><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: #2F7A2E; background: #E8F6E6; border: 1px solid #BFE3B9; border-radius: 6px; padding: 2px 6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"></path></svg>12%</span>vs last season</span>
+</div>
+
+<div style="position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; height: 230px; align-items: end; margin-top: 8px">
+<div style="height: 52%; border-radius: 14px; background: #F2F1EE; display: flex; justify-content: center; padding-top: 12px; box-sizing: border-box; font-size: 12px; color: #3B433E">4</div>
+<div style="height: 70%; border-radius: 14px; background: #F2F1EE; display: flex; justify-content: center; padding-top: 12px; box-sizing: border-box; font-size: 12px; color: #3B433E">6</div>
+<div style="height: 92%; border-radius: 14px; background: #FF7A59; box-shadow: 0 6px 0 #E8603F; display: flex; justify-content: center; padding-top: 12px; box-sizing: border-box; font-size: 12px; font-weight: 600; color: #FFFFFF">11</div>
+<div style="height: 60%; border-radius: 14px; background: #F2F1EE; display: flex; justify-content: center; padding-top: 12px; box-sizing: border-box; font-size: 12px; color: #3B433E">5</div>
+<div style="height: 64%; border-radius: 14px; background: #F2F1EE; display: flex; justify-content: center; padding-top: 12px; box-sizing: border-box; font-size: 12px; color: #3B433E">6</div>
+<div style="height: 44%; border-radius: 14px; background: #F2F1EE; display: flex; justify-content: center; padding-top: 12px; box-sizing: border-box; font-size: 12px; color: #3B433E">5</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 52%; border-top: 1.5px dotted #9AA19B; pointer-events: none"></div>
+<span style="position: absolute; left: 0; bottom: 52%; transform: translateY(50%); font-size: 11px; font-weight: 600; color: #FFFFFF; background: #1F4D43; padding: 3px 8px; border-radius: 4px 0 0 4px">Avg 6</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; text-align: center; font-size: 14px; color: #6B726C">
+<span>May</span><span>Jun</span><span style="color: #16201B; font-weight: 600">Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
+</div>
+</section>
+
+<section aria-label="Patrol schedule" style="position: relative; flex: 2 1 340px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7E0; border-radius: 18px; padding: 22px 20px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 500">Patrol schedule</h2>
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="font-size: 14px; font-weight: 500; margin-right: auto">October 2026</span>
+<button aria-label="Previous week" style="width: 30px; height: 30px; border-radius: 8px; border: 1px solid #E7E9E3; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<button aria-label="Next week" style="width: 30px; height: 30px; border-radius: 8px; border: 1px solid #E7E9E3; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; gap: 4px">
+<span style="font-size: 12px; color: #6B726C">Mon</span><span style="font-size: 12px; color: #6B726C">Tue</span><span style="font-size: 12px; color: #6B726C">Wed</span><span style="font-size: 12px; color: #6B726C">Thu</span><span style="font-size: 12px; color: #6B726C">Fri</span><span style="font-size: 12px; color: #6B726C">Sat</span><span style="font-size: 12px; color: #6B726C">Sun</span>
+<span style="height: 34px; display: flex; align-items: center; justify-content: center; font-size: 14px">5</span>
+<span style="height: 34px; display: flex; align-items: center; justify-content: center; font-size: 14px">6</span>
+<span style="height: 34px; display: flex; align-items: center; justify-content: center; font-size: 14px">7</span>
+<span style="height: 34px; display: flex; align-items: center; justify-content: center"><span style="width: 34px; height: 34px; border-radius: 50%; background: #E9F1DA; color: #1F4D43; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center">8</span></span>
+<span style="height: 34px; display: flex; align-items: center; justify-content: center; font-size: 14px">9</span>
+<span style="height: 34px; display: flex; align-items: center; justify-content: center; font-size: 14px">10</span>
+<span style="height: 34px; display: flex; align-items: center; justify-content: center; font-size: 14px">11</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 12px; color: #6B726C; display: flex; align-items: center; gap: 8px">Today<span style="flex-grow: 1; border-top: 1px dashed #E2E5DC"></span></span>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #FCE98C">
+<span style="width: 34px; height: 34px; border-radius: 9px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500">Night patrol · Hambegamuwa</span><span style="font-size: 12px; color: #3B433E">19:00 – 23:00 · K. Bandara</span></span>
+<button aria-label="Patrol options" style="width: 28px; height: 28px; border: 0; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="#16201B"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg></button>
+</div>
+<span style="font-size: 12px; color: #6B726C; display: flex; align-items: center; gap: 8px">Fri, Oct 9<span style="flex-grow: 1; border-top: 1px dashed #E2E5DC"></span></span>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #F8D6F3">
+<span style="width: 34px; height: 34px; border-radius: 9px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; font-weight: 500">Collar check · Sudu Manika</span><span style="font-size: 12px; color: #3B433E">07:00 – 10:00 · Vet unit</span></span>
+<button aria-label="Patrol options" style="width: 28px; height: 28px; border: 0; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="#16201B"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg></button>
+</div>
+</div>
+</section>
+</div>
+
+</main>
+</div>
+</div>
+</body>
+</html>
