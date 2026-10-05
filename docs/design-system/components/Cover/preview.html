@@ -1,0 +1,54 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WildX</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--surface); color:var(--ink); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .pine { fill:var(--pine); }
+  .lime { fill:var(--lime); }
+  .coral { fill:var(--coral); }
+  .butter { fill:var(--butter); }
+  .card { rx:var(--radius-xl); }
+  .bar { rx:var(--radius-lg); }
+  .words { position:absolute; left:var(--space-6); bottom:var(--space-6); max-width:440px; }
+  .name { margin:0; font-size:112px; line-height:.9; font-weight:600; letter-spacing:-.03em; color:var(--ink); }
+  .tag { margin:var(--space-2) 0 0 4px; font-size:14px; line-height:20px; color:var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      pine 176x264 bled off the top (the brand, largest) · lime 128x152 (active state) · coral 48x208 (the one highlight bar) · butter 48x112 (schedule tint) — about 30% of 960x288
+  arrangement one tall pine slab with satellites stepping right like the dashboard's bar chart, bottoms on one line space-6*1.67 above the edge, space-4 gutters
+  pattern     the leaf motif from the mark ("two crossing lime leaves"): one leaf-X in lime on the pine slab, one single pine leaf cut into the lime block
+  scales      gutters space-4; slab and lime corners radius-xl; bars radius-lg
+-->
+<rect class="pine card" x="16" y="-16" width="176" height="264" rx="18"/>
+<rect class="lime card" x="208" y="96" width="128" height="152" rx="18"/>
+<rect class="coral bar" x="352" y="40" width="48" height="208" rx="14"/>
+<rect class="butter bar" x="416" y="136" width="48" height="112" rx="14"/>
+<g transform="translate(40 64) scale(5.333)">
+<path class="lime" d="M4 4C11 4.5 19 11 20 20C13 19.5 5 13 4 4Z"/>
+<path class="lime" fill-opacity="0.6" d="M20 4C19.5 11 13 19 4 20C4.5 13 11 5 20 4Z"/>
+</g>
+<g transform="translate(232 120) scale(3.333)">
+<path class="pine" d="M4 4C11 4.5 19 11 20 20C13 19.5 5 13 4 4Z"/>
+</g>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">WildX</h1>
+<p class="tag">Calm, field-ready interface for wildlife operations.</p>
+</div>
+</div>
+</body>
+</html>
