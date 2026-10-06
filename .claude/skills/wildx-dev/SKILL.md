@@ -47,4 +47,4 @@ Load only the reference you need:
 - Backend: `cd backend && ./mvnw verify` — compiles, tests pass, ≥80% coverage on new code.
 - Frontend: `cd frontend && npm run lint && npm run build`.
 - No code comments anywhere.
-- Re-check docs still match the code. Commit as `feat(ucN): … [ID]` (architecture §11).
+- Re-check docs still match the code.
