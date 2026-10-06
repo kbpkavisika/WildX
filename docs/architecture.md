@@ -35,7 +35,7 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
 | Backend | Spring Boot 4.1, Java 25, Maven | Already scaffolded in `backend/` |
 | Persistence | Spring Data JPA + PostgreSQL | `ddl-auto=update` during development, with no migrations tool. Custom queries use the Criteria API only (no raw SQL/JPQL) |
 | Validation | `spring-boot-starter-validation` | `@Valid` on request DTOs |
-| Auth | `spring-boot-starter-security` + `spring-boot-starter-oauth2-resource-server` | HS256 JWT issued by our own `/api/auth/login`, no external IdP |
+| Auth | `spring-boot-starter-security` + `spring-boot-starter-security-oauth2-resource-server` | Stateless HS256 JWT access token issued by our own `/api/v1/auth/login`, valid 12 h. Claims: `sub` (user id), `role`, `parkId`. No refresh tokens, cookies or sessions, and no external IdP |
 | Boilerplate | Lombok | `@Getter @Setter` on entities, and Java `record` for DTOs |
 | Frontend | Next.js 16 (App Router), React 19, TypeScript | ⚠ Read `frontend/AGENTS.md`, because Next 16 APIs differ from older versions |
 | Styling | Tailwind CSS 4 | Mobile-first: write the base styles for phones and add `lg:` styles for the desktop dashboard |
@@ -96,7 +96,7 @@ Rules:
 
 ## 5. Database design (PostgreSQL)
 
-All tables have `id BIGSERIAL PK` and `created_at TIMESTAMPTZ`. Location columns are always `lat DOUBLE, lng DOUBLE`. Geometry columns hold GeoJSON `TEXT`. Enums are stored as `VARCHAR` (`@Enumerated(STRING)`).
+All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_at` (`TIMESTAMPTZ`), `created_by`, `modified_by` (user id from the JWT, `NULL` for unauthenticated or system writes). Entities get them by extending `model/Auditable` (Spring Data JPA auditing). Location columns are always `lat DOUBLE, lng DOUBLE`. Geometry columns hold GeoJSON `TEXT`. Enums are stored as `VARCHAR` (`@Enumerated(STRING)`).
 
 `dispatch` links to `incident`, `alert` or `community_report` through `(source_type, source_id)`, with no foreign key (D4).
 
@@ -241,12 +241,12 @@ frontend/
 
 ## 9. Configuration and local setup
 
-Secrets go in `backend/.env` (git-ignored; `.env.example` lists the keys). Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
+Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`). Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
 
-To run the system, start PostgreSQL, the backend and the frontend:
+To run the system, start PostgreSQL (`docker-compose.yml` in the repo root, `postgres:17-alpine`), the backend and the frontend:
 
 ```bash
-docker run -d --name wildx-db -e POSTGRES_USER=wildx -e POSTGRES_PASSWORD=wildx -e POSTGRES_DB=wildx -p 5432:5432 postgres:17
+docker compose up -d
 ```
 
 ```bash
@@ -261,7 +261,7 @@ cd frontend && npm run dev
 - park **Yala**, with 4 sectors, 2 routes and 2 zones (Kumbukgaha farmland, and a road);
 - alert rules, 5 incident types and 3 boundary segments (`KUMB`, `PAL`, `KAT`);
 - 1 collar on elephant "Gemunu" and 1 camera;
-- one user per role, with the test password `password`.
+- one user per role (`ranger@wildx.lk`, `supervisor@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `lel@wildx.lk`, `admin@wildx.lk`), with the test password `password`.
 
 Simulation scripts live in `docs/sim/*.http` (IntelliJ/VS Code REST client) and send a fix inside the farmland zone, a camera image and an SMS.
 
