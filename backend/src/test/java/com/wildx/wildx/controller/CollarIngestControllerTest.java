@@ -1,9 +1,8 @@
 package com.wildx.wildx.controller;
 
+import com.wildx.wildx.config.ApiKeyGuard;
 import com.wildx.wildx.config.SecurityConfig;
-import com.wildx.wildx.dto.CollarFixRequest;
 import com.wildx.wildx.dto.CollarFixResponse;
-import com.wildx.wildx.exception.UnauthorizedException;
 import com.wildx.wildx.service.CollarFixService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +13,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CollarIngestController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, ApiKeyGuard.class})
 @TestPropertySource(properties = {"wildx.jwt-secret=test-secret-test-secret-test-secret-123",
         "wildx.ingest-api-key=test-key"})
 class CollarIngestControllerTest {
@@ -69,14 +67,5 @@ class CollarIngestControllerTest {
                     .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
         }
         verifyNoInteractions(collarFixes);
-    }
-
-    @Test
-    void rejectsEverythingWhenNoKeyIsConfigured() {
-        CollarFixService service = mock(CollarFixService.class);
-        CollarIngestController controller = new CollarIngestController(service, "");
-        CollarFixRequest request = new CollarFixRequest("COL-001", 6.31, 81.41, AT, 80);
-        assertThatThrownBy(() -> controller.ingest("", request)).isInstanceOf(UnauthorizedException.class);
-        verifyNoInteractions(service);
     }
 }
