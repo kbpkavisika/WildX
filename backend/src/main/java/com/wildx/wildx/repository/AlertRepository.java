@@ -10,8 +10,8 @@ import java.util.List;
 public interface AlertRepository extends JpaRepository<Alert, Long> {
     boolean existsByZoneIdAndDeviceAnimalIdAndOccurredAtGreaterThanAndOccurredAtLessThan(
             Long zoneId, Long animalId, Instant after, Instant before);
-    @EntityGraph(attributePaths = {"park", "device", "device.animal", "zone"})
+    @EntityGraph(attributePaths = {"park", "device", "device.animal", "zone", "acknowledgedBy"})
     List<Alert> findByParkIdOrderByOccurredAtDescIdDesc(Long parkId);
-    @EntityGraph(attributePaths = {"park", "device", "device.animal", "zone"})
+    @EntityGraph(attributePaths = {"park", "device", "device.animal", "zone", "acknowledgedBy"})
     List<Alert> findByParkIdAndStatusOrderByOccurredAtDescIdDesc(Long parkId, AlertStatus status);
 }

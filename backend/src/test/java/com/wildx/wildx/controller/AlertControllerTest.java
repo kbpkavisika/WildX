@@ -37,7 +37,7 @@ class AlertControllerTest {
         when(auth.current(any())).thenReturn(new UserResponse(7L, "Ranger", "r@wildx.lk", Role.RANGER, 1L));
         when(alerts.alerts(eq(1L), any())).thenReturn(List.of(new AlertResponse(20L, AlertType.ZONE_BREACH,
                 Severity.HIGH, AlertStatus.OPEN, 3L, "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41,
-                AT, AT)));
+                AT, AT, null, null, null, null)));
         mvc.perform(get("/api/v1/alerts").header("Authorization", token("RANGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].severity").value("HIGH"))
                 .andExpect(jsonPath("$[0].zoneName").value("Kumbukgaha farmland"))
