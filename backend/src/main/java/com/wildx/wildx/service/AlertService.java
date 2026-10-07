@@ -8,4 +8,5 @@ import java.util.List;
 public interface AlertService {
     void raiseZoneBreaches(CollarFix fix);
     List<AlertResponse> alerts(Long parkId, AlertStatus status);
+    AlertResponse acknowledge(Long parkId, Long alertId, Long userId);
 }

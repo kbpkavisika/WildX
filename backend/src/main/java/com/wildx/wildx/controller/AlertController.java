@@ -1,6 +1,7 @@
 package com.wildx.wildx.controller;
 
 import com.wildx.wildx.dto.AlertResponse;
+import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.type.AlertStatus;
@@ -24,5 +25,12 @@ public class AlertController {
     public List<AlertResponse> alerts(@AuthenticationPrincipal Jwt jwt,
                                       @RequestParam(required = false) AlertStatus status) {
         return alerts.alerts(auth.current(jwt).parkId(), status);
+    }
+
+    @PostMapping(value = "/{id}/acknowledge", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER')")
+    public AlertResponse acknowledge(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        UserResponse user = auth.current(jwt);
+        return alerts.acknowledge(user.parkId(), id, user.id());
     }
 }

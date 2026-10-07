@@ -3,6 +3,9 @@ package com.wildx.wildx.service.impl;
 import com.wildx.wildx.dto.AlertResponse;
 import com.wildx.wildx.dto.PatrolLiveResponse;
 import com.wildx.wildx.dto.PatrolResponse;
+import com.wildx.wildx.exception.NotFoundException;
+import jakarta.persistence.EntityManager;
+import java.util.Optional;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.*;
 import com.wildx.wildx.service.NotificationService;
@@ -27,8 +30,10 @@ class AlertServiceImplTest {
     private final AlertRepository alerts = mock(AlertRepository.class);
     private final PatrolMonitorService patrols = mock(PatrolMonitorService.class);
     private final NotificationService notifications = mock(NotificationService.class);
+    private final EntityManager entityManager = mock(EntityManager.class);
     private final AlertServiceImpl service =
-            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC), patrols, notifications);
+            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC), patrols, notifications,
+                    entityManager);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
     private final Device collar = collar();
 
@@ -190,12 +195,56 @@ class AlertServiceImplTest {
     @Test
     void storesSlaDeadlineAtDatabasePrecision() {
         var precise = new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW.plusNanos(958_315_200), ZoneOffset.UTC),
-                patrols, notifications);
+                patrols, notifications, entityManager);
         stubZones(zone(10L, ZoneType.FARMLAND, FARMLAND));
         stubRules(rule(ZoneType.FARMLAND, Severity.MEDIUM, 30, 15));
         precise.raiseZoneBreaches(fix(6.305, 81.405));
         assertThat(savedAlerts(1).getFirst().getSlaDueAt())
                 .isEqualTo(NOW.plusNanos(958_315_000).plus(Duration.ofMinutes(15)));
+    }
+
+    @Test
+    void acknowledgeRecordsWhoAndWhenOnceAndKeepsFirstValues() {
+        Alert alert = openAlert();
+        AppUser ranger = AppUser.builder().name("Ranger").build();
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(alert));
+        when(entityManager.getReference(AppUser.class, 4L)).thenReturn(ranger);
+        var first = service.acknowledge(1L, 20L, 4L);
+        assertThat(first.status()).isEqualTo(AlertStatus.ACKNOWLEDGED);
+        assertThat(first.acknowledgedByName()).isEqualTo("Ranger");
+        assertThat(first.acknowledgedAt()).isEqualTo(NOW);
+        assertThat(alert.getAcknowledgedBy()).isSameAs(ranger);
+        var again = service.acknowledge(1L, 20L, 5L);
+        assertThat(again.acknowledgedByName()).isEqualTo("Ranger");
+        assertThat(again.acknowledgedAt()).isEqualTo(NOW);
+        verify(entityManager, never()).getReference(AppUser.class, 5L);
+    }
+
+    @Test
+    void acknowledgeRejectsResolvedAndOtherParkAlerts() {
+        Alert resolved = openAlert();
+        resolved.setStatus(AlertStatus.RESOLVED);
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(resolved));
+        assertThatThrownBy(() -> service.acknowledge(1L, 20L, 4L))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("Alert is already resolved");
+        when(alerts.findLockedByIdAndParkId(20L, 2L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.acknowledge(2L, 20L, 4L))
+                .isInstanceOf(NotFoundException.class).hasMessage("Alert not found");
+        verifyNoInteractions(entityManager);
+        assertThat(resolved.getAcknowledgedBy()).isNull();
+    }
+
+    private Alert openAlert() {
+        Alert alert = new Alert();
+        alert.setId(20L);
+        alert.setPark(park);
+        alert.setType(AlertType.ZONE_BREACH);
+        alert.setSeverity(Severity.HIGH);
+        alert.setStatus(AlertStatus.OPEN);
+        alert.setDevice(collar);
+        alert.setOccurredAt(FIX_TIME);
+        alert.setSlaDueAt(NOW);
+        return alert;
     }
 
     private PatrolLiveResponse onPatrol(Long rangerId) {
