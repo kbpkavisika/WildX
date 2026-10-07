@@ -5,6 +5,7 @@ import java.time.LocalTime;
 public final class AlertConstants {
     public static final LocalTime NIGHT_START = LocalTime.of(18, 0);
     public static final LocalTime NIGHT_END = LocalTime.of(6, 0);
+    public static final long ESCALATION_INTERVAL_MS = 60_000;
 
     private AlertConstants() {}
 

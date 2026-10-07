@@ -19,4 +19,7 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByParkIdAndStatusOrderByOccurredAtDescIdDesc(Long parkId, AlertStatus status);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Alert> findLockedByIdAndParkId(Long id, Long parkId);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Alert> findLockedById(Long id);
+    List<Alert> findByStatusAndSlaDueAtLessThanEqual(AlertStatus status, Instant time);
 }
