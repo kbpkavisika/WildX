@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.wildx.wildx.type.Role;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -64,5 +67,34 @@ public class AuthServiceImpl implements AuthService {
         }
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse current(Jwt jwt) {
+        AppUser user;
+        try {
+            user = userRepository.findWithParkById(Long.valueOf(jwt.getSubject()))
+                    .filter(AppUser::isActive).orElseThrow(() -> new UnauthorizedException("User is inactive or missing"));
+        } catch (NumberFormatException ex) {
+            throw new UnauthorizedException("Invalid user identity");
+        }
+        UserResponse response = UserMapper.toResponse(user);
+        Object parkClaim = jwt.getClaim(AuthConstants.PARK_ID_CLAIM);
+        if (response.parkId() == null || parkClaim == null
+                || !Objects.equals(response.parkId().toString(), parkClaim.toString())
+                || !response.role().name().equals(jwt.getClaimAsString(AuthConstants.ROLE_CLAIM))) {
+            throw new UnauthorizedException("User access changed; log in again");
+        }
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AppUser requireRanger(Long userId, Long parkId) {
+        return userRepository.findWithParkById(userId)
+                .filter(AppUser::isActive).filter(user -> user.getRole() == Role.RANGER)
+                .filter(user -> user.getPark() != null && user.getPark().getId().equals(parkId))
+                .orElseThrow(() -> new IllegalArgumentException("Ranger must be active and assigned to this park"));
     }
 }

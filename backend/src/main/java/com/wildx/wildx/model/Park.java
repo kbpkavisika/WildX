@@ -28,4 +28,8 @@ public class Park extends Auditable {
 
     @Column(nullable = false, unique = true)
     private String code;
+
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "integer default 7")
+    private int neglectDays = 7;
 }

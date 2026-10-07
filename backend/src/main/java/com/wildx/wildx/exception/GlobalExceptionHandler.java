@@ -9,11 +9,35 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     private static final String ERROR_KEY = "error";
+
+    @ExceptionHandler({org.springframework.web.method.annotation.HandlerMethodValidationException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Map<String, String>> handleRequestError(Exception ex) {
+        return error(HttpStatus.BAD_REQUEST, "Invalid request payload or parameter");
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleConflict(org.springframework.dao.DataIntegrityViolationException ex) {
+        return error(HttpStatus.CONFLICT, "Resource is duplicated or referenced by existing records");
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNotFound(NotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
@@ -34,6 +58,7 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {
+        log.warn("request rejected status={} reason={}", status.value(), message);
         return ResponseEntity.status(status).body(Map.of(ERROR_KEY, message));
     }
 }
