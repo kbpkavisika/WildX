@@ -10,5 +10,6 @@ public interface AuthService {
 
     LoginResponse login(LoginRequest request);
     UserResponse current(Jwt jwt);
+    void requireParkAccess(Jwt jwt, Long parkId);
     AppUser requireRanger(Long userId, Long parkId);
 }

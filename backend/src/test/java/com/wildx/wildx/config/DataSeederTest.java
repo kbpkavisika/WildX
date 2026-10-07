@@ -1,9 +1,13 @@
 package com.wildx.wildx.config;
 
 import com.wildx.wildx.model.AppUser;
+import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.Park;
+import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
+import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.ParkRepository;
+import com.wildx.wildx.type.DeviceType;
 import com.wildx.wildx.type.Role;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -24,7 +28,10 @@ class DataSeederTest {
     private final ParkRepository parkRepository = mock(ParkRepository.class);
     private final AppUserRepository userRepository = mock(AppUserRepository.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder);
+    private final AnimalRepository animalRepository = mock(AnimalRepository.class);
+    private final DeviceRepository deviceRepository = mock(DeviceRepository.class);
+    private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder,
+            animalRepository, deviceRepository);
 
     @Test
     @SuppressWarnings("unchecked")
@@ -43,6 +50,13 @@ class DataSeederTest {
         assertThat(users).filteredOn(user -> user.getRole() == Role.ADMIN).allMatch(user -> user.getPark() == null);
         assertThat(users).filteredOn(user -> user.getRole() != Role.ADMIN).allMatch(user -> user.getPark() != null);
         assertThat(users).extracting(AppUser::getEmail).contains("ranger@wildx.lk", "admin@wildx.lk");
+
+        ArgumentCaptor<List<Device>> devices = ArgumentCaptor.forClass(List.class);
+        verify(deviceRepository).saveAll(devices.capture());
+        assertThat(devices.getValue()).extracting(Device::getCode).containsExactly("COL-001", "CAM-001");
+        assertThat(devices.getValue().get(0).getAnimal().getName()).isEqualTo("Gemunu");
+        assertThat(devices.getValue().get(1).getType()).isEqualTo(DeviceType.CAMERA);
+        assertThat(devices.getValue().get(1).getLat()).isNotNull();
     }
 
     @Test
@@ -51,7 +65,7 @@ class DataSeederTest {
 
         seeder.run();
 
-        verifyNoInteractions(parkRepository);
+        verifyNoInteractions(parkRepository, animalRepository, deviceRepository);
         verify(userRepository, never()).saveAll(any());
     }
 }

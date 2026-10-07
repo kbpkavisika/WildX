@@ -161,13 +161,18 @@ Today and date-range boundaries use Asia/Colombo. Coverage includes never-visite
 
 Sector configuration is exposed at `/parks/{id}/sectors`; updates do not retroactively remap historical points. Sector deletion is rejected when track points reference it. `PUT /parks/{id}/coverage-settings` accepts `{neglectDays}` for a manager's own park. GET `/reports/coverage?from=YYYY-MM-DD&to=YYYY-MM-DD` uses inclusive park-local dates and returns every sector with its recorded point count, distinct patrol count and latest visit within the range. Missing or reversed dates are rejected. `format=csv` downloads UTF-8 CSV with escaped fields and spreadsheet-formula protection; the default is JSON.
 
+### Device registry contract (SEN-01)
+
+Collars and camera traps are simulated, so registering them only creates records. Animals are registered first at `/parks/{id}/animals`; a `COLLAR` then references an `animalId` from the same park, and a `CAMERA` requires `lat`/`lng`. Fields that do not belong to the device type are ignored. `code` is unique across all parks, `expectedIntervalMin` is 1–10080, and a device's type cannot change after registration. There is no delete, because later fixes, alerts and images reference devices. A Manager can write only to their own park, and an Admin can write to any park.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
 |---|---|---|
 | Auth | `POST /auth/login` → `{token, user}` | public |
 | Admin | `GET/POST/PUT /admin/parks`, `GET/POST/PUT /admin/users` | ADMIN |
-| Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|alert-rules\|incident-types\|segments\|devices\|animals` | MANAGER (writes), staff (reads) |
+| Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|alert-rules\|incident-types\|segments` | MANAGER (writes), staff (reads) |
+| UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | ADMIN, MANAGER (writes), staff (reads) |
 | UC1 | `GET/POST /routes`, `POST /patrols` (assign), `GET /patrols?status=&date=` | MANAGER, SUPERVISOR |
 | UC1 | `GET /me/patrols` | RANGER |
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |

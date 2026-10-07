@@ -9,6 +9,7 @@ import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.type.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -113,6 +114,29 @@ class AuthServiceImplTest {
         user.setActive(true);
         user.setRole(Role.MANAGER);
         assertThatThrownBy(() -> authService.current(jwt)).isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    void parkAccessAllowsOwnParkAndAdminAnyPark() {
+        Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
+        AppUser manager = user(Role.MANAGER, park, true);
+        when(userRepository.findWithParkById(7L)).thenReturn(Optional.of(manager));
+        Jwt managerJwt = Jwt.withTokenValue("token").header("alg", "HS256").subject("7")
+                .claim("role", "MANAGER").claim("parkId", 3L).build();
+        authService.requireParkAccess(managerJwt, 3L);
+        assertThatThrownBy(() -> authService.requireParkAccess(managerJwt, 4L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        AppUser admin = user(Role.ADMIN, null, true);
+        when(userRepository.findWithParkById(7L)).thenReturn(Optional.of(admin));
+        Jwt adminJwt = Jwt.withTokenValue("token").header("alg", "HS256").subject("7").claim("role", "ADMIN").build();
+        authService.requireParkAccess(adminJwt, 4L);
+        admin.setRole(Role.MANAGER);
+        assertThatThrownBy(() -> authService.requireParkAccess(adminJwt, 4L)).isInstanceOf(UnauthorizedException.class);
+        admin.setActive(false);
+        assertThatThrownBy(() -> authService.requireParkAccess(adminJwt, 4L)).isInstanceOf(UnauthorizedException.class);
+        Jwt badSubject = Jwt.withTokenValue("token").header("alg", "HS256").subject("x").claim("role", "ADMIN").build();
+        assertThatThrownBy(() -> authService.requireParkAccess(badSubject, 4L)).isInstanceOf(UnauthorizedException.class);
     }
 
     @Test
