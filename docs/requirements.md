@@ -125,9 +125,9 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | SEN-05 | When a stored fix falls inside a zone, the system creates a **Zone breach** alert with the rule's severity, unless an alert for the same animal and zone was raised within the cool-down period. | M |
 | SEN-06 | A breach between 18:00 and 06:00 raises the severity by one level. | S |
 | SEN-07 | A new alert appears in the dashboard alert queue and on the map. All on-duty rangers of the park are notified (CMN-07), with SMS fallback (CMN-08). | M |
-| SEN-08 | A ranger or manager **acknowledges** an alert, and the system records who acknowledged it and when. A manager can dispatch a specific responder (CMN-06). | M |
+| SEN-08 | A ranger, supervisor or manager **acknowledges** an alert, and the system records who acknowledged it and when. A manager can dispatch a specific responder (CMN-06). | M |
 | SEN-09 | Escalation: an alert not acknowledged before its SLA deadline is escalated to the Patrol Supervisor(s), and then to the Park Manager after another SLA period. The number of steps comes from data, so the loop count is not hard-coded (fixes W18). | M |
-| SEN-10 | A user resolves an alert with a disposition: *Conflict averted*, *Conflict occurred*, *No action required* or *False alarm*. | M |
+| SEN-10 | A ranger, supervisor or manager resolves an alert with a disposition: *Conflict averted*, *Conflict occurred*, *No action required* or *False alarm*. | M |
 | SEN-11 | Device health: the system raises an alert when a device has not reported within 3× its expected interval, or reports battery below 15%. | S |
 | SEN-12 | Mortality/immobility: when a collar moves less than 50 m in 6 h, the system raises a **Critical** alert. | S |
 | SEN-13 | Camera upload endpoint: the system accepts an image with a camera code and capture time, and drops duplicates (same camera and capture time). | M |
