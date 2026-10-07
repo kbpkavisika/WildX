@@ -1,6 +1,7 @@
 package com.wildx.wildx.constant;
 
 import com.wildx.wildx.type.Severity;
+import java.time.Duration;
 import java.time.LocalTime;
 
 public final class AlertConstants {
@@ -12,6 +13,10 @@ public final class AlertConstants {
     public static final int LOW_BATTERY_PCT = 15;
     public static final Severity DEVICE_HEALTH_SEVERITY = Severity.MEDIUM;
     public static final int DEVICE_HEALTH_ACK_SLA_MIN = 60;
+    public static final Duration IMMOBILITY_WINDOW = Duration.ofHours(6);
+    public static final int IMMOBILITY_RADIUS_M = 50;
+    public static final Severity MORTALITY_SEVERITY = Severity.CRITICAL;
+    public static final int MORTALITY_ACK_SLA_MIN = 15;
 
     private AlertConstants() {}
 

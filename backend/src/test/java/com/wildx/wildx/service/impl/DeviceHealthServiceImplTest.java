@@ -9,6 +9,7 @@ import com.wildx.wildx.type.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -37,7 +38,7 @@ class DeviceHealthServiceImplTest {
         Device collar = collar(80);
         collar.setLastSeenAt(NOW.minus(Duration.ofMinutes(46)));
         stub(collar);
-        when(fixes.findFirstByDeviceIdOrderByRecordedAtDesc(3L)).thenReturn(Optional.of(fix(6.31, 81.41)));
+        when(fixes.findFirstByDeviceIdOrderByRecordedAtDesc(3L)).thenReturn(Optional.of(fix(6.31, 81.41, NOW.minus(Duration.ofMinutes(46)))));
         service.check(3L);
         Alert alert = savedAlert();
         assertThat(alert.getType()).isEqualTo(AlertType.DEVICE_HEALTH);
@@ -111,6 +112,70 @@ class DeviceHealthServiceImplTest {
         verifyNoInteractions(alerts, notifier, fixes);
     }
 
+    @Test
+    void collarWithinFiftyMetresForSixHoursRaisesCriticalMortalityAlert() {
+        Device collar = collar(80);
+        collar.setLastSeenAt(NOW);
+        stub(collar);
+        stubTrack(0.00004);
+        service.check(3L);
+        Alert alert = savedAlert();
+        assertThat(alert.getType()).isEqualTo(AlertType.MORTALITY);
+        assertThat(alert.getSeverity()).isEqualTo(Severity.CRITICAL);
+        assertThat(alert.getAckSlaMin()).isEqualTo(15);
+        assertThat(alert.getSlaDueAt()).isEqualTo(NOW.plus(Duration.ofMinutes(15)));
+        assertThat(alert.getLat()).isEqualTo(6.30024, within(1e-9));
+        assertThat(notifiedBody(alert)).isEqualTo("Gemunu (COL-001) has moved less than 50 m in 6 h");
+    }
+
+    @Test
+    void movingMoreThanFiftyMetresOrTooLittleHistoryIsNotMortality() {
+        Device collar = collar(80);
+        collar.setLastSeenAt(NOW);
+        stub(collar);
+        stubTrack(0.0001);
+        service.check(3L);
+        verify(alerts, never()).save(any());
+        when(fixes.findFirstByDeviceIdAndRecordedAtLessThanEqualOrderByRecordedAtDesc(eq(3L), any()))
+                .thenReturn(Optional.empty());
+        stubTrackLatestOnly();
+        service.check(3L);
+        verify(alerts, never()).save(any());
+        verify(fixes, times(1)).findByDeviceIdAndRecordedAtBetweenOrderByRecordedAtAsc(eq(3L), any(), any());
+    }
+
+    @Test
+    void skipsMortalityWhileAnEarlierOneIsUnresolvedAndNeverChecksCameras() {
+        Device collar = collar(80);
+        collar.setLastSeenAt(NOW);
+        stub(collar);
+        when(alerts.existsByDeviceIdAndTypeAndStatusNot(3L, AlertType.MORTALITY, AlertStatus.RESOLVED)).thenReturn(true);
+        service.check(3L);
+        verifyNoInteractions(fixes);
+        Device camera = camera();
+        camera.setLastSeenAt(NOW);
+        stub(camera);
+        service.check(4L);
+        verifyNoInteractions(fixes);
+        verify(alerts, never()).save(any());
+    }
+
+    private void stubTrack(double stepDegrees) {
+        List<CollarFix> track = new ArrayList<>();
+        for (int hour = 0; hour <= 6; hour++) {
+            track.add(fix(6.30 + stepDegrees * hour, 81.41, NOW.minus(Duration.ofHours(6 - hour))));
+        }
+        when(fixes.findFirstByDeviceIdOrderByRecordedAtDesc(3L)).thenReturn(Optional.of(track.getLast()));
+        when(fixes.findFirstByDeviceIdAndRecordedAtLessThanEqualOrderByRecordedAtDesc(3L, NOW.minus(Duration.ofHours(6))))
+                .thenReturn(Optional.of(track.getFirst()));
+        when(fixes.findByDeviceIdAndRecordedAtBetweenOrderByRecordedAtAsc(3L, NOW.minus(Duration.ofHours(6)), NOW))
+                .thenReturn(track);
+    }
+
+    private void stubTrackLatestOnly() {
+        when(fixes.findFirstByDeviceIdOrderByRecordedAtDesc(3L)).thenReturn(Optional.of(fix(6.30, 81.41, NOW)));
+    }
+
     private void stub(Device device) {
         when(devices.findById(device.getId())).thenReturn(Optional.of(device));
         when(alerts.save(any())).thenAnswer(call -> call.getArgument(0));
@@ -129,10 +194,11 @@ class DeviceHealthServiceImplTest {
         return body.getValue().apply(alert);
     }
 
-    private CollarFix fix(double lat, double lng) {
+    private CollarFix fix(double lat, double lng, Instant recordedAt) {
         CollarFix fix = new CollarFix();
         fix.setLat(lat);
         fix.setLng(lng);
+        fix.setRecordedAt(recordedAt);
         return fix;
     }
 
