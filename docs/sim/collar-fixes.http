@@ -156,3 +156,27 @@ Authorization: Bearer {{supervisorLogin.response.body.token}}
 ### Manager notifications: the next escalation step, one SLA period later
 GET {{baseUrl}}/me/notifications
 Authorization: Bearer {{login.response.body.token}}
+
+### Simulator: collar barely moves for 6 h, a CRITICAL mortality alert follows within a minute
+POST {{baseUrl}}/parks/1/simulator/collar-fixes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "scenario": "NOT_MOVING",
+  "lat": 6.33,
+  "lng": 81.45
+}
+
+### Simulator: collar battery at 10%, a device health alert follows within a minute
+POST {{baseUrl}}/parks/1/simulator/collar-fixes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "scenario": "LOW_BATTERY",
+  "lat": 6.33024,
+  "lng": 81.45
+}
