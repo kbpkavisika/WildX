@@ -167,6 +167,7 @@ public class AlertServiceImpl implements AlertService {
         alert.setLng(fix.getLng());
         alert.setStatus(AlertStatus.OPEN);
         alert.setOccurredAt(fix.getRecordedAt());
+        alert.setAckSlaMin(rule.getAckSlaMin());
         alert.setSlaDueAt(clock.instant().truncatedTo(ChronoUnit.MICROS).plus(Duration.ofMinutes(rule.getAckSlaMin())));
         return alert;
     }

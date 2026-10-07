@@ -3,12 +3,14 @@ package com.wildx.wildx.config;
 import com.wildx.wildx.model.AlertRule;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.Device;
+import com.wildx.wildx.model.EscalationStep;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AlertRuleRepository;
 import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.DeviceRepository;
+import com.wildx.wildx.repository.EscalationStepRepository;
 import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
@@ -23,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,8 +42,9 @@ class DataSeederTest {
     private final DeviceRepository deviceRepository = mock(DeviceRepository.class);
     private final ZoneRepository zoneRepository = mock(ZoneRepository.class);
     private final AlertRuleRepository alertRuleRepository = mock(AlertRuleRepository.class);
+    private final EscalationStepRepository escalationStepRepository = mock(EscalationStepRepository.class);
     private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder,
-            animalRepository, deviceRepository, zoneRepository, alertRuleRepository);
+            animalRepository, deviceRepository, zoneRepository, alertRuleRepository, escalationStepRepository);
 
     @Test
     @SuppressWarnings("unchecked")
@@ -78,6 +82,11 @@ class DataSeederTest {
         assertThat(rules.getValue()).extracting(AlertRule::getZoneType).containsExactlyInAnyOrder(ZoneType.values());
         assertThat(rules.getValue()).filteredOn(rule -> rule.getZoneType() == ZoneType.FARMLAND)
                 .extracting(AlertRule::getSeverity).containsExactly(Severity.MEDIUM);
+
+        ArgumentCaptor<List<EscalationStep>> steps = ArgumentCaptor.forClass(List.class);
+        verify(escalationStepRepository).saveAll(steps.capture());
+        assertThat(steps.getValue()).extracting(EscalationStep::getStepNo, EscalationStep::getRole)
+                .containsExactly(tuple(1, Role.SUPERVISOR), tuple(2, Role.MANAGER));
     }
 
     @Test
@@ -86,7 +95,8 @@ class DataSeederTest {
 
         seeder.run();
 
-        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository);
+        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository,
+                escalationStepRepository);
         verify(userRepository, never()).saveAll(any());
     }
 }

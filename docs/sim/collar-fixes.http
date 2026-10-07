@@ -127,3 +127,32 @@ Content-Type: application/json
 {
   "disposition": "CONFLICT_AVERTED"
 }
+
+### Manager shortens the farmland acknowledgement SLA to 1 minute for an escalation demo
+PUT {{baseUrl}}/parks/1/alert-rules/FARMLAND
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "severity": "MEDIUM",
+  "cooldownMin": 30,
+  "ackSlaMin": 1
+}
+
+### Log in as the supervisor
+# @name supervisorLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "supervisor@wildx.lk",
+  "password": "password"
+}
+
+### Supervisor notifications: an unacknowledged alert escalates here after about 2 minutes
+GET {{baseUrl}}/me/notifications
+Authorization: Bearer {{supervisorLogin.response.body.token}}
+
+### Manager notifications: the next escalation step, one SLA period later
+GET {{baseUrl}}/me/notifications
+Authorization: Bearer {{login.response.body.token}}

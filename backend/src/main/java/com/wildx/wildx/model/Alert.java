@@ -43,4 +43,8 @@ public class Alert extends Auditable {
     private Instant resolvedAt;
     @Enumerated(EnumType.STRING)
     private Disposition disposition;
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private int escalationLevel;
+    @Column(nullable = false, columnDefinition = "integer default 15")
+    private int ackSlaMin;
 }
