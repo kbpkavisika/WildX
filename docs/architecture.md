@@ -131,8 +131,8 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `escalation_step` | park_id FK, step_no, role — UNIQUE(park_id, step_no) |
 | `collar_fix` | device_id FK, lat, lng, battery_pct, recorded_at — UNIQUE(device_id, recorded_at) |
 | `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (default 0), ack_sla_min (copied from the rule, default 15), sla_due_at, acknowledged_by_id FK, acknowledged_at, resolved_at, disposition |
-| `camera_image` | device_id FK, file_path, captured_at, status (`PENDING/TAGGED/EMPTY/UNIDENTIFIABLE/RESTRICTED`), species, count, reviewed_by FK, reviewed_at — UNIQUE(device_id, captured_at) |
-| `audit_log` | user_id FK, action, entity, entity_id, reason (time = `created_at`) |
+| `camera_image` | device_id FK, file_path, captured_at, status (`PENDING/TAGGED/EMPTY/UNIDENTIFIABLE/RESTRICTED`), species, animal_count, reviewed_by_id FK, reviewed_at — UNIQUE(device_id, captured_at) |
+| `audit_log` | user_id FK, action (text, e.g. `VIEW_RESTRICTED_IMAGE`), entity, entity_id, reason (time = `created_at`) |
 
 **UC4**
 
@@ -204,7 +204,7 @@ Each park lists its escalation steps in `escalation_step`, ordered by `step_no`;
 
 `POST /ingest/camera-images` is multipart with `cameraCode`, `capturedAt` and `image`, protected by the same `X-Api-Key` as collar ingest through the shared `ApiKeyGuard`. Only JPEG and PNG are accepted, checked by the file's first bytes, up to 5 MB (`spring.servlet.multipart.max-file-size`; larger returns 413). The file is stored under `wildx.upload-dir` (`UPLOAD_DIR`, default `./uploads`) with a generated name, and `file_path` holds the path relative to that folder; stored paths can never point outside it. A new image returns 201, starts `PENDING` and updates the camera's `last_seen_at`; the same camera and `capturedAt` returns 200 with `stored: false`; a future `capturedAt` returns 400 and an unknown or non-camera code returns 404.
 
-`GET /parks/{id}/camera-images?status=` returns the park's images newest first, grouped into bursts: images of the same camera where each is at most 1 minute after the previous one. Managers and Admins see every status; an LEL only ever sees `RESTRICTED` images. `POST /parks/{id}/camera-images/{imageId}/tag` (Manager only) takes `{status, species, count}` with status `TAGGED` (species and count ≥ 1 required), `EMPTY`, `UNIDENTIFIABLE` or `RESTRICTED`, and records `reviewed_by` and `reviewed_at`; re-tagging is allowed. Changing an image to `RESTRICTED` raises one `HUMAN_DETECTED` alert (`CRITICAL`, ack SLA 15 min) at the camera's location, linked through `camera_image_id`, which escalates like other alerts and notifies on-duty rangers with e.g. "Suspected poacher on CAM-001 at 22:05" and never the image.
+`GET /parks/{id}/camera-images?status=` returns the park's images newest first, grouped into bursts: images of the same camera where each is at most 1 minute after the previous one. Managers and Admins see every status; an LEL only ever sees `RESTRICTED` images. `POST /parks/{id}/camera-images/{imageId}/tag` (Manager only) takes `{status, species, animalCount}` with status `TAGGED` (species and animalCount ≥ 1 required), `EMPTY`, `UNIDENTIFIABLE` or `RESTRICTED`, and records `reviewed_by_id` and `reviewed_at`; re-tagging is allowed. Changing an image to `RESTRICTED` raises one `HUMAN_DETECTED` alert (`CRITICAL`, ack SLA 15 min) at the camera's location, linked through `camera_image_id`, which escalates like other alerts and notifies on-duty rangers with e.g. "Suspected poacher on CAM-001 at 22:05" and never the image.
 
 `GET /parks/{id}/camera-images/{imageId}/file?reason=` returns the image to Managers and Admins, and to an LEL only when it is `RESTRICTED` (otherwise 404). Viewing a `RESTRICTED` image requires a non-blank `reason` (otherwise 400), writes an `audit_log` row (user, action `VIEW_RESTRICTED_IMAGE`, entity `camera_image`, id, reason) and is sent with `Cache-Control: no-store`. No other role can open camera images, so restricted images never reach unauthorised users (NFR-06). Alert responses include `cameraImageId`.
 
@@ -231,7 +231,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | UC3 | `GET /alerts?status=` | staff |
 | UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, SUPERVISOR, MANAGER |
 | UC3 | `GET /parks/{id}/camera-images?status=`, `GET /parks/{id}/camera-images/{imageId}/file?reason=` (audited if restricted) | MANAGER, ADMIN, LEL (restricted only) |
-| UC3 | `POST /parks/{id}/camera-images/{imageId}/tag` `{status, species, count}` | MANAGER |
+| UC3 | `POST /parks/{id}/camera-images/{imageId}/tag` `{status, species, animalCount}` | MANAGER |
 | UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart `cameraCode`, `capturedAt`, `image`) | **api-key** |
 | UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}`, `POST /parks/{id}/simulator/camera-images` `{cameraCode, count}` | ADMIN, MANAGER |
 | UC4 | `POST /public/reports` (multipart), `GET /public/reports/{ref}`, `GET /public/parks/{id}/segments` | **public** |
