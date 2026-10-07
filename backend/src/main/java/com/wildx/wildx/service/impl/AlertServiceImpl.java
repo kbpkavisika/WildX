@@ -8,14 +8,14 @@ import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AlertRuleRepository;
 import com.wildx.wildx.repository.ZoneRepository;
+import com.wildx.wildx.service.AlertNotifier;
 import com.wildx.wildx.service.AlertService;
-import com.wildx.wildx.service.NotificationService;
-import com.wildx.wildx.service.PatrolMonitorService;
 import com.wildx.wildx.type.AlertStatus;
 import com.wildx.wildx.type.AlertType;
 import com.wildx.wildx.type.Disposition;
 import com.wildx.wildx.type.Severity;
 import com.wildx.wildx.type.ZoneType;
+import com.wildx.wildx.util.AlertText;
 import com.wildx.wildx.util.GeoUtil;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,16 +36,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AlertServiceImpl implements AlertService {
-    private static final String RANGER_ALERTS_LINK = "/ranger/alerts";
-    private static final DateTimeFormatter BREACH_TIME =
-            DateTimeFormatter.ofPattern("HH:mm").withZone(PatrolConstants.PARK_ZONE);
-
     private final ZoneRepository zones;
     private final AlertRuleRepository rules;
     private final AlertRepository alerts;
     private final Clock clock;
-    private final PatrolMonitorService patrols;
-    private final NotificationService notifications;
+    private final AlertNotifier notifier;
     private final EntityManager entityManager;
 
     @Override
@@ -71,7 +65,8 @@ public class AlertServiceImpl implements AlertService {
                 raised.add(alert);
             }
         }
-        notifyOnDutyRangers(parkId, raised);
+        notifier.notifyRaised(parkId, raised, alert -> "%s entered %s at %s".formatted(
+                AlertText.device(alert.getDevice()), alert.getZone().getName(), AlertText.time(alert.getOccurredAt())));
     }
 
     @Override
@@ -126,22 +121,6 @@ public class AlertServiceImpl implements AlertService {
     private void recordAcknowledgement(Alert alert, Long userId) {
         alert.setAcknowledgedBy(entityManager.getReference(AppUser.class, userId));
         alert.setAcknowledgedAt(clock.instant().truncatedTo(ChronoUnit.MICROS));
-    }
-
-    private void notifyOnDutyRangers(Long parkId, List<Alert> raised) {
-        if (raised.isEmpty()) {
-            return;
-        }
-        List<Long> rangers = patrols.live(parkId).stream().map(live -> live.patrol().rangerId()).distinct().toList();
-        if (rangers.isEmpty()) {
-            return;
-        }
-        for (Alert alert : raised) {
-            String title = "New " + alert.getSeverity() + " zone breach alert";
-            String body = "%s (%s) entered %s at %s".formatted(alert.getDevice().getAnimal().getName(),
-                    alert.getDevice().getCode(), alert.getZone().getName(), BREACH_TIME.format(alert.getOccurredAt()));
-            notifications.notifyUsers(rangers, title, body, RANGER_ALERTS_LINK);
-        }
     }
 
     private boolean coolingDown(Zone zone, CollarFix fix, AlertRule rule) {

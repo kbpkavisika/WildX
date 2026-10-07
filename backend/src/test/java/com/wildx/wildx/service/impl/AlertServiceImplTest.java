@@ -8,6 +8,7 @@ import jakarta.persistence.EntityManager;
 import java.util.Optional;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.*;
+import com.wildx.wildx.service.AlertNotifier;
 import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.PatrolMonitorService;
 import com.wildx.wildx.type.*;
@@ -32,8 +33,8 @@ class AlertServiceImplTest {
     private final NotificationService notifications = mock(NotificationService.class);
     private final EntityManager entityManager = mock(EntityManager.class);
     private final AlertServiceImpl service =
-            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC), patrols, notifications,
-                    entityManager);
+            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC),
+                    new AlertNotifier(patrols, notifications), entityManager);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
     private final Device collar = collar();
 
@@ -199,7 +200,7 @@ class AlertServiceImplTest {
     @Test
     void storesSlaDeadlineAtDatabasePrecision() {
         var precise = new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW.plusNanos(958_315_200), ZoneOffset.UTC),
-                patrols, notifications, entityManager);
+                new AlertNotifier(patrols, notifications), entityManager);
         stubZones(zone(10L, ZoneType.FARMLAND, FARMLAND));
         stubRules(rule(ZoneType.FARMLAND, Severity.MEDIUM, 30, 15));
         precise.raiseZoneBreaches(fix(6.305, 81.405));
