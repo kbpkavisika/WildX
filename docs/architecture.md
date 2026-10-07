@@ -132,7 +132,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `collar_fix` | device_id FK, lat, lng, battery_pct, recorded_at — UNIQUE(device_id, recorded_at) |
 | `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (default 0), ack_sla_min (copied from the rule, default 15), sla_due_at, acknowledged_by_id FK, acknowledged_at, resolved_at, disposition |
 | `camera_image` | device_id FK, file_path, captured_at, status (`PENDING/TAGGED/EMPTY/UNIDENTIFIABLE/RESTRICTED`), species, count, reviewed_by FK, reviewed_at — UNIQUE(device_id, captured_at) |
-| `audit_log` | user_id FK, action, entity, entity_id, reason |
+| `audit_log` | user_id FK, action, entity, entity_id, reason (time = `created_at`) |
 
 **UC4**
 
@@ -200,6 +200,16 @@ Each park lists its escalation steps in `escalation_step`, ordered by `step_no`;
 
 `DeviceHealthJob` runs every 60 s and checks each device that has reported at least once (`last_seen_at` set) in its own transaction; a failing device does not stop the others. A `DEVICE_HEALTH` alert (`MEDIUM`, ack SLA 60 min) is raised when `last_seen_at` is older than 3 × `expected_interval_min` or `battery_pct` is below 15. A `MORTALITY` alert (`CRITICAL`, ack SLA 15 min) is raised for a collar when it has a fix at least 6 h before its latest fix and every fix from that one to the latest is within 50 m of the latest fix. A device never gets a second alert of the same type while an earlier one is `OPEN` or `ACKNOWLEDGED`. These alerts have no zone, use the collar's latest fix (or the camera's location) as position and the detection time as `occurred_at`, escalate like zone breaches, and notify on-duty rangers, e.g. "COL-001 battery is at 10%", "COL-001 has not reported since 21:00" or "Gemunu (COL-001) has moved less than 50 m in 6 h".
 
+### Camera traps (SEN-13, SEN-14, SEN-15)
+
+`POST /ingest/camera-images` is multipart with `cameraCode`, `capturedAt` and `image`, protected by the same `X-Api-Key` as collar ingest through the shared `ApiKeyGuard`. Only JPEG and PNG are accepted, checked by the file's first bytes, up to 5 MB (`spring.servlet.multipart.max-file-size`; larger returns 413). The file is stored under `wildx.upload-dir` (`UPLOAD_DIR`, default `./uploads`) with a generated name, and `file_path` holds the path relative to that folder; stored paths can never point outside it. A new image returns 201, starts `PENDING` and updates the camera's `last_seen_at`; the same camera and `capturedAt` returns 200 with `stored: false`; a future `capturedAt` returns 400 and an unknown or non-camera code returns 404.
+
+`GET /parks/{id}/camera-images?status=` returns the park's images newest first, grouped into bursts: images of the same camera where each is at most 1 minute after the previous one. Managers and Admins see every status; an LEL only ever sees `RESTRICTED` images. `POST /parks/{id}/camera-images/{imageId}/tag` (Manager only) takes `{status, species, count}` with status `TAGGED` (species and count ≥ 1 required), `EMPTY`, `UNIDENTIFIABLE` or `RESTRICTED`, and records `reviewed_by` and `reviewed_at`; re-tagging is allowed. Changing an image to `RESTRICTED` raises one `HUMAN_DETECTED` alert (`CRITICAL`, ack SLA 15 min) at the camera's location, linked through `camera_image_id`, which escalates like other alerts and notifies on-duty rangers with e.g. "Suspected poacher on CAM-001 at 22:05" and never the image.
+
+`GET /parks/{id}/camera-images/{imageId}/file?reason=` returns the image to Managers and Admins, and to an LEL only when it is `RESTRICTED` (otherwise 404). Viewing a `RESTRICTED` image requires a non-blank `reason` (otherwise 400), writes an `audit_log` row (user, action `VIEW_RESTRICTED_IMAGE`, entity `camera_image`, id, reason) and is sent with `Cache-Control: no-store`. No other role can open camera images, so restricted images never reach unauthorised users (NFR-06). Alert responses include `cameraImageId`.
+
+For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}` (1–10, Manager or Admin) generates placeholder JPEGs 20 s apart, ending now, and sends them through the same upload logic.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
@@ -220,9 +230,10 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | any except ADMIN |
 | UC3 | `GET /alerts?status=` | staff |
 | UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, SUPERVISOR, MANAGER |
-| UC3 | `GET /camera-images?status=`, `POST /camera-images/{id}/tag`, `GET /camera-images/{id}/file?reason=` (audited if restricted) | MANAGER, LEL (restricted) |
-| UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart) | **api-key** |
-| UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}` | ADMIN, MANAGER |
+| UC3 | `GET /parks/{id}/camera-images?status=`, `GET /parks/{id}/camera-images/{imageId}/file?reason=` (audited if restricted) | MANAGER, ADMIN, LEL (restricted only) |
+| UC3 | `POST /parks/{id}/camera-images/{imageId}/tag` `{status, species, count}` | MANAGER |
+| UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart `cameraCode`, `capturedAt`, `image`) | **api-key** |
+| UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}`, `POST /parks/{id}/simulator/camera-images` `{cameraCode, count}` | ADMIN, MANAGER |
 | UC4 | `POST /public/reports` (multipart), `GET /public/reports/{ref}`, `GET /public/parks/{id}/segments` | **public** |
 | UC4 sim | `POST /ingest/sms` `{from, body}` → `{reply}` | **api-key** |
 | UC4 | `GET /community-reports?status=`, `POST /community-reports/{id}/validate` `{severity}`, `POST /community-reports/{id}/invalidate` `{reason}`, `GET /community/hotspots` | CLO, MANAGER |
@@ -298,7 +309,7 @@ frontend/
 
 ## 9. Configuration and local setup
 
-Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`). Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
+Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`, `UPLOAD_DIR`). Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
 
 To run the system, start PostgreSQL (`docker-compose.yml` in the repo root, `postgres:17-alpine`), the backend and the frontend:
 
