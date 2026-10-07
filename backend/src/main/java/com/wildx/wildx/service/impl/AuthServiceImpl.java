@@ -11,6 +11,7 @@ import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -33,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
 
     private static final Duration TOKEN_TTL = Duration.ofHours(12);
     private static final String INVALID_CREDENTIALS = "Invalid email or password";
+    private static final String ACCESS_CHANGED = "User access changed; log in again";
 
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -72,21 +74,37 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse current(Jwt jwt) {
-        AppUser user;
-        try {
-            user = userRepository.findWithParkById(Long.valueOf(jwt.getSubject()))
-                    .filter(AppUser::isActive).orElseThrow(() -> new UnauthorizedException("User is inactive or missing"));
-        } catch (NumberFormatException ex) {
-            throw new UnauthorizedException("Invalid user identity");
-        }
-        UserResponse response = UserMapper.toResponse(user);
+        UserResponse response = UserMapper.toResponse(activeUser(jwt));
         Object parkClaim = jwt.getClaim(AuthConstants.PARK_ID_CLAIM);
         if (response.parkId() == null || parkClaim == null
                 || !Objects.equals(response.parkId().toString(), parkClaim.toString())
                 || !response.role().name().equals(jwt.getClaimAsString(AuthConstants.ROLE_CLAIM))) {
-            throw new UnauthorizedException("User access changed; log in again");
+            throw new UnauthorizedException(ACCESS_CHANGED);
         }
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void requireParkAccess(Jwt jwt, Long parkId) {
+        if (!Role.ADMIN.name().equals(jwt.getClaimAsString(AuthConstants.ROLE_CLAIM))) {
+            if (!parkId.equals(current(jwt).parkId())) {
+                throw new AccessDeniedException("Access denied");
+            }
+            return;
+        }
+        if (activeUser(jwt).getRole() != Role.ADMIN) {
+            throw new UnauthorizedException(ACCESS_CHANGED);
+        }
+    }
+
+    private AppUser activeUser(Jwt jwt) {
+        try {
+            return userRepository.findWithParkById(Long.valueOf(jwt.getSubject()))
+                    .filter(AppUser::isActive).orElseThrow(() -> new UnauthorizedException("User is inactive or missing"));
+        } catch (NumberFormatException ex) {
+            throw new UnauthorizedException("Invalid user identity");
+        }
     }
 
     @Override
