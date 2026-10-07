@@ -17,6 +17,8 @@ public final class AlertConstants {
     public static final int IMMOBILITY_RADIUS_M = 50;
     public static final Severity MORTALITY_SEVERITY = Severity.CRITICAL;
     public static final int MORTALITY_ACK_SLA_MIN = 15;
+    public static final Severity HUMAN_DETECTED_SEVERITY = Severity.CRITICAL;
+    public static final int HUMAN_DETECTED_ACK_SLA_MIN = 15;
 
     private AlertConstants() {}
 

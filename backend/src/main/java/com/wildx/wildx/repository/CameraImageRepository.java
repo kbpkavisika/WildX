@@ -16,6 +16,8 @@ public interface CameraImageRepository extends JpaRepository<CameraImage, Long> 
     List<CameraImage> findByDeviceParkIdOrderByDeviceIdAscCapturedAtAsc(Long parkId);
     @EntityGraph(attributePaths = {"device", "reviewedBy"})
     List<CameraImage> findByDeviceParkIdAndStatusOrderByDeviceIdAscCapturedAtAsc(Long parkId, CameraImageStatus status);
+    @EntityGraph(attributePaths = "device")
+    Optional<CameraImage> findByIdAndDeviceParkId(Long id, Long parkId);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<CameraImage> findLockedByIdAndDeviceParkId(Long id, Long parkId);
 }
