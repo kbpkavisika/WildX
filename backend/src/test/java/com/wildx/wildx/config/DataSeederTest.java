@@ -3,12 +3,16 @@ package com.wildx.wildx.config;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.Park;
+import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.ParkRepository;
+import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
 import com.wildx.wildx.type.Role;
+import com.wildx.wildx.type.ZoneType;
+import com.wildx.wildx.util.GeoUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,8 +34,9 @@ class DataSeederTest {
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final AnimalRepository animalRepository = mock(AnimalRepository.class);
     private final DeviceRepository deviceRepository = mock(DeviceRepository.class);
+    private final ZoneRepository zoneRepository = mock(ZoneRepository.class);
     private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder,
-            animalRepository, deviceRepository);
+            animalRepository, deviceRepository, zoneRepository);
 
     @Test
     @SuppressWarnings("unchecked")
@@ -57,6 +62,12 @@ class DataSeederTest {
         assertThat(devices.getValue().get(0).getAnimal().getName()).isEqualTo("Gemunu");
         assertThat(devices.getValue().get(1).getType()).isEqualTo(DeviceType.CAMERA);
         assertThat(devices.getValue().get(1).getLat()).isNotNull();
+
+        ArgumentCaptor<List<Zone>> zones = ArgumentCaptor.forClass(List.class);
+        verify(zoneRepository).saveAll(zones.capture());
+        assertThat(zones.getValue()).extracting(Zone::getType).containsExactly(ZoneType.FARMLAND, ZoneType.ROAD);
+        assertThat(zones.getValue()).extracting(Zone::getName).contains("Kumbukgaha farmland");
+        zones.getValue().forEach(zone -> assertThat(GeoUtil.polygon(zone.getPolygonGeojson())).isNotEmpty());
     }
 
     @Test
@@ -65,7 +76,7 @@ class DataSeederTest {
 
         seeder.run();
 
-        verifyNoInteractions(parkRepository, animalRepository, deviceRepository);
+        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository);
         verify(userRepository, never()).saveAll(any());
     }
 }

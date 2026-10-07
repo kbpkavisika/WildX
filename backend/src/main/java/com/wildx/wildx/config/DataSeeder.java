@@ -4,12 +4,15 @@ import com.wildx.wildx.model.Animal;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.Park;
+import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.ParkRepository;
+import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
 import com.wildx.wildx.type.Role;
+import com.wildx.wildx.type.ZoneType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -28,12 +31,17 @@ public class DataSeeder implements CommandLineRunner {
 
     private static final String TEST_PASSWORD = "password";
     private static final String EMAIL_DOMAIN = "@wildx.lk";
+    private static final String FARMLAND_POLYGON = "{\"type\":\"Polygon\",\"coordinates\":"
+            + "[[[81.40,6.30],[81.42,6.30],[81.42,6.32],[81.40,6.32],[81.40,6.30]]]}";
+    private static final String ROAD_POLYGON = "{\"type\":\"Polygon\",\"coordinates\":"
+            + "[[[81.45,6.350],[81.55,6.350],[81.55,6.352],[81.45,6.352],[81.45,6.350]]]}";
 
     private final ParkRepository parkRepository;
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AnimalRepository animalRepository;
     private final DeviceRepository deviceRepository;
+    private final ZoneRepository zoneRepository;
 
     @Override
     @Transactional
@@ -48,6 +56,9 @@ public class DataSeeder implements CommandLineRunner {
                 .toList();
         userRepository.saveAll(users);
         seedDevices(yala);
+        zoneRepository.saveAll(List.of(
+                seedZone(yala, "Kumbukgaha farmland", ZoneType.FARMLAND, FARMLAND_POLYGON),
+                seedZone(yala, "Yala main road", ZoneType.ROAD, ROAD_POLYGON)));
         log.info("Seeded park {} and {} users", yala.getCode(), users.size());
     }
 
@@ -72,6 +83,15 @@ public class DataSeeder implements CommandLineRunner {
         device.setCode(code);
         device.setExpectedIntervalMin(expectedIntervalMin);
         return device;
+    }
+
+    private Zone seedZone(Park park, String name, ZoneType type, String polygonGeojson) {
+        Zone zone = new Zone();
+        zone.setPark(park);
+        zone.setName(name);
+        zone.setType(type);
+        zone.setPolygonGeojson(polygonGeojson);
+        return zone;
     }
 
     private AppUser seedUser(Role role, Park park, String passwordHash) {
