@@ -60,6 +60,7 @@ Content-Type: application/json
 }
 
 ### List open alerts for the manager's park
+# @name openAlerts
 GET {{baseUrl}}/alerts?status=OPEN
 Authorization: Bearer {{login.response.body.token}}
 
@@ -113,3 +114,16 @@ Authorization: Bearer {{rangerLogin.response.body.token}}
 ### Ranger marks the newest notification read
 POST {{baseUrl}}/notifications/{{rangerNotifications.response.body.$.notifications[0].id}}/read
 Authorization: Bearer {{rangerLogin.response.body.token}}
+
+### Ranger acknowledges the newest open alert
+POST {{baseUrl}}/alerts/{{openAlerts.response.body.$[0].id}}/acknowledge
+Authorization: Bearer {{rangerLogin.response.body.token}}
+
+### Manager resolves it with a disposition
+POST {{baseUrl}}/alerts/{{openAlerts.response.body.$[0].id}}/resolve
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "disposition": "CONFLICT_AVERTED"
+}
