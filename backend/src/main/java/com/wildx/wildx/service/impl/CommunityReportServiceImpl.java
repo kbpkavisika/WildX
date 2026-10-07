@@ -3,7 +3,9 @@ package com.wildx.wildx.service.impl;
 import com.wildx.wildx.dto.CommunityReportResponse;
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
+import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
+import com.wildx.wildx.dto.ReportValidateRequest;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
@@ -194,6 +196,43 @@ public class CommunityReportServiceImpl implements CommunityReportService {
         }
         log.info("update location completed reportId={} status={}", id, report.getStatus());
         return CommunityReportResponse.from(report);
+    }
+
+    @Override
+    @Transactional
+    public CommunityReportResponse validateReport(Long parkId, Long id, ReportValidateRequest request) {
+        log.info("validate report started parkId={} reportId={} severity={}", parkId, id, request.severity());
+        CommunityReport report = require(id, parkId);
+        if (CLOSED_STATUSES.contains(report.getStatus()) || report.getStatus() == CommunityReportStatus.DISPATCHED) {
+            throw new IllegalStateException("Cannot validate report with status " + report.getStatus());
+        }
+        if (report.getStatus() == CommunityReportStatus.NEEDS_LOCATION || report.getSegment() == null) {
+            throw new IllegalStateException("Report requires a valid boundary segment before validation");
+        }
+        report.setStatus(CommunityReportStatus.VALIDATED);
+        report.setSeverity(request.severity());
+        CommunityReport saved = reports.save(report);
+        log.info("validate report completed parkId={} reportId={} severity={}", parkId, id, saved.getSeverity());
+        return CommunityReportResponse.from(saved);
+    }
+
+    @Override
+    @Transactional
+    public CommunityReportResponse invalidateReport(Long parkId, Long id, ReportInvalidateRequest request) {
+        log.info("invalidate report started parkId={} reportId={} reason={}", parkId, id, request.reason());
+        CommunityReport report = require(id, parkId);
+        if (report.getStatus() == CommunityReportStatus.CLOSED || report.getStatus() == CommunityReportStatus.DISPATCHED) {
+            throw new IllegalStateException("Cannot invalidate report with status " + report.getStatus());
+        }
+        if (report.getStatus() == CommunityReportStatus.INVALID) {
+            throw new IllegalStateException("Report is already invalid");
+        }
+        report.setStatus(CommunityReportStatus.INVALID);
+        report.setInvalidReason(request.reason().strip());
+        report.setClosedAt(clock.instant());
+        CommunityReport saved = reports.save(report);
+        log.info("invalidate report completed parkId={} reportId={}", parkId, id);
+        return CommunityReportResponse.from(saved);
     }
 
     private BoundarySegment resolveSegment(Long parkId, Long segmentId, String landmarkCode, Double lat, Double lng) {

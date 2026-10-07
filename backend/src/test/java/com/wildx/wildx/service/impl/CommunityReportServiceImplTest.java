@@ -2,7 +2,9 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
+import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
+import com.wildx.wildx.dto.ReportValidateRequest;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
@@ -13,6 +15,7 @@ import com.wildx.wildx.service.ParkService;
 import com.wildx.wildx.type.CommunityReportStatus;
 import com.wildx.wildx.type.ReportChannel;
 import com.wildx.wildx.type.ReportType;
+import com.wildx.wildx.type.Severity;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -300,4 +303,101 @@ class CommunityReportServiceImplTest {
         assertThatThrownBy(() -> service.updateLocation(1L, 21L, new ReportLocationUpdateRequest(null, null, null, null)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void validatesNewReportWithSeverityAndMakesItConflictCase() {
+        BoundarySegment segment = new BoundarySegment();
+        segment.setId(10L);
+        segment.setPark(park);
+        segment.setCode("KUMB");
+
+        CommunityReport report = new CommunityReport();
+        report.setId(30L);
+        report.setPark(park);
+        report.setSegment(segment);
+        report.setReferenceCode("R-1030");
+        report.setStatus(CommunityReportStatus.NEW);
+
+        when(reports.findByIdAndParkId(30L, 1L)).thenReturn(Optional.of(report));
+        when(reports.save(any())).thenAnswer(call -> call.getArgument(0));
+
+        var validated = service.validateReport(1L, 30L, new ReportValidateRequest(Severity.HIGH));
+        assertThat(validated.status()).isEqualTo(CommunityReportStatus.VALIDATED);
+        assertThat(validated.severity()).isEqualTo(Severity.HIGH);
+    }
+
+    @Test
+    void validatingNeedsLocationOrNullSegmentReportThrowsIllegalStateException() {
+        CommunityReport needsLoc = new CommunityReport();
+        needsLoc.setId(31L);
+        needsLoc.setPark(park);
+        needsLoc.setStatus(CommunityReportStatus.NEEDS_LOCATION);
+
+        when(reports.findByIdAndParkId(31L, 1L)).thenReturn(Optional.of(needsLoc));
+
+        assertThatThrownBy(() -> service.validateReport(1L, 31L, new ReportValidateRequest(Severity.MEDIUM)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Report requires a valid boundary segment");
+    }
+
+    @Test
+    void validatingClosedOrDispatchedReportThrowsIllegalStateException() {
+        BoundarySegment segment = new BoundarySegment();
+        segment.setId(10L);
+
+        CommunityReport closed = new CommunityReport();
+        closed.setId(32L);
+        closed.setPark(park);
+        closed.setSegment(segment);
+        closed.setStatus(CommunityReportStatus.CLOSED);
+
+        when(reports.findByIdAndParkId(32L, 1L)).thenReturn(Optional.of(closed));
+
+        assertThatThrownBy(() -> service.validateReport(1L, 32L, new ReportValidateRequest(Severity.LOW)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot validate report with status CLOSED");
+    }
+
+    @Test
+    void invalidatesReportWithReasonAndClosesIt() {
+        CommunityReport report = new CommunityReport();
+        report.setId(40L);
+        report.setPark(park);
+        report.setReferenceCode("R-1040");
+        report.setStatus(CommunityReportStatus.NEW);
+
+        when(reports.findByIdAndParkId(40L, 1L)).thenReturn(Optional.of(report));
+        when(reports.save(any())).thenAnswer(call -> call.getArgument(0));
+
+        var invalidated = service.invalidateReport(1L, 40L, new ReportInvalidateRequest("False alarm by villager"));
+        assertThat(invalidated.status()).isEqualTo(CommunityReportStatus.INVALID);
+        assertThat(invalidated.invalidReason()).isEqualTo("False alarm by villager");
+        assertThat(invalidated.closedAt()).isNotNull();
+    }
+
+    @Test
+    void invalidatingClosedOrAlreadyInvalidReportThrowsIllegalStateException() {
+        CommunityReport closed = new CommunityReport();
+        closed.setId(41L);
+        closed.setPark(park);
+        closed.setStatus(CommunityReportStatus.CLOSED);
+
+        when(reports.findByIdAndParkId(41L, 1L)).thenReturn(Optional.of(closed));
+
+        assertThatThrownBy(() -> service.invalidateReport(1L, 41L, new ReportInvalidateRequest("Reason")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot invalidate report with status CLOSED");
+
+        CommunityReport invalid = new CommunityReport();
+        invalid.setId(42L);
+        invalid.setPark(park);
+        invalid.setStatus(CommunityReportStatus.INVALID);
+
+        when(reports.findByIdAndParkId(42L, 1L)).thenReturn(Optional.of(invalid));
+
+        assertThatThrownBy(() -> service.invalidateReport(1L, 42L, new ReportInvalidateRequest("Reason")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Report is already invalid");
+    }
 }
+

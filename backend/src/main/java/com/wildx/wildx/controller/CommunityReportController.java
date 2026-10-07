@@ -1,7 +1,9 @@
 package com.wildx.wildx.controller;
 
 import com.wildx.wildx.dto.CommunityReportResponse;
+import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
+import com.wildx.wildx.dto.ReportValidateRequest;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.CommunityReportService;
 import com.wildx.wildx.type.CommunityReportStatus;
@@ -53,6 +55,30 @@ public class CommunityReportController {
     ) {
         Long resolvedParkId = resolveParkId(jwt, parkId);
         return reports.updateLocation(resolvedParkId, id, request);
+    }
+
+    @PostMapping("/{id}/validate")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER')")
+    public CommunityReportResponse validate(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @RequestParam(required = false) Long parkId,
+            @Valid @RequestBody ReportValidateRequest request
+    ) {
+        Long resolvedParkId = resolveParkId(jwt, parkId);
+        return reports.validateReport(resolvedParkId, id, request);
+    }
+
+    @PostMapping("/{id}/invalidate")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER')")
+    public CommunityReportResponse invalidate(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @RequestParam(required = false) Long parkId,
+            @Valid @RequestBody ReportInvalidateRequest request
+    ) {
+        Long resolvedParkId = resolveParkId(jwt, parkId);
+        return reports.invalidateReport(resolvedParkId, id, request);
     }
 
     private Long resolveParkId(Jwt jwt, Long parkId) {

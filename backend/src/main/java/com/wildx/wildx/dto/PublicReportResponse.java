@@ -29,7 +29,7 @@ public record PublicReportResponse(
                 report.getSegment() != null ? report.getSegment().getCode() : null,
                 report.getSegment() != null ? report.getSegment().getName() : null,
                 report.getPhotoPath(),
-                report.getOutcome(),
+                report.getOutcome() != null ? report.getOutcome() : report.getInvalidReason(),
                 report.getCreatedAt(),
                 report.getClosedAt()
         );
