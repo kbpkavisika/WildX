@@ -9,4 +9,3 @@ public interface PatrolRouteService {
     List<PatrolRouteResponse> list(Long parkId);
     PatrolRoute require(Long id, Long parkId);
 }
-

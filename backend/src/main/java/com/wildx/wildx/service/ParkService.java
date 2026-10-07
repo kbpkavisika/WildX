@@ -15,4 +15,3 @@ public interface ParkService {
     void updateCoverageSettings(Long parkId, CoverageSettingsRequest request);
     List<Sector> sectorShapes(Long parkId);
 }
-

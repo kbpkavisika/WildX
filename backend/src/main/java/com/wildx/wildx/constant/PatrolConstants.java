@@ -6,4 +6,3 @@ public final class PatrolConstants {
     public static final ZoneId PARK_ZONE = ZoneId.of("Asia/Colombo");
     private PatrolConstants() {}
 }
-

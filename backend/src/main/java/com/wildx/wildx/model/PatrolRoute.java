@@ -18,4 +18,3 @@ public class PatrolRoute extends Auditable {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String pathGeojson;
 }
-

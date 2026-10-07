@@ -12,4 +12,3 @@ public record TrackPointResponse(Long id, double lat, double lng, Double accurac
                 point.getSector() == null ? null : point.getSector().getId());
     }
 }
-

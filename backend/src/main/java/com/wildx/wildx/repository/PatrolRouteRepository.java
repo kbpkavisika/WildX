@@ -10,4 +10,3 @@ public interface PatrolRouteRepository extends JpaRepository<PatrolRoute, Long> 
     @EntityGraph(attributePaths = "park")
     Optional<PatrolRoute> findByIdAndParkId(Long id, Long parkId);
 }
-

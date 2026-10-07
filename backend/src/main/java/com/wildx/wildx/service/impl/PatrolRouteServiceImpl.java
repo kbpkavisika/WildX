@@ -48,4 +48,3 @@ public class PatrolRouteServiceImpl implements PatrolRouteService {
         return repository.findByIdAndParkId(id, parkId).orElseThrow(() -> new NotFoundException("Route not found"));
     }
 }
-

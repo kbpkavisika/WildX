@@ -33,4 +33,3 @@ public class TrackPoint extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     private Sector sector;
 }
-

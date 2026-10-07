@@ -10,4 +10,3 @@ public class PatrolConfig {
         return Clock.systemUTC();
     }
 }
-
