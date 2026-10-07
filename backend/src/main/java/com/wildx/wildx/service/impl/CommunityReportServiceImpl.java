@@ -3,6 +3,7 @@ package com.wildx.wildx.service.impl;
 import com.wildx.wildx.dto.CommunityReportResponse;
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
+import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
@@ -165,6 +166,34 @@ public class CommunityReportServiceImpl implements CommunityReportService {
         CommunityReport saved = reports.save(report);
         log.info("create sms report completed ref={} status={}", saved.getReferenceCode(), saved.getStatus());
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public CommunityReportResponse updateLocation(Long parkId, Long id, ReportLocationUpdateRequest request) {
+        log.info("update location started parkId={} reportId={}", parkId, id);
+        CommunityReport report = require(id, parkId);
+        BoundarySegment segment = resolveSegment(parkId, request.segmentId(), request.landmarkCode(), request.lat(), request.lng());
+        if (segment == null && (request.lat() == null || request.lng() == null)) {
+            throw new IllegalArgumentException("A valid segment, landmark code, or GPS coordinate pair is required");
+        }
+        if (segment != null) {
+            report.setSegment(segment);
+            report.setLat(request.lat() != null ? request.lat() : segment.getCenterLat());
+            report.setLng(request.lng() != null ? request.lng() : segment.getCenterLng());
+            if (report.getStatus() == CommunityReportStatus.NEEDS_LOCATION) {
+                Park park = parks.require(parkId);
+                checkDuplicateAndSetStatus(report, park, segment);
+            }
+        } else {
+            report.setLat(request.lat());
+            report.setLng(request.lng());
+            if (report.getStatus() == CommunityReportStatus.NEEDS_LOCATION) {
+                report.setStatus(CommunityReportStatus.NEW);
+            }
+        }
+        log.info("update location completed reportId={} status={}", id, report.getStatus());
+        return CommunityReportResponse.from(report);
     }
 
     private BoundarySegment resolveSegment(Long parkId, Long segmentId, String landmarkCode, Double lat, Double lng) {

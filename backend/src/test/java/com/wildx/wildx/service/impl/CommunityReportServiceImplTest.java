@@ -2,6 +2,7 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
+import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
@@ -247,5 +248,56 @@ class CommunityReportServiceImplTest {
         assertThat(service.listReports(1L, null)).hasSize(1);
         assertThat(service.listReports(1L, CommunityReportStatus.NEW)).hasSize(1);
         assertThat(service.getReport(1L, 10L).referenceCode()).isEqualTo("R-1042");
+    }
+
+    @Test
+    void updatesLocationForNeedsLocationReportAndTransitionsToNew() {
+        when(parks.require(1L)).thenReturn(park);
+
+        BoundarySegment segment = new BoundarySegment();
+        segment.setId(10L);
+        segment.setPark(park);
+        segment.setName("Kumbukgaha");
+        segment.setCode("KUMB");
+        segment.setCenterLat(6.315);
+        segment.setCenterLng(81.41);
+
+        CommunityReport report = new CommunityReport();
+        report.setId(20L);
+        report.setPark(park);
+        report.setReferenceCode("R-1020");
+        report.setStatus(CommunityReportStatus.NEEDS_LOCATION);
+
+        when(reports.findByIdAndParkId(20L, 1L)).thenReturn(Optional.of(report));
+        when(segments.findByCode(1L, "KUMB")).thenReturn(Optional.of(segment));
+        when(reports.findFirstByParkIdAndSegmentIdAndStatusNotInAndCreatedAtAfterOrderByCreatedAtDesc(
+                eq(1L), eq(10L), any(), any()))
+                .thenReturn(Optional.empty());
+
+        var updated = service.updateLocation(1L, 20L, new ReportLocationUpdateRequest(null, "KUMB", null, null));
+        assertThat(updated.status()).isEqualTo(CommunityReportStatus.NEW);
+        assertThat(updated.segmentCode()).isEqualTo("KUMB");
+        assertThat(updated.lat()).isEqualTo(6.315);
+        assertThat(updated.lng()).isEqualTo(81.41);
+    }
+
+    @Test
+    void updatesLocationWithGpsCoordinatesWhenNoSegmentFound() {
+        CommunityReport report = new CommunityReport();
+        report.setId(21L);
+        report.setPark(park);
+        report.setReferenceCode("R-1021");
+        report.setStatus(CommunityReportStatus.NEEDS_LOCATION);
+
+        when(reports.findByIdAndParkId(21L, 1L)).thenReturn(Optional.of(report));
+        when(segments.findNearest(1L, 6.30, 81.40)).thenReturn(Optional.empty());
+
+        var updated = service.updateLocation(1L, 21L, new ReportLocationUpdateRequest(null, null, 6.30, 81.40));
+        assertThat(updated.status()).isEqualTo(CommunityReportStatus.NEW);
+        assertThat(updated.lat()).isEqualTo(6.30);
+        assertThat(updated.lng()).isEqualTo(81.40);
+
+        assertThatThrownBy(() -> service.updateLocation(1L, 21L, new ReportLocationUpdateRequest(null, null, null, null)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

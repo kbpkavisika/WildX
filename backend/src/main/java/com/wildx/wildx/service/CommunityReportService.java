@@ -3,6 +3,7 @@ package com.wildx.wildx.service;
 import com.wildx.wildx.dto.CommunityReportResponse;
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
+import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.model.CommunityReport;
 import com.wildx.wildx.type.CommunityReportStatus;
 import com.wildx.wildx.type.ReportType;
@@ -22,4 +23,6 @@ public interface CommunityReportService {
     CommunityReport require(Long id, Long parkId);
 
     CommunityReport createSmsReport(Long parkId, String fromPhone, ReportType type, String landmarkCode, Integer count, String rawText);
+
+    CommunityReportResponse updateLocation(Long parkId, Long id, ReportLocationUpdateRequest request);
 }
