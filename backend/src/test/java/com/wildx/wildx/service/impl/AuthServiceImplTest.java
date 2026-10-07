@@ -22,6 +22,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,6 +138,18 @@ class AuthServiceImplTest {
         assertThatThrownBy(() -> authService.requireParkAccess(adminJwt, 4L)).isInstanceOf(UnauthorizedException.class);
         Jwt badSubject = Jwt.withTokenValue("token").header("alg", "HS256").subject("x").claim("role", "ADMIN").build();
         assertThatThrownBy(() -> authService.requireParkAccess(badSubject, 4L)).isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    void listsIdsOfActiveUsersWithRoleInPark() {
+        Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
+        AppUser first = user(Role.SUPERVISOR, park, true);
+        AppUser second = user(Role.SUPERVISOR, park, true);
+        second.setId(8L);
+        when(userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(3L, Role.SUPERVISOR))
+                .thenReturn(List.of(first, second));
+        assertThat(authService.activeUserIds(3L, Role.SUPERVISOR)).containsExactly(7L, 8L);
+        assertThat(authService.activeUserIds(3L, Role.MANAGER)).isEmpty();
     }
 
     @Test

@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.wildx.wildx.type.Role;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -114,5 +115,12 @@ public class AuthServiceImpl implements AuthService {
                 .filter(AppUser::isActive).filter(user -> user.getRole() == Role.RANGER)
                 .filter(user -> user.getPark() != null && user.getPark().getId().equals(parkId))
                 .orElseThrow(() -> new IllegalArgumentException("Ranger must be active and assigned to this park"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> activeUserIds(Long parkId, Role role) {
+        return userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, role).stream()
+                .map(AppUser::getId).toList();
     }
 }
