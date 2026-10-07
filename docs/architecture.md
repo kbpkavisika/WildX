@@ -165,14 +165,19 @@ Sector configuration is exposed at `/parks/{id}/sectors`; updates do not retroac
 
 Collars and camera traps are simulated, so registering them only creates records. Animals are registered first at `/parks/{id}/animals`; a `COLLAR` then references an `animalId` from the same park, and a `CAMERA` requires `lat`/`lng`. Fields that do not belong to the device type are ignored. `code` is unique across all parks, `expectedIntervalMin` is 1–10080, and a device's type cannot change after registration. There is no delete, because later fixes, alerts and images reference devices. A Manager can write only to their own park, and an Admin can write to any park.
 
+### Alert rule contract (SEN-03)
+
+A park has at most one alert rule per zone type, so rules are addressed by zone type: `PUT /parks/{id}/alert-rules/{zoneType}` creates or replaces the rule and `DELETE` removes it. `cooldownMin` is 0–1440 (0 means no cool-down) and `ackSlaMin` is 1–1440. A zone type without a rule raises no zone-breach alert.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
 |---|---|---|
 | Auth | `POST /auth/login` → `{token, user}` | public |
 | Admin | `GET/POST/PUT /admin/parks`, `GET/POST/PUT /admin/users` | ADMIN |
-| Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|alert-rules\|incident-types\|segments` | MANAGER (writes), staff (reads) |
+| Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|incident-types\|segments` | MANAGER (writes), staff (reads) |
 | UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | ADMIN, MANAGER (writes), staff (reads) |
+| UC3 | `GET /parks/{id}/alert-rules`, `PUT/DELETE /parks/{id}/alert-rules/{zoneType}` `{severity, cooldownMin, ackSlaMin}` | MANAGER (writes), staff (reads) |
 | UC1 | `GET/POST /routes`, `POST /patrols` (assign), `GET /patrols?status=&date=` | MANAGER, SUPERVISOR |
 | UC1 | `GET /me/patrols` | RANGER |
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
@@ -202,7 +207,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 
 ### 7.1 Collar fix → alert (SEN-04 to SEN-09)
 - Store the fix (duplicates ignored) and update the device's last seen and battery.
-- If the fix is inside a zone, create an alert from the zone's rule unless one was raised within the cool-down. Night-time raises severity one level.
+- If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised within the cool-down. A zone type without a rule raises no alert. Night-time raises severity one level.
 - A scheduled job escalates unacknowledged alerts after each SLA period: Supervisor, then Manager.
 - A second scheduled job raises device-health and mortality alerts, never duplicating an open one.
 

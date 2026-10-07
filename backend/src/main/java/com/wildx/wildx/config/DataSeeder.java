@@ -1,10 +1,12 @@
 package com.wildx.wildx.config;
 
+import com.wildx.wildx.model.AlertRule;
 import com.wildx.wildx.model.Animal;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
+import com.wildx.wildx.repository.AlertRuleRepository;
 import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.DeviceRepository;
@@ -12,6 +14,7 @@ import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
 import com.wildx.wildx.type.Role;
+import com.wildx.wildx.type.Severity;
 import com.wildx.wildx.type.ZoneType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +45,7 @@ public class DataSeeder implements CommandLineRunner {
     private final AnimalRepository animalRepository;
     private final DeviceRepository deviceRepository;
     private final ZoneRepository zoneRepository;
+    private final AlertRuleRepository alertRuleRepository;
 
     @Override
     @Transactional
@@ -59,6 +63,11 @@ public class DataSeeder implements CommandLineRunner {
         zoneRepository.saveAll(List.of(
                 seedZone(yala, "Kumbukgaha farmland", ZoneType.FARMLAND, FARMLAND_POLYGON),
                 seedZone(yala, "Yala main road", ZoneType.ROAD, ROAD_POLYGON)));
+        alertRuleRepository.saveAll(List.of(
+                seedRule(yala, ZoneType.FARMLAND, Severity.MEDIUM, 30, 15),
+                seedRule(yala, ZoneType.ROAD, Severity.LOW, 60, 30),
+                seedRule(yala, ZoneType.VILLAGE_BUFFER, Severity.HIGH, 30, 10),
+                seedRule(yala, ZoneType.RESTRICTED, Severity.HIGH, 15, 10)));
         log.info("Seeded park {} and {} users", yala.getCode(), users.size());
     }
 
@@ -92,6 +101,16 @@ public class DataSeeder implements CommandLineRunner {
         zone.setType(type);
         zone.setPolygonGeojson(polygonGeojson);
         return zone;
+    }
+
+    private AlertRule seedRule(Park park, ZoneType zoneType, Severity severity, int cooldownMin, int ackSlaMin) {
+        AlertRule rule = new AlertRule();
+        rule.setPark(park);
+        rule.setZoneType(zoneType);
+        rule.setSeverity(severity);
+        rule.setCooldownMin(cooldownMin);
+        rule.setAckSlaMin(ackSlaMin);
+        return rule;
     }
 
     private AppUser seedUser(Role role, Park park, String passwordHash) {
