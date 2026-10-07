@@ -87,6 +87,26 @@ class AlertServiceImplTest {
         savedAlerts(1);
     }
 
+    @Test
+    void nightFixRaisesSeverityOneLevelAndCriticalStaysCritical() {
+        stubZones(zone(10L, ZoneType.FARMLAND, FARMLAND), zone(13L, ZoneType.RESTRICTED, square(81.50, 6.50)));
+        stubRules(rule(ZoneType.FARMLAND, Severity.MEDIUM, 0, 15), rule(ZoneType.RESTRICTED, Severity.CRITICAL, 0, 10));
+        service.raiseZoneBreaches(fix(6.305, 81.405, Instant.parse("2026-10-07T16:30:00Z")));
+        service.raiseZoneBreaches(fix(6.505, 81.505, Instant.parse("2026-10-07T16:30:00Z")));
+        assertThat(savedAlerts(2)).extracting(Alert::getSeverity).containsExactly(Severity.HIGH, Severity.CRITICAL);
+    }
+
+    @Test
+    void nightStartsAtSixInTheEveningAndEndsAtSixInTheMorningColomboTime() {
+        stubZones(zone(10L, ZoneType.FARMLAND, FARMLAND));
+        stubRules(rule(ZoneType.FARMLAND, Severity.LOW, 0, 15));
+        List<Instant> times = List.of(Instant.parse("2026-10-07T12:29:59Z"), Instant.parse("2026-10-07T12:30:00Z"),
+                Instant.parse("2026-10-07T00:29:59Z"), Instant.parse("2026-10-07T00:30:00Z"));
+        times.forEach(time -> service.raiseZoneBreaches(fix(6.305, 81.405, time)));
+        assertThat(savedAlerts(4)).extracting(Alert::getSeverity)
+                .containsExactly(Severity.LOW, Severity.MEDIUM, Severity.MEDIUM, Severity.LOW);
+    }
+
     private static String square(double lng, double lat) {
         return "{\"type\":\"Polygon\",\"coordinates\":[[[%s,%s],[%s,%s],[%s,%s],[%s,%s],[%s,%s]]]}".formatted(
                 lng, lat, lng + 0.02, lat, lng + 0.02, lat + 0.02, lng, lat + 0.02, lng, lat);
@@ -137,12 +157,16 @@ class AlertServiceImplTest {
     }
 
     private CollarFix fix(double lat, double lng) {
+        return fix(lat, lng, FIX_TIME);
+    }
+
+    private CollarFix fix(double lat, double lng, Instant recordedAt) {
         when(alerts.save(any())).thenAnswer(call -> call.getArgument(0));
         CollarFix fix = new CollarFix();
         fix.setDevice(collar);
         fix.setLat(lat);
         fix.setLng(lng);
-        fix.setRecordedAt(FIX_TIME);
+        fix.setRecordedAt(recordedAt);
         return fix;
     }
 }

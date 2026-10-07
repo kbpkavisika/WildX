@@ -1,5 +1,7 @@
 package com.wildx.wildx.service.impl;
 
+import com.wildx.wildx.constant.AlertConstants;
+import com.wildx.wildx.constant.PatrolConstants;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AlertRuleRepository;
@@ -7,6 +9,7 @@ import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.type.AlertStatus;
 import com.wildx.wildx.type.AlertType;
+import com.wildx.wildx.type.Severity;
 import com.wildx.wildx.type.ZoneType;
 import com.wildx.wildx.util.GeoUtil;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -58,11 +62,16 @@ public class AlertServiceImpl implements AlertService {
                 fix.getRecordedAt().plus(cooldown));
     }
 
+    private Severity severity(AlertRule rule, Instant occurredAt) {
+        boolean night = AlertConstants.isNight(occurredAt.atZone(PatrolConstants.PARK_ZONE).toLocalTime());
+        return night ? rule.getSeverity().raised() : rule.getSeverity();
+    }
+
     private Alert breach(Zone zone, CollarFix fix, AlertRule rule) {
         Alert alert = new Alert();
         alert.setPark(fix.getDevice().getPark());
         alert.setType(AlertType.ZONE_BREACH);
-        alert.setSeverity(rule.getSeverity());
+        alert.setSeverity(severity(rule, fix.getRecordedAt()));
         alert.setDevice(fix.getDevice());
         alert.setZone(zone);
         alert.setLat(fix.getLat());
