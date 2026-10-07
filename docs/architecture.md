@@ -169,6 +169,12 @@ Collars and camera traps are simulated, so registering them only creates records
 
 A park has at most one alert rule per zone type, so rules are addressed by zone type: `PUT /parks/{id}/alert-rules/{zoneType}` creates or replaces the rule and `DELETE` removes it. `cooldownMin` is 0–1440 (0 means no cool-down) and `ackSlaMin` is 1–1440. A zone type without a rule raises no zone-breach alert.
 
+### Collar ingest and simulator contract (SEN-04)
+
+`POST /ingest/collar-fixes` takes `{collarCode, lat, lng, recordedAt, batteryPct}` with an `X-Api-Key` header that must equal `wildx.ingest-api-key` (`INGEST_API_KEY`); a missing or wrong key, or no configured key, returns 401. A new fix returns 201 and updates the collar's `last_seen_at` and `battery_pct` when it is the newest fix. A repeated collar and timestamp returns 200 with `stored: false` and changes nothing. Missing fields, coordinates out of range, battery outside 0–100 or a future timestamp return 400; an unknown or non-collar code returns 404.
+
+The simulator replaces real collars in the demo. `POST /parks/{id}/simulator/collar-fixes` takes `{collarCode, scenario, lat, lng, zoneId}` and sends every generated fix through the same ingest logic, returning `{sent, stored, duplicates}`. Scenarios: `SINGLE_FIX`, `LOW_BATTERY` (battery 10), `DUPLICATE` (the same fix twice) and `NOT_MOVING` (seven hourly fixes over the last 6 h within about 30 m) use `lat`/`lng`; `WALK_INTO_ZONE` (six fixes over 25 min ending at the zone's vertex average) and `NIGHT_WALK_INTO_ZONE` (the same walk moved into 18:00–06:00 Asia/Colombo) use `zoneId`. The collar and zone must belong to the park.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
@@ -189,7 +195,8 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | Shared | `GET /me/notifications`, `POST /notifications/{id}/read` | any |
 | UC3 | `GET /alerts?status=`, `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | staff |
 | UC3 | `GET /camera-images?status=`, `POST /camera-images/{id}/tag`, `GET /camera-images/{id}/file?reason=` (audited if restricted) | MANAGER, LEL (restricted) |
-| UC3 sim | `POST /ingest/collar-fixes`, `POST /ingest/camera-images` (multipart) | **api-key** |
+| UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart) | **api-key** |
+| UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}` | ADMIN, MANAGER |
 | UC4 | `POST /public/reports` (multipart), `GET /public/reports/{ref}`, `GET /public/parks/{id}/segments` | **public** |
 | UC4 sim | `POST /ingest/sms` `{from, body}` → `{reply}` | **api-key** |
 | UC4 | `GET /community-reports?status=`, `POST /community-reports/{id}/validate` `{severity}`, `POST /community-reports/{id}/invalidate` `{reason}`, `GET /community/hotspots` | CLO, MANAGER |
@@ -265,7 +272,7 @@ frontend/
 
 ## 9. Configuration and local setup
 
-Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`). Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
+Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`). Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
 
 To run the system, start PostgreSQL (`docker-compose.yml` in the repo root, `postgres:17-alpine`), the backend and the frontend:
 

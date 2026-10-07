@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:8080/api/v1
+@apiKey = change-me-ingest-key
+
+### Collar fix inside Kumbukgaha farmland
+POST {{baseUrl}}/ingest/collar-fixes
+X-Api-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "lat": 6.31,
+  "lng": 81.41,
+  "recordedAt": "2026-10-07T16:30:00Z",
+  "batteryPct": 80
+}
+
+### Same fix again is ignored as a duplicate
+POST {{baseUrl}}/ingest/collar-fixes
+X-Api-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "lat": 6.31,
+  "lng": 81.41,
+  "recordedAt": "2026-10-07T16:30:00Z",
+  "batteryPct": 80
+}
+
+### Log in as the park manager for the simulator
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "manager@wildx.lk",
+  "password": "password"
+}
+
+### Simulator: walk Gemunu into the first zone
+POST {{baseUrl}}/parks/1/simulator/collar-fixes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "scenario": "WALK_INTO_ZONE",
+  "zoneId": 1
+}

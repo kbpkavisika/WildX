@@ -3,6 +3,7 @@ package com.wildx.wildx.model;
 import com.wildx.wildx.type.DeviceType;
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -25,4 +26,6 @@ public class Device extends Auditable {
     private Double lng;
     @Column(nullable = false)
     private int expectedIntervalMin;
+    private Integer batteryPct;
+    private Instant lastSeenAt;
 }
