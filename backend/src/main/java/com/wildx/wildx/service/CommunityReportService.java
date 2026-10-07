@@ -1,6 +1,8 @@
 package com.wildx.wildx.service;
 
 import com.wildx.wildx.dto.CommunityReportResponse;
+import com.wildx.wildx.dto.ConflictTrendReportResponse;
+import com.wildx.wildx.dto.HotspotResponse;
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
@@ -11,6 +13,7 @@ import com.wildx.wildx.type.CommunityReportStatus;
 import com.wildx.wildx.type.ReportType;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface CommunityReportService {
@@ -31,4 +34,8 @@ public interface CommunityReportService {
     CommunityReportResponse validateReport(Long parkId, Long id, ReportValidateRequest request);
 
     CommunityReportResponse invalidateReport(Long parkId, Long id, ReportInvalidateRequest request);
+
+    List<HotspotResponse> getHotspots(Long parkId);
+
+    List<ConflictTrendReportResponse> getConflictTrends(Long parkId, LocalDate from, LocalDate to);
 }

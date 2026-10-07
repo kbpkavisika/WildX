@@ -1,5 +1,8 @@
 package com.wildx.wildx.service.impl;
 
+import com.wildx.wildx.dto.BoundarySegmentResponse;
+import com.wildx.wildx.dto.ConflictTrendReportResponse;
+import com.wildx.wildx.dto.HotspotResponse;
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
@@ -18,9 +21,11 @@ import com.wildx.wildx.type.ReportType;
 import com.wildx.wildx.type.Severity;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -398,6 +403,142 @@ class CommunityReportServiceImplTest {
         assertThatThrownBy(() -> service.invalidateReport(1L, 42L, new ReportInvalidateRequest("Reason")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Report is already invalid");
+    }
+
+    @Test
+    void getHotspotsCalculatesThresholdAndSortsHotspotsFirst() {
+        Park parkWithThreshold = Park.builder().id(1L).name("Yala").code("YALA").hotspotThreshold(3).build();
+        when(parks.require(1L)).thenReturn(parkWithThreshold);
+
+        BoundarySegment seg1 = new BoundarySegment();
+        seg1.setId(10L);
+
+        BoundarySegment seg2 = new BoundarySegment();
+        seg2.setId(20L);
+
+        BoundarySegmentResponse resp1 = new BoundarySegmentResponse(10L, 1L, "Kumbukgaha", "KUMB", 6.315, 81.41);
+        BoundarySegmentResponse resp2 = new BoundarySegmentResponse(20L, 1L, "North Fence", "NORT", 6.400, 81.50);
+        when(segments.segments(1L)).thenReturn(List.of(resp1, resp2));
+
+        CommunityReport r1 = new CommunityReport();
+        r1.setSegment(seg1);
+        r1.setStatus(CommunityReportStatus.VALIDATED);
+
+        CommunityReport r2 = new CommunityReport();
+        r2.setSegment(seg1);
+        r2.setStatus(CommunityReportStatus.DISPATCHED);
+
+        CommunityReport r3 = new CommunityReport();
+        r3.setSegment(seg1);
+        r3.setStatus(CommunityReportStatus.CLOSED);
+
+        CommunityReport r4 = new CommunityReport();
+        r4.setSegment(seg2);
+        r4.setStatus(CommunityReportStatus.VALIDATED);
+
+        CommunityReport r5 = new CommunityReport();
+        r5.setSegment(null);
+        r5.setStatus(CommunityReportStatus.VALIDATED);
+
+        when(reports.findByParkIdAndStatusInAndCreatedAtGreaterThanEqual(
+                eq(1L), any(), any(Instant.class)))
+                .thenReturn(List.of(r1, r2, r3, r4, r5));
+
+        List<HotspotResponse> results = service.getHotspots(1L);
+
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).segmentId()).isEqualTo(10L);
+        assertThat(results.get(0).conflictCount()).isEqualTo(3L);
+        assertThat(results.get(0).threshold()).isEqualTo(3);
+        assertThat(results.get(0).hotspot()).isTrue();
+
+        assertThat(results.get(1).segmentId()).isEqualTo(20L);
+        assertThat(results.get(1).conflictCount()).isEqualTo(1L);
+        assertThat(results.get(1).threshold()).isEqualTo(3);
+        assertThat(results.get(1).hotspot()).isFalse();
+    }
+
+    @Test
+    void getHotspotsUsesDefaultThresholdWhenConfigured() {
+        Park parkDefault = Park.builder().id(1L).name("Yala").code("YALA").hotspotThreshold(5).build();
+        when(parks.require(1L)).thenReturn(parkDefault);
+
+        BoundarySegmentResponse resp = new BoundarySegmentResponse(10L, 1L, "Kumbukgaha", "KUMB", 6.315, 81.41);
+        when(segments.segments(1L)).thenReturn(List.of(resp));
+
+        when(reports.findByParkIdAndStatusInAndCreatedAtGreaterThanEqual(
+                eq(1L), any(), any(Instant.class)))
+                .thenReturn(List.of());
+
+        List<HotspotResponse> results = service.getHotspots(1L);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).threshold()).isEqualTo(5);
+        assertThat(results.get(0).hotspot()).isFalse();
+        assertThat(results.get(0).conflictCount()).isEqualTo(0L);
+    }
+
+    @Test
+    void getConflictTrendsAggregatesMonthlyCountsPerSegment() {
+        when(parks.require(1L)).thenReturn(park);
+
+        BoundarySegment seg1 = new BoundarySegment();
+        seg1.setId(10L);
+
+        BoundarySegment seg2 = new BoundarySegment();
+        seg2.setId(20L);
+
+        BoundarySegmentResponse resp1 = new BoundarySegmentResponse(10L, 1L, "Kumbukgaha", "KUMB", 6.315, 81.41);
+        BoundarySegmentResponse resp2 = new BoundarySegmentResponse(20L, 1L, "North Fence", "NORT", 6.400, 81.50);
+        when(segments.segments(1L)).thenReturn(List.of(resp1, resp2));
+
+        CommunityReport r1 = new CommunityReport();
+        r1.setSegment(seg1);
+        ReflectionTestUtils.setField(r1, "createdAt", Instant.parse("2026-08-15T04:00:00Z"));
+
+        CommunityReport r2 = new CommunityReport();
+        r2.setSegment(seg1);
+        ReflectionTestUtils.setField(r2, "createdAt", Instant.parse("2026-08-20T04:00:00Z"));
+
+        CommunityReport r3 = new CommunityReport();
+        r3.setSegment(seg2);
+        ReflectionTestUtils.setField(r3, "createdAt", Instant.parse("2026-08-25T04:00:00Z"));
+
+        CommunityReport r4 = new CommunityReport();
+        r4.setSegment(seg1);
+        ReflectionTestUtils.setField(r4, "createdAt", Instant.parse("2026-09-05T04:00:00Z"));
+
+        when(reports.findByParkIdAndStatusInAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                eq(1L), any(), any(Instant.class), any(Instant.class)))
+                .thenReturn(List.of(r1, r2, r3, r4));
+
+        List<ConflictTrendReportResponse> results = service.getConflictTrends(
+                1L, LocalDate.parse("2026-08-01"), LocalDate.parse("2026-09-30"));
+
+        assertThat(results).hasSize(4);
+        assertThat(results.get(0).month()).isEqualTo("2026-08");
+        assertThat(results.get(0).segmentCode()).isEqualTo("KUMB");
+        assertThat(results.get(0).conflictCount()).isEqualTo(2L);
+
+        assertThat(results.get(1).month()).isEqualTo("2026-08");
+        assertThat(results.get(1).segmentCode()).isEqualTo("NORT");
+        assertThat(results.get(1).conflictCount()).isEqualTo(1L);
+
+        assertThat(results.get(2).month()).isEqualTo("2026-09");
+        assertThat(results.get(2).segmentCode()).isEqualTo("KUMB");
+        assertThat(results.get(2).conflictCount()).isEqualTo(1L);
+
+        assertThat(results.get(3).month()).isEqualTo("2026-09");
+        assertThat(results.get(3).segmentCode()).isEqualTo("NORT");
+        assertThat(results.get(3).conflictCount()).isEqualTo(0L);
+    }
+
+    @Test
+    void getConflictTrendsThrowsWhenFromIsAfterTo() {
+        assertThatThrownBy(() -> service.getConflictTrends(
+                1L, LocalDate.parse("2026-10-01"), LocalDate.parse("2026-09-01")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Provide a valid inclusive date range");
     }
 }
 

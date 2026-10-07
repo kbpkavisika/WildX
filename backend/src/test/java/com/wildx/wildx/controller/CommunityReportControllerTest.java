@@ -2,6 +2,8 @@ package com.wildx.wildx.controller;
 
 import com.wildx.wildx.config.SecurityConfig;
 import com.wildx.wildx.dto.CommunityReportResponse;
+import com.wildx.wildx.dto.ConflictTrendReportResponse;
+import com.wildx.wildx.dto.HotspotResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.dto.ReportValidateRequest;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -28,6 +31,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -37,6 +41,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -316,6 +322,97 @@ class CommunityReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("VALIDATED"))
                 .andExpect(jsonPath("$.severity").value("MEDIUM"));
+    }
+
+    @Test
+    void cloCanGetHotspots() throws Exception {
+        UserResponse user = new UserResponse(4L, "Clo", "clo@wildx.lk", Role.CLO, 1L);
+        when(auth.current(any())).thenReturn(user);
+
+        var hotspot = new HotspotResponse(10L, "Kumbukgaha", "KUMB", 6.315, 81.41, 12L, 5, true);
+        when(reports.getHotspots(1L)).thenReturn(List.of(hotspot));
+
+        mvc.perform(get("/api/v1/community/hotspots")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].segmentId").value(10))
+                .andExpect(jsonPath("$[0].segmentCode").value("KUMB"))
+                .andExpect(jsonPath("$[0].conflictCount").value(12))
+                .andExpect(jsonPath("$[0].hotspot").value(true));
+
+        mvc.perform(get("/api/v1/community-reports/hotspots")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].segmentId").value(10));
+    }
+
+    @Test
+    void rangerForbiddenFromGettingHotspots() throws Exception {
+        mvc.perform(get("/api/v1/community/hotspots")
+                        .header("Authorization", token("RANGER", 1L)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void managerCanGetConflictTrendsAsJson() throws Exception {
+        UserResponse user = new UserResponse(2L, "Manager", "manager@wildx.lk", Role.MANAGER, 1L);
+        when(auth.current(any())).thenReturn(user);
+
+        var trend = new ConflictTrendReportResponse("2026-08", 10L, "Kumbukgaha", "KUMB", 12L);
+        when(reports.getConflictTrends(1L, LocalDate.parse("2026-08-01"), LocalDate.parse("2026-09-30")))
+                .thenReturn(List.of(trend));
+
+        mvc.perform(get("/api/v1/reports/conflicts")
+                        .param("from", "2026-08-01")
+                        .param("to", "2026-09-30")
+                        .header("Authorization", token("MANAGER", 1L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].month").value("2026-08"))
+                .andExpect(jsonPath("$[0].segmentCode").value("KUMB"))
+                .andExpect(jsonPath("$[0].conflictCount").value(12));
+    }
+
+    @Test
+    void cloCanGetConflictTrendsAsCsv() throws Exception {
+        UserResponse user = new UserResponse(4L, "Clo", "clo@wildx.lk", Role.CLO, 1L);
+        when(auth.current(any())).thenReturn(user);
+
+        var trend = new ConflictTrendReportResponse("2026-08", 10L, "Kumbukgaha", "KUMB", 12L);
+        when(reports.getConflictTrends(1L, LocalDate.parse("2026-08-01"), LocalDate.parse("2026-09-30")))
+                .thenReturn(List.of(trend));
+
+        mvc.perform(get("/api/v1/reports/conflicts")
+                        .param("from", "2026-08-01")
+                        .param("to", "2026-09-30")
+                        .param("format", "csv")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"conflicts-2026-08-01-2026-09-30.csv\""))
+                .andExpect(content().contentType("text/csv;charset=UTF-8"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("month,segment_id,segment_code,segment_name,conflict_count\r\n2026-08,10,\"KUMB\",\"Kumbukgaha\",12\r\n")));
+    }
+
+    @Test
+    void invalidReportFormatReturnsBadRequest() throws Exception {
+        UserResponse user = new UserResponse(4L, "Clo", "clo@wildx.lk", Role.CLO, 1L);
+        when(auth.current(any())).thenReturn(user);
+
+        mvc.perform(get("/api/v1/reports/conflicts")
+                        .param("from", "2026-08-01")
+                        .param("to", "2026-09-30")
+                        .param("format", "yaml")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Report format must be json or csv"));
+    }
+
+    @Test
+    void rangerForbiddenFromGettingConflictTrends() throws Exception {
+        mvc.perform(get("/api/v1/reports/conflicts")
+                        .param("from", "2026-08-01")
+                        .param("to", "2026-09-30")
+                        .header("Authorization", token("RANGER", 1L)))
+                .andExpect(status().isForbidden());
     }
 
     private String token(String role, Long parkId) {
