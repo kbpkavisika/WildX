@@ -181,6 +181,12 @@ Every stored collar fix (not a duplicate) is checked against all zones of the co
 
 `GET /alerts?status=` returns the caller's park alerts, newest `occurred_at` first, optionally filtered by status, with the collar code, animal name and zone name.
 
+### Notifications (CMN-07, SEN-07)
+
+`NotificationService` (owned by UC3) is the shared way to notify users: `notifyUsers(userIds, title, body, link)` stores one `notification` row per user. `GET /me/notifications` returns `{unreadCount, notifications}` with the caller's latest 50 notifications, newest first; `unreadCount` counts every unread one and drives the badge. `POST /notifications/{id}/read` marks the caller's own notification read and keeps the first `read_at` on repeats; another user's notification returns 404. Both endpoints are for every role except Admin.
+
+For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, taken from `PatrolMonitorService.live`; the `app_user.on_duty` column is not used. Each raised alert sends every such ranger one notification, e.g. title "New HIGH zone breach alert", body "Gemunu (COL-001) entered Kumbukgaha farmland at 22:05" (Asia/Colombo time) and link `/ranger/alerts`. The SMS fallback (CMN-08) is added once UC4's `SmsService` exists.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
@@ -198,7 +204,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}`, `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, SUPERVISOR/MANAGER triage |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
 | Shared | `GET /responders?lat=&lng=`, which returns on-duty rangers sorted by distance | — |
-| Shared | `GET /me/notifications`, `POST /notifications/{id}/read` | any |
+| Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | any except ADMIN |
 | UC3 | `GET /alerts?status=`, `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | staff |
 | UC3 | `GET /camera-images?status=`, `POST /camera-images/{id}/tag`, `GET /camera-images/{id}/file?reason=` (audited if restricted) | MANAGER, LEL (restricted) |
 | UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart) | **api-key** |
