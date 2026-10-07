@@ -1,12 +1,18 @@
 package com.wildx.wildx.service.impl;
 
+import com.wildx.wildx.constant.PatrolConstants;
+import com.wildx.wildx.dto.BoundarySegmentResponse;
 import com.wildx.wildx.dto.CommunityReportResponse;
+import com.wildx.wildx.dto.ConflictTrendReportResponse;
+import com.wildx.wildx.dto.HotspotResponse;
 import com.wildx.wildx.dto.PublicReportCreateRequest;
 import com.wildx.wildx.dto.PublicReportResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.dto.ReportValidateRequest;
+import com.wildx.wildx.dto.SmsHelpCardResponse;
 import com.wildx.wildx.exception.NotFoundException;
+import com.wildx.wildx.util.SmsParser;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
 import com.wildx.wildx.model.Park;
@@ -32,10 +38,9 @@ import java.nio.file.StandardCopyOption;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -48,6 +53,12 @@ public class CommunityReportServiceImpl implements CommunityReportService {
             CommunityReportStatus.DUPLICATE
     );
 
+    private static final Set<CommunityReportStatus> VALIDATED_CONFLICT_STATUSES = Set.of(
+            CommunityReportStatus.VALIDATED,
+            CommunityReportStatus.DISPATCHED,
+            CommunityReportStatus.CLOSED
+    );
+
     private final CommunityReportRepository reports;
     private final ParkService parks;
     private final BoundarySegmentService segments;
@@ -55,6 +66,9 @@ public class CommunityReportServiceImpl implements CommunityReportService {
 
     @Value("${wildx.upload-dir:./uploads}")
     private String uploadDir = "./uploads";
+
+    @Value("${wildx.sms.short-code:8800}")
+    private String shortCode = "8800";
 
     private final AtomicLong referenceCounter = new AtomicLong(1000);
 
@@ -297,4 +311,149 @@ public class CommunityReportServiceImpl implements CommunityReportService {
         }
         return ".jpg";
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HotspotResponse> getHotspots(Long parkId) {
+        log.info("get hotspots started parkId={}", parkId);
+        Park park = parks.require(parkId);
+        int threshold = park.getHotspotThreshold();
+        Instant thirtyDaysAgo = clock.instant().minus(Duration.ofDays(30));
+
+        List<BoundarySegmentResponse> segmentList = segments.segments(parkId);
+        List<CommunityReport> recentReports = reports
+                .findByParkIdAndStatusInAndCreatedAtGreaterThanEqual(parkId, VALIDATED_CONFLICT_STATUSES, thirtyDaysAgo);
+
+        Map<Long, Long> countsBySegment = new HashMap<>();
+        for (CommunityReport report : recentReports) {
+            if (report.getSegment() != null) {
+                countsBySegment.merge(report.getSegment().getId(), 1L, Long::sum);
+            }
+        }
+
+        List<HotspotResponse> response = segmentList.stream()
+                .map(s -> {
+                    long count = countsBySegment.getOrDefault(s.id(), 0L);
+                    boolean isHotspot = count >= threshold;
+                    return new HotspotResponse(
+                            s.id(),
+                            s.name(),
+                            s.code(),
+                            s.centerLat(),
+                            s.centerLng(),
+                            count,
+                            threshold,
+                            isHotspot
+                    );
+                })
+                .sorted(Comparator.comparing(HotspotResponse::hotspot).reversed()
+                        .thenComparing(HotspotResponse::conflictCount, Comparator.reverseOrder())
+                        .thenComparing(HotspotResponse::segmentName))
+                .toList();
+
+        log.info("get hotspots completed parkId={} count={}", parkId, response.size());
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ConflictTrendReportResponse> getConflictTrends(Long parkId, LocalDate from, LocalDate to) {
+        log.info("get conflict trends started parkId={} from={} to={}", parkId, from, to);
+        if (from == null || to == null || from.isAfter(to) || to.equals(LocalDate.MAX)) {
+            throw new IllegalArgumentException("Provide a valid inclusive date range");
+        }
+        parks.require(parkId);
+        List<BoundarySegmentResponse> segmentList = segments.segments(parkId);
+
+        Instant start = from.atStartOfDay(PatrolConstants.PARK_ZONE).toInstant();
+        Instant until = to.plusDays(1).atStartOfDay(PatrolConstants.PARK_ZONE).toInstant();
+
+        List<CommunityReport> rangeReports = reports
+                .findByParkIdAndStatusInAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                        parkId,
+                        VALIDATED_CONFLICT_STATUSES,
+                        start,
+                        until
+                );
+
+        Map<String, Map<Long, Long>> countsByMonthAndSegment = new HashMap<>();
+        for (CommunityReport report : rangeReports) {
+            if (report.getSegment() != null) {
+                YearMonth ym = YearMonth.from(report.getCreatedAt().atZone(PatrolConstants.PARK_ZONE));
+                String monthKey = ym.toString();
+                countsByMonthAndSegment
+                        .computeIfAbsent(monthKey, k -> new HashMap<>())
+                        .merge(report.getSegment().getId(), 1L, Long::sum);
+            }
+        }
+
+        List<YearMonth> months = new ArrayList<>();
+        YearMonth current = YearMonth.from(from);
+        YearMonth end = YearMonth.from(to);
+        while (!current.isAfter(end)) {
+            months.add(current);
+            current = current.plusMonths(1);
+        }
+
+        List<ConflictTrendReportResponse> result = new ArrayList<>();
+        for (YearMonth ym : months) {
+            String monthKey = ym.toString();
+            Map<Long, Long> segmentCounts = countsByMonthAndSegment.getOrDefault(monthKey, Map.of());
+            for (BoundarySegmentResponse segment : segmentList) {
+                long count = segmentCounts.getOrDefault(segment.id(), 0L);
+                result.add(new ConflictTrendReportResponse(
+                        monthKey,
+                        segment.id(),
+                        segment.name(),
+                        segment.code(),
+                        count
+                ));
+            }
+        }
+
+        result.sort(Comparator.comparing(ConflictTrendReportResponse::month)
+                .thenComparing(ConflictTrendReportResponse::segmentName));
+
+        log.info("get conflict trends completed count={}", result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SmsHelpCardResponse getSmsHelpCard(Long parkId) {
+        log.info("get sms help card started parkId={}", parkId);
+        Park park = parks.require(parkId);
+        List<BoundarySegmentResponse> segmentList = segments.segments(parkId);
+
+        List<SmsHelpCardResponse.KeywordHelp> keywords = List.of(
+                new SmsHelpCardResponse.KeywordHelp("SIGHTING", "Elephant sighting", "ELE", "ALI", "YANAI"),
+                new SmsHelpCardResponse.KeywordHelp("CROP_DAMAGE", "Crop damage", "CROP", "GOVI", "PAYIR"),
+                new SmsHelpCardResponse.KeywordHelp("OTHER", "Other / emergency", "HELP", "UDAW", "UTHAVI")
+        );
+
+        List<SmsHelpCardResponse.LandmarkHelp> landmarks = segmentList.stream()
+                .map(s -> new SmsHelpCardResponse.LandmarkHelp(
+                        s.id(),
+                        s.code(),
+                        s.name(),
+                        s.centerLat(),
+                        s.centerLng()
+                ))
+                .sorted(Comparator.comparing(SmsHelpCardResponse.LandmarkHelp::code))
+                .toList();
+
+        SmsHelpCardResponse response = new SmsHelpCardResponse(
+                park.getId(),
+                park.getName(),
+                shortCode,
+                "TYPE LANDMARK [COUNT]",
+                "ELE KUMB 3",
+                SmsParser.HELP_MESSAGE,
+                keywords,
+                landmarks
+        );
+        log.info("get sms help card completed parkId={} landmarkCount={}", parkId, landmarks.size());
+        return response;
+    }
 }
+

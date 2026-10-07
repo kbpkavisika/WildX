@@ -32,4 +32,19 @@ public interface CommunityReportRepository extends JpaRepository<CommunityReport
     );
 
     Optional<CommunityReport> findTopByOrderByIdDesc();
+
+    @EntityGraph(attributePaths = {"park", "segment"})
+    List<CommunityReport> findByParkIdAndStatusInAndCreatedAtGreaterThanEqual(
+            Long parkId,
+            Collection<CommunityReportStatus> statuses,
+            Instant after
+    );
+
+    @EntityGraph(attributePaths = {"park", "segment"})
+    List<CommunityReport> findByParkIdAndStatusInAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            Long parkId,
+            Collection<CommunityReportStatus> statuses,
+            Instant start,
+            Instant until
+    );
 }

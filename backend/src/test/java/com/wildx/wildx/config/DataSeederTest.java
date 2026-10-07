@@ -45,10 +45,10 @@ class DataSeederTest {
     private final ZoneRepository zoneRepository = mock(ZoneRepository.class);
     private final AlertRuleRepository alertRuleRepository = mock(AlertRuleRepository.class);
     private final BoundarySegmentRepository boundarySegmentRepository = mock(BoundarySegmentRepository.class);
+    private final EscalationStepRepository escalationStepRepository = mock(EscalationStepRepository.class);
     private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder,
             animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository, escalationStepRepository);
-    private final EscalationStepRepository escalationStepRepository = mock(EscalationStepRepository.class);
-   
+
 
     @Test
     @SuppressWarnings("unchecked")
