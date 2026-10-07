@@ -32,4 +32,12 @@ public class Park extends Auditable {
     @Builder.Default
     @Column(nullable = false, columnDefinition = "integer default 7")
     private int neglectDays = 7;
+
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "integer default 120")
+    private int duplicateWindowMin = 120;
+
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "integer default 5")
+    private int hotspotThreshold = 5;
 }

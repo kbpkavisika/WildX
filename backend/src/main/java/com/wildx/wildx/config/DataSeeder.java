@@ -3,12 +3,14 @@ package com.wildx.wildx.config;
 import com.wildx.wildx.model.AlertRule;
 import com.wildx.wildx.model.Animal;
 import com.wildx.wildx.model.AppUser;
+import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AlertRuleRepository;
 import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
+import com.wildx.wildx.repository.BoundarySegmentRepository;
 import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
@@ -46,6 +48,7 @@ public class DataSeeder implements CommandLineRunner {
     private final DeviceRepository deviceRepository;
     private final ZoneRepository zoneRepository;
     private final AlertRuleRepository alertRuleRepository;
+    private final BoundarySegmentRepository boundarySegmentRepository;
 
     @Override
     @Transactional
@@ -68,7 +71,21 @@ public class DataSeeder implements CommandLineRunner {
                 seedRule(yala, ZoneType.ROAD, Severity.LOW, 60, 30),
                 seedRule(yala, ZoneType.VILLAGE_BUFFER, Severity.HIGH, 30, 10),
                 seedRule(yala, ZoneType.RESTRICTED, Severity.HIGH, 15, 10)));
+        boundarySegmentRepository.saveAll(List.of(
+                seedSegment(yala, "Kumbukgaha", "KUMB", 6.3150, 81.4100),
+                seedSegment(yala, "Palatupana", "PAL", 6.2700, 81.4400),
+                seedSegment(yala, "Katagamuwa", "KAT", 6.3800, 81.4800)));
         log.info("Seeded park {} and {} users", yala.getCode(), users.size());
+    }
+
+    private BoundarySegment seedSegment(Park park, String name, String code, double lat, double lng) {
+        BoundarySegment segment = new BoundarySegment();
+        segment.setPark(park);
+        segment.setName(name);
+        segment.setCode(code);
+        segment.setCenterLat(lat);
+        segment.setCenterLng(lng);
+        return segment;
     }
 
     private void seedDevices(Park park) {

@@ -2,12 +2,14 @@ package com.wildx.wildx.config;
 
 import com.wildx.wildx.model.AlertRule;
 import com.wildx.wildx.model.AppUser;
+import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AlertRuleRepository;
 import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
+import com.wildx.wildx.repository.BoundarySegmentRepository;
 import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
@@ -39,8 +41,9 @@ class DataSeederTest {
     private final DeviceRepository deviceRepository = mock(DeviceRepository.class);
     private final ZoneRepository zoneRepository = mock(ZoneRepository.class);
     private final AlertRuleRepository alertRuleRepository = mock(AlertRuleRepository.class);
+    private final BoundarySegmentRepository boundarySegmentRepository = mock(BoundarySegmentRepository.class);
     private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder,
-            animalRepository, deviceRepository, zoneRepository, alertRuleRepository);
+            animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository);
 
     @Test
     @SuppressWarnings("unchecked")
@@ -78,6 +81,10 @@ class DataSeederTest {
         assertThat(rules.getValue()).extracting(AlertRule::getZoneType).containsExactlyInAnyOrder(ZoneType.values());
         assertThat(rules.getValue()).filteredOn(rule -> rule.getZoneType() == ZoneType.FARMLAND)
                 .extracting(AlertRule::getSeverity).containsExactly(Severity.MEDIUM);
+
+        ArgumentCaptor<List<BoundarySegment>> segments = ArgumentCaptor.forClass(List.class);
+        verify(boundarySegmentRepository).saveAll(segments.capture());
+        assertThat(segments.getValue()).extracting(BoundarySegment::getCode).containsExactly("KUMB", "PAL", "KAT");
     }
 
     @Test
@@ -86,7 +93,7 @@ class DataSeederTest {
 
         seeder.run();
 
-        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository);
+        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository);
         verify(userRepository, never()).saveAll(any());
     }
 }
