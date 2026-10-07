@@ -7,6 +7,7 @@ import com.wildx.wildx.model.CollarFix;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.repository.CollarFixRepository;
 import com.wildx.wildx.repository.DeviceRepository;
+import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.service.CollarFixService;
 import com.wildx.wildx.type.DeviceType;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class CollarFixServiceImpl implements CollarFixService {
     private final DeviceRepository devices;
     private final CollarFixRepository fixes;
     private final Clock clock;
+    private final AlertService alerts;
 
     @Override
     @Transactional
@@ -37,11 +39,13 @@ public class CollarFixServiceImpl implements CollarFixService {
             log.info("ingest collar fix ignored duplicate deviceId={}", collar.getId());
             return new CollarFixResponse(collar.getId(), collar.getCode(), request.recordedAt(), false);
         }
-        fixes.save(fix(collar, request));
+        CollarFix fix = fix(collar, request);
+        fixes.save(fix);
         if (collar.getLastSeenAt() == null || request.recordedAt().isAfter(collar.getLastSeenAt())) {
             collar.setLastSeenAt(request.recordedAt());
             collar.setBatteryPct(request.batteryPct());
         }
+        alerts.raiseZoneBreaches(fix);
         log.info("ingest collar fix completed deviceId={}", collar.getId());
         return new CollarFixResponse(collar.getId(), collar.getCode(), request.recordedAt(), true);
     }

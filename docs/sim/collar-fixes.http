@@ -47,3 +47,136 @@ Content-Type: application/json
   "scenario": "WALK_INTO_ZONE",
   "zoneId": 1
 }
+
+### Simulator: night walk into the first zone
+POST {{baseUrl}}/parks/1/simulator/collar-fixes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "scenario": "NIGHT_WALK_INTO_ZONE",
+  "zoneId": 1
+}
+
+### List open alerts for the manager's park
+# @name openAlerts
+GET {{baseUrl}}/alerts?status=OPEN
+Authorization: Bearer {{login.response.body.token}}
+
+### Log in as the ranger
+# @name rangerLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ranger@wildx.lk",
+  "password": "password"
+}
+
+### Manager creates a patrol route
+# @name route
+POST {{baseUrl}}/routes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Notification demo route",
+  "pathGeojson": "{\"type\":\"LineString\",\"coordinates\":[[81.45,6.36],[81.50,6.37],[81.55,6.36]]}"
+}
+
+### Manager assigns today's patrol to the ranger
+# @name patrol
+POST {{baseUrl}}/patrols
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "routeId": {{route.response.body.id}},
+  "rangerId": {{rangerLogin.response.body.user.id}},
+  "scheduledDate": "{{$datetime 'YYYY-MM-DD'}}"
+}
+
+### Ranger starts the patrol, so new alerts notify them
+POST {{baseUrl}}/patrols/{{patrol.response.body.id}}/start
+Authorization: Bearer {{rangerLogin.response.body.token}}
+Content-Type: application/json
+
+{
+  "at": "{{$datetime iso8601}}"
+}
+
+### Ranger notifications with unread count
+# @name rangerNotifications
+GET {{baseUrl}}/me/notifications
+Authorization: Bearer {{rangerLogin.response.body.token}}
+
+### Ranger marks the newest notification read
+POST {{baseUrl}}/notifications/{{rangerNotifications.response.body.$.notifications[0].id}}/read
+Authorization: Bearer {{rangerLogin.response.body.token}}
+
+### Ranger acknowledges the newest open alert
+POST {{baseUrl}}/alerts/{{openAlerts.response.body.$[0].id}}/acknowledge
+Authorization: Bearer {{rangerLogin.response.body.token}}
+
+### Manager resolves it with a disposition
+POST {{baseUrl}}/alerts/{{openAlerts.response.body.$[0].id}}/resolve
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "disposition": "CONFLICT_AVERTED"
+}
+
+### Manager shortens the farmland acknowledgement SLA to 1 minute for an escalation demo
+PUT {{baseUrl}}/parks/1/alert-rules/FARMLAND
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "severity": "MEDIUM",
+  "cooldownMin": 30,
+  "ackSlaMin": 1
+}
+
+### Log in as the supervisor
+# @name supervisorLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "supervisor@wildx.lk",
+  "password": "password"
+}
+
+### Supervisor notifications: an unacknowledged alert escalates here after about 2 minutes
+GET {{baseUrl}}/me/notifications
+Authorization: Bearer {{supervisorLogin.response.body.token}}
+
+### Manager notifications: the next escalation step, one SLA period later
+GET {{baseUrl}}/me/notifications
+Authorization: Bearer {{login.response.body.token}}
+
+### Simulator: collar barely moves for 6 h, a CRITICAL mortality alert follows within a minute
+POST {{baseUrl}}/parks/1/simulator/collar-fixes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "scenario": "NOT_MOVING",
+  "lat": 6.33,
+  "lng": 81.45
+}
+
+### Simulator: collar battery at 10%, a device health alert follows within a minute
+POST {{baseUrl}}/parks/1/simulator/collar-fixes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "scenario": "LOW_BATTERY",
+  "lat": 6.33024,
+  "lng": 81.45
+}

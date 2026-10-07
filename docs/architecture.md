@@ -128,8 +128,9 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `device` | park_id FK, type (`COLLAR/CAMERA`), code UNIQUE, animal_id FK NULL, lat, lng (camera), expected_interval_min, battery_pct, last_seen_at |
 | `zone` | park_id FK, name, type (`FARMLAND/ROAD/VILLAGE_BUFFER/RESTRICTED`), polygon_geojson |
 | `alert_rule` | park_id FK, zone_type, severity, cooldown_min, ack_sla_min — UNIQUE(park_id, zone_type) |
+| `escalation_step` | park_id FK, step_no, role — UNIQUE(park_id, step_no) |
 | `collar_fix` | device_id FK, lat, lng, battery_pct, recorded_at — UNIQUE(device_id, recorded_at) |
-| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), escalation_level (0..2), sla_due_at, acknowledged_by FK, acknowledged_at, resolved_at, disposition |
+| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (default 0), ack_sla_min (copied from the rule, default 15), sla_due_at, acknowledged_by_id FK, acknowledged_at, resolved_at, disposition |
 | `camera_image` | device_id FK, file_path, captured_at, status (`PENDING/TAGGED/EMPTY/UNIDENTIFIABLE/RESTRICTED`), species, count, reviewed_by FK, reviewed_at — UNIQUE(device_id, captured_at) |
 | `audit_log` | user_id FK, action, entity, entity_id, reason |
 
@@ -175,6 +176,30 @@ A park has at most one alert rule per zone type, so rules are addressed by zone 
 
 The simulator replaces real collars in the demo. `POST /parks/{id}/simulator/collar-fixes` takes `{collarCode, scenario, lat, lng, zoneId}` and sends every generated fix through the same ingest logic, returning `{sent, stored, duplicates}`. Scenarios: `SINGLE_FIX`, `LOW_BATTERY` (battery 10), `DUPLICATE` (the same fix twice) and `NOT_MOVING` (seven hourly fixes over the last 6 h within about 30 m) use `lat`/`lng`; `WALK_INTO_ZONE` (six fixes over 25 min ending at the zone's vertex average) and `NIGHT_WALK_INTO_ZONE` (the same walk moved into 18:00–06:00 Asia/Colombo) use `zoneId`. The collar and zone must belong to the park.
 
+### Zone breach alerts (SEN-05, SEN-06)
+
+Every stored collar fix (not a duplicate) is checked against all zones of the collar's park. Each zone that contains the fix and whose type has an alert rule is handled separately, so overlapping zones can raise one alert each. The alert copies the rule's severity, stores the fix position and the fix time as `occurred_at`, starts `OPEN`, and gets `sla_due_at` = now + the rule's `ackSlaMin`. No alert is raised when the same animal already has an alert for the same zone whose `occurred_at` is less than `cooldownMin` before or after the fix time; a cool-down of 0 never suppresses. When the fix time in Asia/Colombo is between 18:00 and 06:00 the severity goes up one level, and `CRITICAL` stays `CRITICAL`.
+
+`GET /alerts?status=` returns the caller's park alerts, newest `occurred_at` first, optionally filtered by status, with the collar code, animal name and zone name.
+
+### Notifications (CMN-07, SEN-07)
+
+`NotificationService` (owned by UC3) is the shared way to notify users: `notifyUsers(userIds, title, body, link)` stores one `notification` row per user. `GET /me/notifications` returns `{unreadCount, notifications}` with the caller's latest 50 notifications, newest first; `unreadCount` counts every unread one and drives the badge. `POST /notifications/{id}/read` marks the caller's own notification read and keeps the first `read_at` on repeats; another user's notification returns 404. Both endpoints are for every role except Admin.
+
+For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, taken from `PatrolMonitorService.live`; the `app_user.on_duty` column is not used. Each raised alert sends every such ranger one notification, e.g. title "New HIGH zone breach alert", body "Gemunu (COL-001) entered Kumbukgaha farmland at 22:05" (Asia/Colombo time) and link `/ranger/alerts`. The SMS fallback (CMN-08) is added once UC4's `SmsService` exists.
+
+### Alert acknowledge and resolve (SEN-08, SEN-10)
+
+Rangers, supervisors and managers can act on alerts of their own park; an alert from another park returns 404. `POST /alerts/{id}/acknowledge` moves an `OPEN` alert to `ACKNOWLEDGED` and records `acknowledged_by_id` and `acknowledged_at`; repeating it on an `ACKNOWLEDGED` alert keeps the first values. `POST /alerts/{id}/resolve` with `{disposition}` (`CONFLICT_AVERTED`, `CONFLICT_OCCURRED`, `NO_ACTION`, `FALSE_ALARM`) moves an `OPEN` or `ACKNOWLEDGED` alert to `RESOLVED` and records `resolved_at` and the disposition; resolving an `OPEN` alert also records the resolver and time as the acknowledgement. Acting on a `RESOLVED` alert returns 400. Both return the alert, and alert responses include `acknowledgedByName`, `acknowledgedAt`, `resolvedAt` and `disposition`. Dispatching a responder (CMN-06) arrives with UC2's `DispatchService`, which resolves the alert through the same resolve logic when a dispatch completes.
+
+### Alert escalation (SEN-09)
+
+Each park lists its escalation steps in `escalation_step`, ordered by `step_no`; the seed gives Yala 1 = `SUPERVISOR` and 2 = `MANAGER`, and a park without steps never escalates. `AlertEscalationJob` runs every 60 s and escalates each `OPEN` alert whose `sla_due_at` has passed. Each alert is escalated in its own transaction under the alert row lock and is skipped when it is no longer `OPEN`, so an acknowledge or resolve always wins. Escalating notifies every active user of the park with the role of step `escalation_level + 1` (e.g. title "Escalated HIGH zone breach alert", body "Gemunu (COL-001) in Kumbukgaha farmland is not acknowledged since 22:05", link `/dashboard/alerts`), then adds 1 to `escalation_level` and moves `sla_due_at` on by `ack_sla_min`. After the last step the alert is not escalated again. Alert responses include `escalationLevel`. Users are listed through `AuthService.activeUserIds(parkId, role)`. Alerts without a zone are described by animal and collar code, or by device code, e.g. "Gemunu (COL-001) is not acknowledged since 22:05".
+
+### Device health and mortality alerts (SEN-11, SEN-12)
+
+`DeviceHealthJob` runs every 60 s and checks each device that has reported at least once (`last_seen_at` set) in its own transaction; a failing device does not stop the others. A `DEVICE_HEALTH` alert (`MEDIUM`, ack SLA 60 min) is raised when `last_seen_at` is older than 3 × `expected_interval_min` or `battery_pct` is below 15. A `MORTALITY` alert (`CRITICAL`, ack SLA 15 min) is raised for a collar when it has a fix at least 6 h before its latest fix and every fix from that one to the latest is within 50 m of the latest fix. A device never gets a second alert of the same type while an earlier one is `OPEN` or `ACKNOWLEDGED`. These alerts have no zone, use the collar's latest fix (or the camera's location) as position and the detection time as `occurred_at`, escalate like zone breaches, and notify on-duty rangers, e.g. "COL-001 battery is at 10%", "COL-001 has not reported since 21:00" or "Gemunu (COL-001) has moved less than 50 m in 6 h".
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
@@ -192,8 +217,9 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}`, `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, SUPERVISOR/MANAGER triage |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
 | Shared | `GET /responders?lat=&lng=`, which returns on-duty rangers sorted by distance | — |
-| Shared | `GET /me/notifications`, `POST /notifications/{id}/read` | any |
-| UC3 | `GET /alerts?status=`, `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | staff |
+| Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | any except ADMIN |
+| UC3 | `GET /alerts?status=` | staff |
+| UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, SUPERVISOR, MANAGER |
 | UC3 | `GET /camera-images?status=`, `POST /camera-images/{id}/tag`, `GET /camera-images/{id}/file?reason=` (audited if restricted) | MANAGER, LEL (restricted) |
 | UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart) | **api-key** |
 | UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}` | ADMIN, MANAGER |
@@ -214,9 +240,9 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 
 ### 7.1 Collar fix → alert (SEN-04 to SEN-09)
 - Store the fix (duplicates ignored) and update the device's last seen and battery.
-- If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised within the cool-down. A zone type without a rule raises no alert. Night-time raises severity one level.
-- A scheduled job escalates unacknowledged alerts after each SLA period: Supervisor, then Manager.
-- A second scheduled job raises device-health and mortality alerts, never duplicating an open one.
+- If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised for the same animal and zone within the cool-down of the fix time. A zone type without a rule raises no alert. A fix time at night raises severity one level.
+- A scheduled job escalates unacknowledged alerts after each SLA period through the park's escalation steps (Supervisor, then Manager for Yala).
+- A second scheduled job (`DeviceHealthJob`) raises device-health and mortality alerts, never while an earlier alert of the same type for the device is still open or acknowledged.
 
 ### 7.2 Inbound SMS (COM-03 to COM-05)
 - Format `TYPE LANDMARK [COUNT]`, case-insensitive. Unparseable → help reply.

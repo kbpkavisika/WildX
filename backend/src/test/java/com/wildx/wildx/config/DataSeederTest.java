@@ -4,6 +4,7 @@ import com.wildx.wildx.model.AlertRule;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.Device;
+import com.wildx.wildx.model.EscalationStep;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AlertRuleRepository;
@@ -11,6 +12,7 @@ import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.BoundarySegmentRepository;
 import com.wildx.wildx.repository.DeviceRepository;
+import com.wildx.wildx.repository.EscalationStepRepository;
 import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
@@ -25,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -43,7 +46,9 @@ class DataSeederTest {
     private final AlertRuleRepository alertRuleRepository = mock(AlertRuleRepository.class);
     private final BoundarySegmentRepository boundarySegmentRepository = mock(BoundarySegmentRepository.class);
     private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder,
-            animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository);
+            animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository, escalationStepRepository);
+    private final EscalationStepRepository escalationStepRepository = mock(EscalationStepRepository.class);
+   
 
     @Test
     @SuppressWarnings("unchecked")
@@ -85,6 +90,10 @@ class DataSeederTest {
         ArgumentCaptor<List<BoundarySegment>> segments = ArgumentCaptor.forClass(List.class);
         verify(boundarySegmentRepository).saveAll(segments.capture());
         assertThat(segments.getValue()).extracting(BoundarySegment::getCode).containsExactly("KUMB", "PAL", "KAT");
+        ArgumentCaptor<List<EscalationStep>> steps = ArgumentCaptor.forClass(List.class);
+        verify(escalationStepRepository).saveAll(steps.capture());
+        assertThat(steps.getValue()).extracting(EscalationStep::getStepNo, EscalationStep::getRole)
+                .containsExactly(tuple(1, Role.SUPERVISOR), tuple(2, Role.MANAGER));
     }
 
     @Test
@@ -93,7 +102,9 @@ class DataSeederTest {
 
         seeder.run();
 
-        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository);
+
+        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository ,escalationStepRepository);
+
         verify(userRepository, never()).saveAll(any());
     }
 }
