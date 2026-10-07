@@ -100,6 +100,32 @@ class AuthServiceImplTest {
         when(userRepository.findByEmailIgnoreCase(anyString())).thenReturn(Optional.of(user));
     }
 
+    @Test
+    void currentUserRejectsInactiveAndStaleClaims() {
+        Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
+        AppUser user = user(Role.RANGER, park, true);
+        when(userRepository.findWithParkById(7L)).thenReturn(Optional.of(user));
+        Jwt jwt = Jwt.withTokenValue("token").header("alg", "HS256").subject("7")
+                .claim("role", "RANGER").claim("parkId", 3L).build();
+        assertThat(authService.current(jwt).parkId()).isEqualTo(3L);
+        user.setActive(false);
+        assertThatThrownBy(() -> authService.current(jwt)).isInstanceOf(UnauthorizedException.class);
+        user.setActive(true);
+        user.setRole(Role.MANAGER);
+        assertThatThrownBy(() -> authService.current(jwt)).isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    void assignedRangerMustBeActiveAndInCallerPark() {
+        Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
+        AppUser user = user(Role.RANGER, park, true);
+        when(userRepository.findWithParkById(7L)).thenReturn(Optional.of(user));
+        assertThat(authService.requireRanger(7L, 3L)).isEqualTo(user);
+        assertThatThrownBy(() -> authService.requireRanger(7L, 4L)).isInstanceOf(IllegalArgumentException.class);
+        user.setActive(false);
+        assertThatThrownBy(() -> authService.requireRanger(7L, 3L)).isInstanceOf(IllegalArgumentException.class);
+    }
+
     private AppUser user(Role role, Park park, boolean active) {
         AppUser user = AppUser.builder()
                 .park(park)

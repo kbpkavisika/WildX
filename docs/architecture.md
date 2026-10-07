@@ -108,8 +108,8 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `sector` | park_id FK, name, polygon_geojson |
 | `app_user` | park_id FK NULL (null for Admin), name, email UNIQUE, phone, password_hash, role, language (`en`/`si`/`ta`), active, on_duty, last_lat, last_lng, last_seen_at |
 | `patrol_route` | park_id FK, name, path_geojson (LineString) |
-| `patrol` | route_id FK, ranger_id FK, scheduled_date, status (`PLANNED/ACTIVE/COMPLETED/CANCELLED`), started_at, ended_at |
-| `track_point` | patrol_id FK, lat, lng, accuracy_m, recorded_at, sector_id FK NULL, is_waypoint, note — UNIQUE(patrol_id, recorded_at) |
+| `patrol` | route_id FK, ranger_id FK, scheduled_date, status (`PLANNED/ACTIVE/COMPLETED/CANCELLED`), started_at, ended_at, gps_available, last_contact_at |
+| `track_point` | patrol_id FK, lat, lng, accuracy_m, recorded_at, sector_id FK NULL, is_waypoint, note, waypoint_type — UNIQUE(patrol_id, recorded_at) |
 | `notification` | user_id FK, title, body, link, read_at |
 | `dispatch` | source_type (`INCIDENT/ALERT/COMMUNITY_REPORT`), source_id, responder_id FK, assigned_by FK, status (`ASSIGNED/ACKNOWLEDGED/COMPLETED/DECLINED`), assigned_at, acknowledged_at, completed_at, outcome, note |
 
@@ -146,6 +146,20 @@ The enums live in `type/`:
 - Disposition: CONFLICT_AVERTED, CONFLICT_OCCURRED, NO_ACTION, FALSE_ALARM
 
 ## 6. REST API
+
+### Patrol backend contract
+
+Patrol APIs use the existing JWT roles and scope every read/write to the caller's current park. Requests are checked against the active database user so deactivated users or outdated role/park claims cannot continue using patrol APIs.
+
+Route paths are GeoJSON LineStrings. Sector polygons support holes; exterior boundaries are included and hole boundaries excluded. Overlapping sectors resolve to the lowest sector ID. Geometry input is validated before persistence.
+
+The backend accepts validated timestamped tracking batches and samples automatic points when 60 seconds or 50 metres have passed since the previous accepted point. First points are always recorded; new out-of-order points are rejected. Device scheduling, GPS acquisition, banners and map rendering remain frontend responsibilities. Manual waypoints are flagged track points; their optional pick-list value is a `WaypointType` enum (CHECKPOINT, OBSERVATION, REST or OTHER), stored as `waypoint_type`. Waypoints bypass automatic sampling. `POST /patrols/{id}/gps` accepts `{available}` and preserves patrol state while GPS is unavailable. Location uploads restore GPS availability.
+
+Patrol transitions and point writes lock the patrol row. Repeated start/end requests return the saved state. Upload retries use the unique patrol/timestamp key; a matching automatic point can be upgraded to a waypoint without replacing its coordinates. Device timestamps are truncated to PostgreSQL microsecond precision before validation and persistence. Timestamps must be ordered within patrol bounds, and future timestamps are rejected. Batch retries may repeat sampled-out automatic points following a matching saved anchor; they never insert historical points.
+
+Today and date-range boundaries use Asia/Colombo. Coverage includes never-visited sectors, derives neglect from the park setting and orders neglected sectors first. GET `/patrols/history` returns completed patrols with distance in metres and duration in seconds, newest scheduled date first; GET `/patrols/{id}/track` provides replay points in timestamp order. Live responses expose the last recorded location/time and consider it offline after five minutes without an accepted patrol request. GPS-status requests can serve as heartbeats during GPS loss.
+
+Sector configuration is exposed at `/parks/{id}/sectors`; updates do not retroactively remap historical points. Sector deletion is rejected when track points reference it. `PUT /parks/{id}/coverage-settings` accepts `{neglectDays}` for a manager's own park. GET `/reports/coverage?from=YYYY-MM-DD&to=YYYY-MM-DD` uses inclusive park-local dates and returns every sector with its recorded point count, distinct patrol count and latest visit within the range. Missing or reversed dates are rejected. `format=csv` downloads UTF-8 CSV with escaped fields and spreadsheet-formula protection; the default is JSON.
 
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
