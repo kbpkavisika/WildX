@@ -2,6 +2,7 @@ package com.wildx.wildx.repository;
 
 import com.wildx.wildx.model.Alert;
 import com.wildx.wildx.type.AlertStatus;
+import com.wildx.wildx.type.AlertType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,5 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Alert> findLockedById(Long id);
     List<Alert> findByStatusAndSlaDueAtLessThanEqual(AlertStatus status, Instant time);
+    boolean existsByDeviceIdAndTypeAndStatusNot(Long deviceId, AlertType type, AlertStatus status);
 }

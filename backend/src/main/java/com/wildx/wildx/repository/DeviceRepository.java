@@ -10,4 +10,5 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
     @EntityGraph(attributePaths = {"park", "animal"})
     Optional<Device> findByIdAndParkId(Long id, Long parkId);
     Optional<Device> findByCode(String code);
+    List<Device> findByLastSeenAtIsNotNullOrderByIdAsc();
 }
