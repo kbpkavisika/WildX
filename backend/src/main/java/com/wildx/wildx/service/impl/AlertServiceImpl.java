@@ -23,6 +23,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,7 @@ public class AlertServiceImpl implements AlertService {
         alert.setLng(fix.getLng());
         alert.setStatus(AlertStatus.OPEN);
         alert.setOccurredAt(fix.getRecordedAt());
-        alert.setSlaDueAt(clock.instant().plus(Duration.ofMinutes(rule.getAckSlaMin())));
+        alert.setSlaDueAt(clock.instant().truncatedTo(ChronoUnit.MICROS).plus(Duration.ofMinutes(rule.getAckSlaMin())));
         return alert;
     }
 }

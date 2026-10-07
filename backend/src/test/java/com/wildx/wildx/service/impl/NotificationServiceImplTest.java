@@ -70,6 +70,14 @@ class NotificationServiceImplTest {
         verify(notifications, never()).save(any());
     }
 
+    @Test
+    void storesReadTimeAtDatabasePrecision() {
+        var precise = new NotificationServiceImpl(notifications, entityManager,
+                Clock.fixed(NOW.plusNanos(958_315_200), ZoneOffset.UTC));
+        when(notifications.findByIdAndUserId(1L, 4L)).thenReturn(Optional.of(notification(1L, null)));
+        assertThat(precise.markRead(4L, 1L).readAt()).isEqualTo(NOW.plusNanos(958_315_000));
+    }
+
     private Notification notification(Long id, Instant readAt) {
         Notification notification = new Notification();
         notification.setId(id);

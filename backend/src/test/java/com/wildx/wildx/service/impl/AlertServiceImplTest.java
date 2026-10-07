@@ -174,6 +174,17 @@ class AlertServiceImplTest {
         verifyNoInteractions(notifications);
     }
 
+    @Test
+    void storesSlaDeadlineAtDatabasePrecision() {
+        var precise = new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW.plusNanos(958_315_200), ZoneOffset.UTC),
+                patrols, notifications);
+        stubZones(zone(10L, ZoneType.FARMLAND, FARMLAND));
+        stubRules(rule(ZoneType.FARMLAND, Severity.MEDIUM, 30, 15));
+        precise.raiseZoneBreaches(fix(6.305, 81.405));
+        assertThat(savedAlerts(1).getFirst().getSlaDueAt())
+                .isEqualTo(NOW.plusNanos(958_315_000).plus(Duration.ofMinutes(15)));
+    }
+
     private PatrolLiveResponse onPatrol(Long rangerId) {
         PatrolResponse patrol = new PatrolResponse(rangerId * 10, null, rangerId, "Ranger " + rangerId,
                 LocalDate.of(2026, 10, 7), PatrolStatus.ACTIVE, NOW, null, true);

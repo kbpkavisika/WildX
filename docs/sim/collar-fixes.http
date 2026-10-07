@@ -62,3 +62,54 @@ Content-Type: application/json
 ### List open alerts for the manager's park
 GET {{baseUrl}}/alerts?status=OPEN
 Authorization: Bearer {{login.response.body.token}}
+
+### Log in as the ranger
+# @name rangerLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ranger@wildx.lk",
+  "password": "password"
+}
+
+### Manager creates a patrol route
+# @name route
+POST {{baseUrl}}/routes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Notification demo route",
+  "pathGeojson": "{\"type\":\"LineString\",\"coordinates\":[[81.45,6.36],[81.50,6.37],[81.55,6.36]]}"
+}
+
+### Manager assigns today's patrol to the ranger
+# @name patrol
+POST {{baseUrl}}/patrols
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "routeId": {{route.response.body.id}},
+  "rangerId": {{rangerLogin.response.body.user.id}},
+  "scheduledDate": "{{$datetime 'YYYY-MM-DD'}}"
+}
+
+### Ranger starts the patrol, so new alerts notify them
+POST {{baseUrl}}/patrols/{{patrol.response.body.id}}/start
+Authorization: Bearer {{rangerLogin.response.body.token}}
+Content-Type: application/json
+
+{
+  "at": "{{$datetime iso8601}}"
+}
+
+### Ranger notifications with unread count
+# @name rangerNotifications
+GET {{baseUrl}}/me/notifications
+Authorization: Bearer {{rangerLogin.response.body.token}}
+
+### Ranger marks the newest notification read
+POST {{baseUrl}}/notifications/{{rangerNotifications.response.body.$.notifications[0].id}}/read
+Authorization: Bearer {{rangerLogin.response.body.token}}

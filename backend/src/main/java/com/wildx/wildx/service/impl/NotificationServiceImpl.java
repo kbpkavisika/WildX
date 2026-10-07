@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 
@@ -51,7 +52,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = notifications.findByIdAndUserId(notificationId, userId)
                 .orElseThrow(() -> new NotFoundException("Notification not found"));
         if (notification.getReadAt() == null) {
-            notification.setReadAt(clock.instant());
+            notification.setReadAt(clock.instant().truncatedTo(ChronoUnit.MICROS));
         }
         log.info("mark notification read completed notificationId={}", notificationId);
         return NotificationResponse.from(notification);
