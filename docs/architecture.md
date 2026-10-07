@@ -194,7 +194,11 @@ Rangers, supervisors and managers can act on alerts of their own park; an alert 
 
 ### Alert escalation (SEN-09)
 
-Each park lists its escalation steps in `escalation_step`, ordered by `step_no`; the seed gives Yala 1 = `SUPERVISOR` and 2 = `MANAGER`, and a park without steps never escalates. `AlertEscalationJob` runs every 60 s and escalates each `OPEN` alert whose `sla_due_at` has passed. Each alert is escalated in its own transaction under the alert row lock and is skipped when it is no longer `OPEN`, so an acknowledge or resolve always wins. Escalating notifies every active user of the park with the role of step `escalation_level + 1` (e.g. title "Escalated HIGH zone breach alert", body "Gemunu (COL-001) in Kumbukgaha farmland is not acknowledged since 22:05", link `/dashboard/alerts`), then adds 1 to `escalation_level` and moves `sla_due_at` on by `ack_sla_min`. After the last step the alert is not escalated again. Alert responses include `escalationLevel`. Users are listed through `AuthService.activeUserIds(parkId, role)`.
+Each park lists its escalation steps in `escalation_step`, ordered by `step_no`; the seed gives Yala 1 = `SUPERVISOR` and 2 = `MANAGER`, and a park without steps never escalates. `AlertEscalationJob` runs every 60 s and escalates each `OPEN` alert whose `sla_due_at` has passed. Each alert is escalated in its own transaction under the alert row lock and is skipped when it is no longer `OPEN`, so an acknowledge or resolve always wins. Escalating notifies every active user of the park with the role of step `escalation_level + 1` (e.g. title "Escalated HIGH zone breach alert", body "Gemunu (COL-001) in Kumbukgaha farmland is not acknowledged since 22:05", link `/dashboard/alerts`), then adds 1 to `escalation_level` and moves `sla_due_at` on by `ack_sla_min`. After the last step the alert is not escalated again. Alert responses include `escalationLevel`. Users are listed through `AuthService.activeUserIds(parkId, role)`. Alerts without a zone are described by animal and collar code, or by device code, e.g. "Gemunu (COL-001) is not acknowledged since 22:05".
+
+### Device health and mortality alerts (SEN-11, SEN-12)
+
+`DeviceHealthJob` runs every 60 s and checks each device that has reported at least once (`last_seen_at` set) in its own transaction; a failing device does not stop the others. A `DEVICE_HEALTH` alert (`MEDIUM`, ack SLA 60 min) is raised when `last_seen_at` is older than 3 × `expected_interval_min` or `battery_pct` is below 15. A `MORTALITY` alert (`CRITICAL`, ack SLA 15 min) is raised for a collar when it has a fix at least 6 h before its latest fix and every fix from that one to the latest is within 50 m of the latest fix. A device never gets a second alert of the same type while an earlier one is `OPEN` or `ACKNOWLEDGED`. These alerts have no zone, use the collar's latest fix (or the camera's location) as position and the detection time as `occurred_at`, escalate like zone breaches, and notify on-duty rangers, e.g. "COL-001 battery is at 10%", "COL-001 has not reported since 21:00" or "Gemunu (COL-001) has moved less than 50 m in 6 h".
 
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
@@ -238,7 +242,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 - Store the fix (duplicates ignored) and update the device's last seen and battery.
 - If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised for the same animal and zone within the cool-down of the fix time. A zone type without a rule raises no alert. A fix time at night raises severity one level.
 - A scheduled job escalates unacknowledged alerts after each SLA period through the park's escalation steps (Supervisor, then Manager for Yala).
-- A second scheduled job raises device-health and mortality alerts, never duplicating an open one.
+- A second scheduled job (`DeviceHealthJob`) raises device-health and mortality alerts, never while an earlier alert of the same type for the device is still open or acknowledged.
 
 ### 7.2 Inbound SMS (COM-03 to COM-05)
 - Format `TYPE LANDMARK [COUNT]`, case-insensitive. Unparseable → help reply.
