@@ -47,3 +47,18 @@ Content-Type: application/json
   "scenario": "WALK_INTO_ZONE",
   "zoneId": 1
 }
+
+### Simulator: night walk into the first zone
+POST {{baseUrl}}/parks/1/simulator/collar-fixes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "collarCode": "COL-001",
+  "scenario": "NIGHT_WALK_INTO_ZONE",
+  "zoneId": 1
+}
+
+### List open alerts for the manager's park
+GET {{baseUrl}}/alerts?status=OPEN
+Authorization: Bearer {{login.response.body.token}}
