@@ -4,6 +4,7 @@ import com.wildx.wildx.dto.CollarFixRequest;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.*;
+import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.type.DeviceType;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -17,8 +18,9 @@ class CollarFixServiceImplTest {
     private static final Instant NOW = Instant.parse("2026-10-07T12:00:00Z");
     private final DeviceRepository devices = mock(DeviceRepository.class);
     private final CollarFixRepository fixes = mock(CollarFixRepository.class);
+    private final AlertService alerts = mock(AlertService.class);
     private final CollarFixServiceImpl service =
-            new CollarFixServiceImpl(devices, fixes, Clock.fixed(NOW, ZoneOffset.UTC));
+            new CollarFixServiceImpl(devices, fixes, Clock.fixed(NOW, ZoneOffset.UTC), alerts);
     private final Device collar = device(DeviceType.COLLAR);
 
     @Test
@@ -35,6 +37,7 @@ class CollarFixServiceImplTest {
         assertThat(saved.getValue().getBatteryPct()).isEqualTo(77);
         assertThat(collar.getLastSeenAt()).isEqualTo(NOW.minusSeconds(60));
         assertThat(collar.getBatteryPct()).isEqualTo(77);
+        verify(alerts).raiseZoneBreaches(saved.getValue());
     }
 
     @Test
@@ -44,6 +47,7 @@ class CollarFixServiceImplTest {
         var result = service.ingest(new CollarFixRequest("COL-001", 6.31, 81.41, NOW, 77));
         assertThat(result.stored()).isFalse();
         verify(fixes, never()).save(any());
+        verifyNoInteractions(alerts);
         assertThat(collar.getLastSeenAt()).isNull();
     }
 
@@ -56,6 +60,7 @@ class CollarFixServiceImplTest {
         verify(fixes).save(any());
         assertThat(collar.getLastSeenAt()).isEqualTo(NOW);
         assertThat(collar.getBatteryPct()).isEqualTo(50);
+        verify(alerts).raiseZoneBreaches(any());
     }
 
     @Test
