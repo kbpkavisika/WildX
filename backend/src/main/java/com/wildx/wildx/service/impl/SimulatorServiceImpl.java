@@ -7,6 +7,7 @@ import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.ZoneRepository;
+import com.wildx.wildx.service.CameraImageService;
 import com.wildx.wildx.service.CollarFixService;
 import com.wildx.wildx.service.SimulatorService;
 import com.wildx.wildx.type.DeviceType;
@@ -16,6 +17,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,11 +43,15 @@ public class SimulatorServiceImpl implements SimulatorService {
     private static final int STILL_HOURS = 6;
     private static final double STILL_STEP_DEG = 0.00004;
     private static final Duration NIGHT_SHIFT = Duration.ofHours(12);
+    private static final Duration CAMERA_SHOT_GAP = Duration.ofSeconds(20);
+    private static final int PLACEHOLDER_WIDTH = 320;
+    private static final int PLACEHOLDER_HEIGHT = 240;
 
     private final DeviceRepository devices;
     private final ZoneRepository zones;
     private final CollarFixService collarFixes;
     private final Clock clock;
+    private final CameraImageService cameraImages;
 
     @Override
     @Transactional
@@ -64,6 +76,40 @@ public class SimulatorServiceImpl implements SimulatorService {
         int stored = (int) generated.stream().map(collarFixes::ingest).filter(CollarFixResponse::stored).count();
         log.info("simulate collar fixes completed parkId={} stored={}", parkId, stored);
         return new SimulationResponse(generated.size(), stored, generated.size() - stored);
+    }
+
+    @Override
+    @Transactional
+    public SimulationResponse simulateCamera(Long parkId, CameraSimulationRequest request) {
+        log.info("simulate camera images started parkId={} count={}", parkId, request.count());
+        String code = request.cameraCode().strip();
+        devices.findByCode(code)
+                .filter(device -> device.getType() == DeviceType.CAMERA && device.getPark().getId().equals(parkId))
+                .orElseThrow(() -> new NotFoundException("Camera not found"));
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        int stored = 0;
+        for (int shot = 0; shot < request.count(); shot++) {
+            Instant capturedAt = now.minus(CAMERA_SHOT_GAP.multipliedBy(request.count() - 1L - shot));
+            if (cameraImages.ingest(code, capturedAt, placeholder(shot)).stored()) {
+                stored++;
+            }
+        }
+        log.info("simulate camera images completed parkId={} stored={}", parkId, stored);
+        return new SimulationResponse(request.count(), stored, request.count() - stored);
+    }
+
+    private byte[] placeholder(int shot) {
+        BufferedImage image = new BufferedImage(PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        graphics.setColor(new Color(40, 90 + shot * 15, 40));
+        graphics.fillRect(0, 0, PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT);
+        graphics.dispose();
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            ImageIO.write(image, "jpg", out);
+            return out.toByteArray();
+        } catch (IOException ex) {
+            throw new UncheckedIOException("Could not create placeholder image", ex);
+        }
     }
 
     private Point point(SimulationRequest request) {

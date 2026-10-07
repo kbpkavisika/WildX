@@ -60,6 +60,24 @@ class SimulatorControllerTest {
         verifyNoInteractions(simulator);
     }
 
+    @Test
+    void managersAndAdminsSimulateCameraBurstsWithValidatedCounts() throws Exception {
+        when(simulator.simulateCamera(eq(1L), any())).thenReturn(new SimulationResponse(3, 3, 0));
+        mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("MANAGER"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"cameraCode\":\"CAM-001\",\"count\":3}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.stored").value(3));
+        verify(simulator).simulateCamera(eq(1L), argThat(request -> request.count() == 3));
+        for (String body : new String[] {"{\"cameraCode\":\"CAM-001\",\"count\":0}",
+                "{\"cameraCode\":\"CAM-001\",\"count\":11}", "{\"count\":2}"}) {
+            mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("ADMIN"))
+                    .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        }
+        mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("LEL"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"cameraCode\":\"CAM-001\",\"count\":3}"))
+                .andExpect(status().isForbidden());
+        verify(simulator, times(1)).simulateCamera(any(), any());
+    }
+
     private String token(String role) {
         Instant now = Instant.now();
         var claims = JwtClaimsSet.builder().subject("7").issuedAt(now).expiresAt(now.plusSeconds(60))

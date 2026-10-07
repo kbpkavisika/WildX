@@ -6,6 +6,7 @@ import com.wildx.wildx.dto.*;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.*;
+import com.wildx.wildx.service.CameraImageService;
 import com.wildx.wildx.service.CollarFixService;
 import com.wildx.wildx.type.DeviceType;
 import com.wildx.wildx.type.SimulationScenario;
@@ -13,6 +14,7 @@ import com.wildx.wildx.util.GeoUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import java.time.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
@@ -28,6 +30,7 @@ class SimulatorServiceImplTest {
     private final DeviceRepository devices = mock(DeviceRepository.class);
     private final ZoneRepository zones = mock(ZoneRepository.class);
     private final CollarFixService collarFixes = mock(CollarFixService.class);
+    private final CameraImageService cameraImages = mock(CameraImageService.class);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
 
     @Test
@@ -128,9 +131,53 @@ class SimulatorServiceImplTest {
         verifyNoInteractions(collarFixes);
     }
 
+    @Test
+    void cameraBurstSendsRealJpegsTwentySecondsApartEndingNow() {
+        var service = service(DAY);
+        stubCamera(park);
+        when(cameraImages.ingest(eq("CAM-001"), any(), any()))
+                .thenReturn(upload(true), upload(true), upload(false));
+        var result = service.simulateCamera(1L, new CameraSimulationRequest(" CAM-001 ", 3));
+        assertThat(result).isEqualTo(new SimulationResponse(3, 2, 1));
+        ArgumentCaptor<Instant> times = ArgumentCaptor.forClass(Instant.class);
+        ArgumentCaptor<byte[]> files = ArgumentCaptor.forClass(byte[].class);
+        verify(cameraImages, times(3)).ingest(eq("CAM-001"), times.capture(), files.capture());
+        assertThat(times.getAllValues()).containsExactly(DAY.minusSeconds(40), DAY.minusSeconds(20), DAY);
+        assertThat(files.getAllValues()).allSatisfy(jpeg -> {
+            assertThat(jpeg.length).isGreaterThan(100);
+            assertThat(Arrays.copyOf(jpeg, 3)).containsExactly(0xFF, 0xD8, 0xFF);
+        });
+        assertThat(files.getAllValues().get(0)).isNotEqualTo(files.getAllValues().get(2));
+    }
+
+    @Test
+    void cameraSimulationRejectsForeignAndNonCameraDevices() {
+        var service = service(DAY);
+        stubCamera(Park.builder().id(2L).name("Wilpattu").code("WIL").build());
+        assertThatThrownBy(() -> service.simulateCamera(1L, new CameraSimulationRequest("CAM-001", 2)))
+                .isInstanceOf(NotFoundException.class).hasMessage("Camera not found");
+        stubCollar(DeviceType.COLLAR, park);
+        assertThatThrownBy(() -> service.simulateCamera(1L, new CameraSimulationRequest("COL-001", 2)))
+                .isInstanceOf(NotFoundException.class);
+        verifyNoInteractions(cameraImages);
+    }
+
+    private void stubCamera(Park owner) {
+        Device camera = new Device();
+        camera.setId(4L);
+        camera.setPark(owner);
+        camera.setType(DeviceType.CAMERA);
+        camera.setCode("CAM-001");
+        when(devices.findByCode("CAM-001")).thenReturn(Optional.of(camera));
+    }
+
+    private CameraImageUploadResponse upload(boolean stored) {
+        return new CameraImageUploadResponse(40L, "CAM-001", DAY, stored);
+    }
+
     private SimulatorServiceImpl service(Instant now) {
         when(collarFixes.ingest(any())).thenReturn(stored(true));
-        return new SimulatorServiceImpl(devices, zones, collarFixes, Clock.fixed(now, ZoneOffset.UTC));
+        return new SimulatorServiceImpl(devices, zones, collarFixes, Clock.fixed(now, ZoneOffset.UTC), cameraImages);
     }
 
     private void stubCollar(DeviceType type, Park owner) {
