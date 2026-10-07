@@ -128,8 +128,9 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `device` | park_id FK, type (`COLLAR/CAMERA`), code UNIQUE, animal_id FK NULL, lat, lng (camera), expected_interval_min, battery_pct, last_seen_at |
 | `zone` | park_id FK, name, type (`FARMLAND/ROAD/VILLAGE_BUFFER/RESTRICTED`), polygon_geojson |
 | `alert_rule` | park_id FK, zone_type, severity, cooldown_min, ack_sla_min — UNIQUE(park_id, zone_type) |
+| `escalation_step` | park_id FK, step_no, role — UNIQUE(park_id, step_no) |
 | `collar_fix` | device_id FK, lat, lng, battery_pct, recorded_at — UNIQUE(device_id, recorded_at) |
-| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (0..2), sla_due_at, acknowledged_by_id FK, acknowledged_at, resolved_at, disposition |
+| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (default 0), ack_sla_min (copied from the rule, default 15), sla_due_at, acknowledged_by_id FK, acknowledged_at, resolved_at, disposition |
 | `camera_image` | device_id FK, file_path, captured_at, status (`PENDING/TAGGED/EMPTY/UNIDENTIFIABLE/RESTRICTED`), species, count, reviewed_by FK, reviewed_at — UNIQUE(device_id, captured_at) |
 | `audit_log` | user_id FK, action, entity, entity_id, reason |
 
@@ -191,6 +192,10 @@ For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, t
 
 Rangers, supervisors and managers can act on alerts of their own park; an alert from another park returns 404. `POST /alerts/{id}/acknowledge` moves an `OPEN` alert to `ACKNOWLEDGED` and records `acknowledged_by_id` and `acknowledged_at`; repeating it on an `ACKNOWLEDGED` alert keeps the first values. `POST /alerts/{id}/resolve` with `{disposition}` (`CONFLICT_AVERTED`, `CONFLICT_OCCURRED`, `NO_ACTION`, `FALSE_ALARM`) moves an `OPEN` or `ACKNOWLEDGED` alert to `RESOLVED` and records `resolved_at` and the disposition; resolving an `OPEN` alert also records the resolver and time as the acknowledgement. Acting on a `RESOLVED` alert returns 400. Both return the alert, and alert responses include `acknowledgedByName`, `acknowledgedAt`, `resolvedAt` and `disposition`. Dispatching a responder (CMN-06) arrives with UC2's `DispatchService`, which resolves the alert through the same resolve logic when a dispatch completes.
 
+### Alert escalation (SEN-09)
+
+Each park lists its escalation steps in `escalation_step`, ordered by `step_no`; the seed gives Yala 1 = `SUPERVISOR` and 2 = `MANAGER`, and a park without steps never escalates. `AlertEscalationJob` runs every 60 s and escalates each `OPEN` alert whose `sla_due_at` has passed. Each alert is escalated in its own transaction under the alert row lock and is skipped when it is no longer `OPEN`, so an acknowledge or resolve always wins. Escalating notifies every active user of the park with the role of step `escalation_level + 1` (e.g. title "Escalated HIGH zone breach alert", body "Gemunu (COL-001) in Kumbukgaha farmland is not acknowledged since 22:05", link `/dashboard/alerts`), then adds 1 to `escalation_level` and moves `sla_due_at` on by `ack_sla_min`. After the last step the alert is not escalated again. Alert responses include `escalationLevel`. Users are listed through `AuthService.activeUserIds(parkId, role)`.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
@@ -232,7 +237,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 ### 7.1 Collar fix → alert (SEN-04 to SEN-09)
 - Store the fix (duplicates ignored) and update the device's last seen and battery.
 - If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised for the same animal and zone within the cool-down of the fix time. A zone type without a rule raises no alert. A fix time at night raises severity one level.
-- A scheduled job escalates unacknowledged alerts after each SLA period: Supervisor, then Manager.
+- A scheduled job escalates unacknowledged alerts after each SLA period through the park's escalation steps (Supervisor, then Manager for Yala).
 - A second scheduled job raises device-health and mortality alerts, never duplicating an open one.
 
 ### 7.2 Inbound SMS (COM-03 to COM-05)
