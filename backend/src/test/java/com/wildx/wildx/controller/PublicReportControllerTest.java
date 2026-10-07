@@ -2,6 +2,7 @@ package com.wildx.wildx.controller;
 
 import com.wildx.wildx.config.SecurityConfig;
 import com.wildx.wildx.dto.PublicReportResponse;
+import com.wildx.wildx.dto.SmsHelpCardResponse;
 import com.wildx.wildx.service.CommunityReportService;
 import com.wildx.wildx.type.CommunityReportStatus;
 import com.wildx.wildx.type.ReportType;
@@ -16,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -160,5 +162,29 @@ class PublicReportControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJson))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void returnsSmsHelpCardForPark() throws Exception {
+        var card = new SmsHelpCardResponse(
+                1L,
+                "Yala",
+                "8800",
+                "TYPE LANDMARK [COUNT]",
+                "ELE KUMB 3",
+                "Help reply",
+                List.of(new SmsHelpCardResponse.KeywordHelp("SIGHTING", "Elephant sighting", "ELE", "ALI", "YANAI")),
+                List.of(new SmsHelpCardResponse.LandmarkHelp(10L, "KUMB", "Kumbukgaha", 6.315, 81.41))
+        );
+
+        when(reports.getSmsHelpCard(1L)).thenReturn(card);
+
+        mvc.perform(get("/api/v1/public/parks/1/sms-help-card"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parkId").value(1))
+                .andExpect(jsonPath("$.shortCode").value("8800"))
+                .andExpect(jsonPath("$.format").value("TYPE LANDMARK [COUNT]"))
+                .andExpect(jsonPath("$.keywords[0].english").value("ELE"))
+                .andExpect(jsonPath("$.landmarks[0].code").value("KUMB"));
     }
 }

@@ -8,6 +8,7 @@ import com.wildx.wildx.dto.PublicReportResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.dto.ReportValidateRequest;
+import com.wildx.wildx.dto.SmsHelpCardResponse;
 import com.wildx.wildx.model.CommunityReport;
 import com.wildx.wildx.type.CommunityReportStatus;
 import com.wildx.wildx.type.ReportType;
@@ -38,4 +39,6 @@ public interface CommunityReportService {
     List<HotspotResponse> getHotspots(Long parkId);
 
     List<ConflictTrendReportResponse> getConflictTrends(Long parkId, LocalDate from, LocalDate to);
+
+    SmsHelpCardResponse getSmsHelpCard(Long parkId);
 }

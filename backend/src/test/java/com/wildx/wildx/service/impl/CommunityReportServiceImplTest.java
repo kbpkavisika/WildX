@@ -8,6 +8,7 @@ import com.wildx.wildx.dto.PublicReportResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.dto.ReportValidateRequest;
+import com.wildx.wildx.dto.SmsHelpCardResponse;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
@@ -22,6 +23,7 @@ import com.wildx.wildx.type.Severity;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import com.wildx.wildx.util.SmsParser;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -539,6 +541,31 @@ class CommunityReportServiceImplTest {
                 1L, LocalDate.parse("2026-10-01"), LocalDate.parse("2026-09-01")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Provide a valid inclusive date range");
+    }
+
+    @Test
+    void getSmsHelpCardReturnsParkKeywordsAndLandmarks() {
+        when(parks.require(1L)).thenReturn(park);
+
+        BoundarySegmentResponse resp1 = new BoundarySegmentResponse(10L, 1L, "Kumbukgaha", "KUMB", 6.315, 81.41);
+        BoundarySegmentResponse resp2 = new BoundarySegmentResponse(20L, 1L, "North Fence", "NORT", 6.400, 81.50);
+        when(segments.segments(1L)).thenReturn(List.of(resp1, resp2));
+
+        SmsHelpCardResponse result = service.getSmsHelpCard(1L);
+
+        assertThat(result.parkId()).isEqualTo(1L);
+        assertThat(result.parkName()).isEqualTo("Yala");
+        assertThat(result.shortCode()).isEqualTo("8800");
+        assertThat(result.format()).isEqualTo("TYPE LANDMARK [COUNT]");
+        assertThat(result.example()).isEqualTo("ELE KUMB 3");
+        assertThat(result.helpReply()).isEqualTo(SmsParser.HELP_MESSAGE);
+        assertThat(result.keywords()).hasSize(3);
+        assertThat(result.keywords().get(0).english()).isEqualTo("ELE");
+        assertThat(result.keywords().get(0).sinhala()).isEqualTo("ALI");
+        assertThat(result.keywords().get(0).tamil()).isEqualTo("YANAI");
+        assertThat(result.landmarks()).hasSize(2);
+        assertThat(result.landmarks().get(0).code()).isEqualTo("KUMB");
+        assertThat(result.landmarks().get(1).code()).isEqualTo("NORT");
     }
 }
 

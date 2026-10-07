@@ -10,7 +10,9 @@ import com.wildx.wildx.dto.PublicReportResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.dto.ReportValidateRequest;
+import com.wildx.wildx.dto.SmsHelpCardResponse;
 import com.wildx.wildx.exception.NotFoundException;
+import com.wildx.wildx.util.SmsParser;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
 import com.wildx.wildx.model.Park;
@@ -64,6 +66,9 @@ public class CommunityReportServiceImpl implements CommunityReportService {
 
     @Value("${wildx.upload-dir:./uploads}")
     private String uploadDir = "./uploads";
+
+    @Value("${wildx.sms.short-code:8800}")
+    private String shortCode = "8800";
 
     private final AtomicLong referenceCounter = new AtomicLong(1000);
 
@@ -411,6 +416,44 @@ public class CommunityReportServiceImpl implements CommunityReportService {
 
         log.info("get conflict trends completed count={}", result.size());
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SmsHelpCardResponse getSmsHelpCard(Long parkId) {
+        log.info("get sms help card started parkId={}", parkId);
+        Park park = parks.require(parkId);
+        List<BoundarySegmentResponse> segmentList = segments.segments(parkId);
+
+        List<SmsHelpCardResponse.KeywordHelp> keywords = List.of(
+                new SmsHelpCardResponse.KeywordHelp("SIGHTING", "Elephant sighting", "ELE", "ALI", "YANAI"),
+                new SmsHelpCardResponse.KeywordHelp("CROP_DAMAGE", "Crop damage", "CROP", "GOVI", "PAYIR"),
+                new SmsHelpCardResponse.KeywordHelp("OTHER", "Other / emergency", "HELP", "UDAW", "UTHAVI")
+        );
+
+        List<SmsHelpCardResponse.LandmarkHelp> landmarks = segmentList.stream()
+                .map(s -> new SmsHelpCardResponse.LandmarkHelp(
+                        s.id(),
+                        s.code(),
+                        s.name(),
+                        s.centerLat(),
+                        s.centerLng()
+                ))
+                .sorted(Comparator.comparing(SmsHelpCardResponse.LandmarkHelp::code))
+                .toList();
+
+        SmsHelpCardResponse response = new SmsHelpCardResponse(
+                park.getId(),
+                park.getName(),
+                shortCode,
+                "TYPE LANDMARK [COUNT]",
+                "ELE KUMB 3",
+                SmsParser.HELP_MESSAGE,
+                keywords,
+                landmarks
+        );
+        log.info("get sms help card completed parkId={} landmarkCount={}", parkId, landmarks.size());
+        return response;
     }
 }
 

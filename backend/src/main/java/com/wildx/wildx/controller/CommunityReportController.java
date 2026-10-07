@@ -6,6 +6,7 @@ import com.wildx.wildx.dto.HotspotResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.dto.ReportValidateRequest;
+import com.wildx.wildx.dto.SmsHelpCardResponse;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.CommunityReportService;
 import com.wildx.wildx.type.CommunityReportStatus;
@@ -121,6 +122,16 @@ public class CommunityReportController {
                     .body(ConflictCsv.conflicts(report));
         }
         return ResponseEntity.ok(report);
+    }
+
+    @GetMapping({"/community/sms-help-card", "/community-reports/sms-help-card"})
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR','ADMIN')")
+    public SmsHelpCardResponse helpCard(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) Long parkId
+    ) {
+        Long resolvedParkId = resolveParkId(jwt, parkId);
+        return reports.getSmsHelpCard(resolvedParkId);
     }
 
     private Long resolveParkId(Jwt jwt, Long parkId) {

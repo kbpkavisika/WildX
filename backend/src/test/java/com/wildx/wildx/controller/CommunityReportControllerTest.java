@@ -7,6 +7,7 @@ import com.wildx.wildx.dto.HotspotResponse;
 import com.wildx.wildx.dto.ReportInvalidateRequest;
 import com.wildx.wildx.dto.ReportLocationUpdateRequest;
 import com.wildx.wildx.dto.ReportValidateRequest;
+import com.wildx.wildx.dto.SmsHelpCardResponse;
 import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.CommunityReportService;
@@ -411,6 +412,45 @@ class CommunityReportControllerTest {
         mvc.perform(get("/api/v1/reports/conflicts")
                         .param("from", "2026-08-01")
                         .param("to", "2026-09-30")
+                        .header("Authorization", token("RANGER", 1L)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void cloCanGetSmsHelpCard() throws Exception {
+        UserResponse user = new UserResponse(4L, "Clo", "clo@wildx.lk", Role.CLO, 1L);
+        when(auth.current(any())).thenReturn(user);
+
+        var card = new SmsHelpCardResponse(
+                1L,
+                "Yala",
+                "8800",
+                "TYPE LANDMARK [COUNT]",
+                "ELE KUMB 3",
+                "Help reply",
+                List.of(new SmsHelpCardResponse.KeywordHelp("SIGHTING", "Elephant sighting", "ELE", "ALI", "YANAI")),
+                List.of(new SmsHelpCardResponse.LandmarkHelp(10L, "KUMB", "Kumbukgaha", 6.315, 81.41))
+        );
+
+        when(reports.getSmsHelpCard(1L)).thenReturn(card);
+
+        mvc.perform(get("/api/v1/community/sms-help-card")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parkId").value(1))
+                .andExpect(jsonPath("$.shortCode").value("8800"))
+                .andExpect(jsonPath("$.format").value("TYPE LANDMARK [COUNT]"))
+                .andExpect(jsonPath("$.keywords[0].english").value("ELE"));
+
+        mvc.perform(get("/api/v1/community-reports/sms-help-card")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parkId").value(1));
+    }
+
+    @Test
+    void rangerForbiddenFromGettingSmsHelpCard() throws Exception {
+        mvc.perform(get("/api/v1/community/sms-help-card")
                         .header("Authorization", token("RANGER", 1L)))
                 .andExpect(status().isForbidden());
     }
