@@ -1,0 +1,64 @@
+@baseUrl = http://localhost:8080/api/v1
+
+### Log in as the park manager
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "manager@wildx.lk",
+  "password": "password"
+}
+
+### Simulator: a burst of 3 camera trap images on CAM-001
+POST {{baseUrl}}/parks/1/simulator/camera-images
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "cameraCode": "CAM-001",
+  "count": 3
+}
+
+### Review queue of images still to tag, grouped into bursts
+# @name cameraQueue
+GET {{baseUrl}}/parks/1/camera-images?status=PENDING
+Authorization: Bearer {{login.response.body.token}}
+
+### Manager tags the first image of the newest burst
+POST {{baseUrl}}/parks/1/camera-images/{{cameraQueue.response.body.$[0].images[0].id}}/tag
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "status": "TAGGED",
+  "species": "Elephant",
+  "animalCount": 2
+}
+
+### Manager marks the second image as a suspected poacher, which raises a CRITICAL alert
+POST {{baseUrl}}/parks/1/camera-images/{{cameraQueue.response.body.$[0].images[1].id}}/tag
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "status": "RESTRICTED"
+}
+
+### Log in as the law enforcement liaison
+# @name lelLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "lel@wildx.lk",
+  "password": "password"
+}
+
+### LEL sees only restricted images
+GET {{baseUrl}}/parks/1/camera-images
+Authorization: Bearer {{lelLogin.response.body.token}}
+
+### LEL opens the restricted image; the reason is written to the audit log
+GET {{baseUrl}}/parks/1/camera-images/{{cameraQueue.response.body.$[0].images[1].id}}/file?reason=Case%20114%20evidence
+Authorization: Bearer {{lelLogin.response.body.token}}
