@@ -7,4 +7,3 @@ public record PatrolRouteResponse(Long id, Long parkId, String name, String path
         return new PatrolRouteResponse(route.getId(), route.getPark().getId(), route.getName(), route.getPathGeojson());
     }
 }
-

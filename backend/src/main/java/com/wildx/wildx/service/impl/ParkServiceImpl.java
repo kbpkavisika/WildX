@@ -101,4 +101,3 @@ public class ParkServiceImpl implements ParkService {
         return sectors.findByParkIdOrderByIdAsc(parkId);
     }
 }
-

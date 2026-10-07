@@ -13,4 +13,3 @@ public record PatrolResponse(Long id, PatrolRouteResponse route, Long rangerId, 
                 patrol.getStatus(), patrol.getStartedAt(), patrol.getEndedAt(), patrol.isGpsAvailable());
     }
 }
-

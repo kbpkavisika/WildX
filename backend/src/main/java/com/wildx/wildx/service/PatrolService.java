@@ -15,4 +15,3 @@ public interface PatrolService {
     PatrolResponse gps(UserResponse caller, Long id, PatrolGpsRequest request);
     PatrolResponse end(UserResponse caller, Long id, PatrolTimeRequest request);
 }
-

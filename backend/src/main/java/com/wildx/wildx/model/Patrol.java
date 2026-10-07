@@ -28,4 +28,3 @@ public class Patrol extends Auditable {
     private boolean gpsAvailable = true;
     private Instant lastContactAt;
 }
-

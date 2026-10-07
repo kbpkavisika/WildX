@@ -14,4 +14,3 @@ public record PatrolPointRequest(@NotNull @DecimalMin("-90") @DecimalMax("90") D
         isWaypoint = Boolean.TRUE.equals(isWaypoint);
     }
 }
-

@@ -26,4 +26,3 @@ class PatrolMetricsTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
-

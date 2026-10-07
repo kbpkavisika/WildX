@@ -7,4 +7,3 @@ public record SectorResponse(Long id, Long parkId, String name, String polygonGe
         return new SectorResponse(sector.getId(), sector.getPark().getId(), sector.getName(), sector.getPolygonGeojson());
     }
 }
-

@@ -10,4 +10,3 @@ public interface SectorRepository extends JpaRepository<Sector, Long> {
     @EntityGraph(attributePaths = "park")
     Optional<Sector> findByIdAndParkId(Long id, Long parkId);
 }
-

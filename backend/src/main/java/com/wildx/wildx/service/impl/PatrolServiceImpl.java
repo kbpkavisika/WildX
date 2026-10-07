@@ -139,4 +139,3 @@ public class PatrolServiceImpl implements PatrolService {
         return PatrolResponse.from(patrol);
     }
 }
-

@@ -16,4 +16,3 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint, Long> {
     List<TrackPoint> findBySectorParkIdAndRecordedAtGreaterThanEqualAndRecordedAtLessThanOrderByRecordedAtAscIdAsc(
             Long parkId, Instant from, Instant until);
 }
-

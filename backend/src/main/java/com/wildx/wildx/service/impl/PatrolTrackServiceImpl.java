@@ -124,4 +124,3 @@ public class PatrolTrackServiceImpl implements PatrolTrackService {
         point.setWaypointType(request.waypointType());
     }
 }
-
