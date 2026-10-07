@@ -1,8 +1,12 @@
 package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.AlertResponse;
+import com.wildx.wildx.dto.PatrolLiveResponse;
+import com.wildx.wildx.dto.PatrolResponse;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.*;
+import com.wildx.wildx.service.NotificationService;
+import com.wildx.wildx.service.PatrolMonitorService;
 import com.wildx.wildx.type.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,8 +25,10 @@ class AlertServiceImplTest {
     private final ZoneRepository zones = mock(ZoneRepository.class);
     private final AlertRuleRepository rules = mock(AlertRuleRepository.class);
     private final AlertRepository alerts = mock(AlertRepository.class);
+    private final PatrolMonitorService patrols = mock(PatrolMonitorService.class);
+    private final NotificationService notifications = mock(NotificationService.class);
     private final AlertServiceImpl service =
-            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC));
+            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC), patrols, notifications);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
     private final Device collar = collar();
 
@@ -134,6 +140,44 @@ class AlertServiceImplTest {
         assertThat(all.get(1)).extracting(AlertResponse::deviceId, AlertResponse::collarCode, AlertResponse::animalName,
                 AlertResponse::zoneId, AlertResponse::zoneName).containsOnlyNulls();
         assertThat(service.alerts(1L, AlertStatus.OPEN)).extracting(AlertResponse::id).containsExactly(20L);
+    }
+
+    @Test
+    void notifiesEveryActivePatrolRangerOncePerRaisedAlert() {
+        Zone farmland = zone(10L, ZoneType.FARMLAND, FARMLAND);
+        farmland.setName("Kumbukgaha farmland");
+        Zone village = zone(12L, ZoneType.VILLAGE_BUFFER, VILLAGE);
+        village.setName("Village edge");
+        stubZones(farmland, village);
+        stubRules(rule(ZoneType.FARMLAND, Severity.MEDIUM, 30, 15), rule(ZoneType.VILLAGE_BUFFER, Severity.HIGH, 30, 10));
+        when(patrols.live(1L)).thenReturn(List.of(onPatrol(4L), onPatrol(5L), onPatrol(4L)));
+        service.raiseZoneBreaches(fix(6.315, 81.415));
+        verify(patrols).live(1L);
+        verify(notifications).notifyUsers(List.of(4L, 5L), "New MEDIUM zone breach alert",
+                "Gemunu (COL-001) entered Kumbukgaha farmland at 11:30", "/ranger/alerts");
+        verify(notifications).notifyUsers(List.of(4L, 5L), "New HIGH zone breach alert",
+                "Gemunu (COL-001) entered Village edge at 11:30", "/ranger/alerts");
+    }
+
+    @Test
+    void notifiesNobodyWithoutRaisedAlertOrActivePatrol() {
+        stubZones(zone(10L, ZoneType.FARMLAND, FARMLAND));
+        stubRules(rule(ZoneType.FARMLAND, Severity.MEDIUM, 30, 15));
+        service.raiseZoneBreaches(fix(6.0, 81.0));
+        when(alerts.existsByZoneIdAndDeviceAnimalIdAndOccurredAtGreaterThanAndOccurredAtLessThan(
+                anyLong(), anyLong(), any(), any())).thenReturn(true);
+        service.raiseZoneBreaches(fix(6.305, 81.405));
+        verifyNoInteractions(patrols, notifications);
+        reset(alerts);
+        service.raiseZoneBreaches(fix(6.305, 81.405));
+        verify(patrols).live(1L);
+        verifyNoInteractions(notifications);
+    }
+
+    private PatrolLiveResponse onPatrol(Long rangerId) {
+        PatrolResponse patrol = new PatrolResponse(rangerId * 10, null, rangerId, "Ranger " + rangerId,
+                LocalDate.of(2026, 10, 7), PatrolStatus.ACTIVE, NOW, null, true);
+        return new PatrolLiveResponse(patrol, null, NOW, false);
     }
 
     private static String square(double lng, double lat) {
