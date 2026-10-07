@@ -10,7 +10,8 @@ import java.time.Instant;
 public record AlertResponse(Long id, AlertType type, Severity severity, AlertStatus status, Long deviceId,
                             String collarCode, String animalName, Long zoneId, String zoneName, Double lat,
                             Double lng, Instant occurredAt, Instant slaDueAt, String acknowledgedByName,
-                            Instant acknowledgedAt, Instant resolvedAt, Disposition disposition) {
+                            Instant acknowledgedAt, Instant resolvedAt, Disposition disposition,
+                            int escalationLevel) {
     public static AlertResponse from(Alert alert) {
         var device = alert.getDevice();
         var animal = device == null ? null : device.getAnimal();
@@ -21,6 +22,6 @@ public record AlertResponse(Long id, AlertType type, Severity severity, AlertSta
                 animal == null ? null : animal.getName(), zone == null ? null : zone.getId(),
                 zone == null ? null : zone.getName(), alert.getLat(), alert.getLng(), alert.getOccurredAt(),
                 alert.getSlaDueAt(), acknowledgedBy == null ? null : acknowledgedBy.getName(),
-                alert.getAcknowledgedAt(), alert.getResolvedAt(), alert.getDisposition());
+                alert.getAcknowledgedAt(), alert.getResolvedAt(), alert.getDisposition(), alert.getEscalationLevel());
     }
 }

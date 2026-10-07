@@ -4,12 +4,14 @@ import com.wildx.wildx.model.AlertRule;
 import com.wildx.wildx.model.Animal;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.Device;
+import com.wildx.wildx.model.EscalationStep;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AlertRuleRepository;
 import com.wildx.wildx.repository.AnimalRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.DeviceRepository;
+import com.wildx.wildx.repository.EscalationStepRepository;
 import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
@@ -46,6 +48,7 @@ public class DataSeeder implements CommandLineRunner {
     private final DeviceRepository deviceRepository;
     private final ZoneRepository zoneRepository;
     private final AlertRuleRepository alertRuleRepository;
+    private final EscalationStepRepository escalationStepRepository;
 
     @Override
     @Transactional
@@ -68,6 +71,7 @@ public class DataSeeder implements CommandLineRunner {
                 seedRule(yala, ZoneType.ROAD, Severity.LOW, 60, 30),
                 seedRule(yala, ZoneType.VILLAGE_BUFFER, Severity.HIGH, 30, 10),
                 seedRule(yala, ZoneType.RESTRICTED, Severity.HIGH, 15, 10)));
+        escalationStepRepository.saveAll(List.of(seedStep(yala, 1, Role.SUPERVISOR), seedStep(yala, 2, Role.MANAGER)));
         log.info("Seeded park {} and {} users", yala.getCode(), users.size());
     }
 
@@ -101,6 +105,14 @@ public class DataSeeder implements CommandLineRunner {
         zone.setType(type);
         zone.setPolygonGeojson(polygonGeojson);
         return zone;
+    }
+
+    private EscalationStep seedStep(Park park, int stepNo, Role role) {
+        EscalationStep step = new EscalationStep();
+        step.setPark(park);
+        step.setStepNo(stepNo);
+        step.setRole(role);
+        return step;
     }
 
     private AlertRule seedRule(Park park, ZoneType zoneType, Severity severity, int cooldownMin, int ackSlaMin) {
