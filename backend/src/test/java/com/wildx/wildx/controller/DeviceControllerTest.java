@@ -37,7 +37,7 @@ class DeviceControllerTest {
     @Test
     void managerAndAdminRegisterAnimalsAndDevices() throws Exception {
         var animal = new AnimalResponse(5L, 1L, "Gemunu", "Asian elephant");
-        var device = new DeviceResponse(9L, 1L, DeviceType.COLLAR, "COL-001", 15, animal, null, null);
+        var device = new DeviceResponse(9L, 1L, DeviceType.COLLAR, "COL-001", 15, animal, null, null, null, null);
         when(devices.createAnimal(eq(1L), any())).thenReturn(animal);
         when(devices.updateAnimal(eq(1L), eq(5L), any())).thenReturn(animal);
         when(devices.createDevice(eq(1L), any())).thenReturn(device);
