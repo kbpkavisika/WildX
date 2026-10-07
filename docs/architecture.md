@@ -129,7 +129,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `zone` | park_id FK, name, type (`FARMLAND/ROAD/VILLAGE_BUFFER/RESTRICTED`), polygon_geojson |
 | `alert_rule` | park_id FK, zone_type, severity, cooldown_min, ack_sla_min — UNIQUE(park_id, zone_type) |
 | `collar_fix` | device_id FK, lat, lng, battery_pct, recorded_at — UNIQUE(device_id, recorded_at) |
-| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), escalation_level (0..2), sla_due_at, acknowledged_by FK, acknowledged_at, resolved_at, disposition |
+| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (0..2), sla_due_at, acknowledged_by FK, acknowledged_at, resolved_at, disposition |
 | `camera_image` | device_id FK, file_path, captured_at, status (`PENDING/TAGGED/EMPTY/UNIDENTIFIABLE/RESTRICTED`), species, count, reviewed_by FK, reviewed_at — UNIQUE(device_id, captured_at) |
 | `audit_log` | user_id FK, action, entity, entity_id, reason |
 
@@ -175,6 +175,12 @@ A park has at most one alert rule per zone type, so rules are addressed by zone 
 
 The simulator replaces real collars in the demo. `POST /parks/{id}/simulator/collar-fixes` takes `{collarCode, scenario, lat, lng, zoneId}` and sends every generated fix through the same ingest logic, returning `{sent, stored, duplicates}`. Scenarios: `SINGLE_FIX`, `LOW_BATTERY` (battery 10), `DUPLICATE` (the same fix twice) and `NOT_MOVING` (seven hourly fixes over the last 6 h within about 30 m) use `lat`/`lng`; `WALK_INTO_ZONE` (six fixes over 25 min ending at the zone's vertex average) and `NIGHT_WALK_INTO_ZONE` (the same walk moved into 18:00–06:00 Asia/Colombo) use `zoneId`. The collar and zone must belong to the park.
 
+### Zone breach alerts (SEN-05, SEN-06)
+
+Every stored collar fix (not a duplicate) is checked against all zones of the collar's park. Each zone that contains the fix and whose type has an alert rule is handled separately, so overlapping zones can raise one alert each. The alert copies the rule's severity, stores the fix position and the fix time as `occurred_at`, starts `OPEN`, and gets `sla_due_at` = now + the rule's `ackSlaMin`. No alert is raised when the same animal already has an alert for the same zone whose `occurred_at` is less than `cooldownMin` before or after the fix time; a cool-down of 0 never suppresses. When the fix time in Asia/Colombo is between 18:00 and 06:00 the severity goes up one level, and `CRITICAL` stays `CRITICAL`.
+
+`GET /alerts?status=` returns the caller's park alerts, newest `occurred_at` first, optionally filtered by status, with the collar code, animal name and zone name.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
@@ -214,7 +220,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 
 ### 7.1 Collar fix → alert (SEN-04 to SEN-09)
 - Store the fix (duplicates ignored) and update the device's last seen and battery.
-- If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised within the cool-down. A zone type without a rule raises no alert. Night-time raises severity one level.
+- If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised for the same animal and zone within the cool-down of the fix time. A zone type without a rule raises no alert. A fix time at night raises severity one level.
 - A scheduled job escalates unacknowledged alerts after each SLA period: Supervisor, then Manager.
 - A second scheduled job raises device-health and mortality alerts, never duplicating an open one.
 
