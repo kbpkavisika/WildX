@@ -3,6 +3,9 @@ package com.wildx.wildx.service.impl;
 import com.wildx.wildx.dto.AlertResponse;
 import com.wildx.wildx.dto.PatrolLiveResponse;
 import com.wildx.wildx.dto.PatrolResponse;
+import com.wildx.wildx.exception.NotFoundException;
+import jakarta.persistence.EntityManager;
+import java.util.Optional;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.*;
 import com.wildx.wildx.service.NotificationService;
@@ -27,8 +30,10 @@ class AlertServiceImplTest {
     private final AlertRepository alerts = mock(AlertRepository.class);
     private final PatrolMonitorService patrols = mock(PatrolMonitorService.class);
     private final NotificationService notifications = mock(NotificationService.class);
+    private final EntityManager entityManager = mock(EntityManager.class);
     private final AlertServiceImpl service =
-            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC), patrols, notifications);
+            new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW, ZoneOffset.UTC), patrols, notifications,
+                    entityManager);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
     private final Device collar = collar();
 
@@ -132,13 +137,26 @@ class AlertServiceImplTest {
         Alert bare = new Alert();
         bare.setId(21L);
         bare.setPark(park);
-        when(alerts.findByParkIdOrderByOccurredAtDescIdDesc(1L)).thenReturn(List.of(breach, bare));
+        AppUser ranger = AppUser.builder().name("Ranger").build();
+        Alert handled = new Alert();
+        handled.setId(22L);
+        handled.setPark(park);
+        handled.setStatus(AlertStatus.RESOLVED);
+        handled.setAcknowledgedBy(ranger);
+        handled.setAcknowledgedAt(FIX_TIME);
+        handled.setResolvedAt(NOW);
+        handled.setDisposition(Disposition.CONFLICT_AVERTED);
+        when(alerts.findByParkIdOrderByOccurredAtDescIdDesc(1L)).thenReturn(List.of(breach, bare, handled));
         when(alerts.findByParkIdAndStatusOrderByOccurredAtDescIdDesc(1L, AlertStatus.OPEN)).thenReturn(List.of(breach));
         List<AlertResponse> all = service.alerts(1L, null);
         assertThat(all.getFirst()).isEqualTo(new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH,
-                AlertStatus.OPEN, 3L, "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.305, 81.405, FIX_TIME, NOW));
+                AlertStatus.OPEN, 3L, "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.305, 81.405, FIX_TIME, NOW, null, null, null, null));
         assertThat(all.get(1)).extracting(AlertResponse::deviceId, AlertResponse::collarCode, AlertResponse::animalName,
-                AlertResponse::zoneId, AlertResponse::zoneName).containsOnlyNulls();
+                AlertResponse::zoneId, AlertResponse::zoneName, AlertResponse::acknowledgedByName,
+                AlertResponse::disposition).containsOnlyNulls();
+        assertThat(all.get(2)).extracting(AlertResponse::status, AlertResponse::acknowledgedByName,
+                AlertResponse::acknowledgedAt, AlertResponse::resolvedAt, AlertResponse::disposition)
+                .containsExactly(AlertStatus.RESOLVED, "Ranger", FIX_TIME, NOW, Disposition.CONFLICT_AVERTED);
         assertThat(service.alerts(1L, AlertStatus.OPEN)).extracting(AlertResponse::id).containsExactly(20L);
     }
 
@@ -177,12 +195,101 @@ class AlertServiceImplTest {
     @Test
     void storesSlaDeadlineAtDatabasePrecision() {
         var precise = new AlertServiceImpl(zones, rules, alerts, Clock.fixed(NOW.plusNanos(958_315_200), ZoneOffset.UTC),
-                patrols, notifications);
+                patrols, notifications, entityManager);
         stubZones(zone(10L, ZoneType.FARMLAND, FARMLAND));
         stubRules(rule(ZoneType.FARMLAND, Severity.MEDIUM, 30, 15));
         precise.raiseZoneBreaches(fix(6.305, 81.405));
         assertThat(savedAlerts(1).getFirst().getSlaDueAt())
                 .isEqualTo(NOW.plusNanos(958_315_000).plus(Duration.ofMinutes(15)));
+    }
+
+    @Test
+    void acknowledgeRecordsWhoAndWhenOnceAndKeepsFirstValues() {
+        Alert alert = openAlert();
+        AppUser ranger = AppUser.builder().name("Ranger").build();
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(alert));
+        when(entityManager.getReference(AppUser.class, 4L)).thenReturn(ranger);
+        var first = service.acknowledge(1L, 20L, 4L);
+        assertThat(first.status()).isEqualTo(AlertStatus.ACKNOWLEDGED);
+        assertThat(first.acknowledgedByName()).isEqualTo("Ranger");
+        assertThat(first.acknowledgedAt()).isEqualTo(NOW);
+        assertThat(alert.getAcknowledgedBy()).isSameAs(ranger);
+        var again = service.acknowledge(1L, 20L, 5L);
+        assertThat(again.acknowledgedByName()).isEqualTo("Ranger");
+        assertThat(again.acknowledgedAt()).isEqualTo(NOW);
+        verify(entityManager, never()).getReference(AppUser.class, 5L);
+    }
+
+    @Test
+    void acknowledgeRejectsResolvedAndOtherParkAlerts() {
+        Alert resolved = openAlert();
+        resolved.setStatus(AlertStatus.RESOLVED);
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(resolved));
+        assertThatThrownBy(() -> service.acknowledge(1L, 20L, 4L))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("Alert is already resolved");
+        when(alerts.findLockedByIdAndParkId(20L, 2L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.acknowledge(2L, 20L, 4L))
+                .isInstanceOf(NotFoundException.class).hasMessage("Alert not found");
+        verifyNoInteractions(entityManager);
+        assertThat(resolved.getAcknowledgedBy()).isNull();
+    }
+
+    @Test
+    void resolveKeepsExistingAcknowledgementAndRecordsDisposition() {
+        Alert alert = openAlert();
+        AppUser ranger = AppUser.builder().name("Ranger").build();
+        alert.setStatus(AlertStatus.ACKNOWLEDGED);
+        alert.setAcknowledgedBy(ranger);
+        alert.setAcknowledgedAt(FIX_TIME);
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(alert));
+        var result = service.resolve(1L, 20L, 6L, Disposition.CONFLICT_AVERTED);
+        assertThat(result.status()).isEqualTo(AlertStatus.RESOLVED);
+        assertThat(result.disposition()).isEqualTo(Disposition.CONFLICT_AVERTED);
+        assertThat(result.resolvedAt()).isEqualTo(NOW);
+        assertThat(result.acknowledgedByName()).isEqualTo("Ranger");
+        assertThat(result.acknowledgedAt()).isEqualTo(FIX_TIME);
+        verifyNoInteractions(entityManager);
+    }
+
+    @Test
+    void resolvingAnOpenAlertAlsoRecordsTheResolverAsAcknowledgement() {
+        Alert alert = openAlert();
+        AppUser manager = AppUser.builder().name("Manager").build();
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(alert));
+        when(entityManager.getReference(AppUser.class, 6L)).thenReturn(manager);
+        var result = service.resolve(1L, 20L, 6L, Disposition.FALSE_ALARM);
+        assertThat(result.status()).isEqualTo(AlertStatus.RESOLVED);
+        assertThat(result.disposition()).isEqualTo(Disposition.FALSE_ALARM);
+        assertThat(result.acknowledgedByName()).isEqualTo("Manager");
+        assertThat(result.acknowledgedAt()).isEqualTo(NOW);
+        assertThat(result.resolvedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void resolveRejectsResolvedAndOtherParkAlerts() {
+        Alert resolved = openAlert();
+        resolved.setStatus(AlertStatus.RESOLVED);
+        resolved.setDisposition(Disposition.NO_ACTION);
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(resolved));
+        assertThatThrownBy(() -> service.resolve(1L, 20L, 6L, Disposition.FALSE_ALARM))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("Alert is already resolved");
+        assertThat(resolved.getDisposition()).isEqualTo(Disposition.NO_ACTION);
+        when(alerts.findLockedByIdAndParkId(20L, 2L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.resolve(2L, 20L, 6L, Disposition.FALSE_ALARM))
+                .isInstanceOf(NotFoundException.class).hasMessage("Alert not found");
+    }
+
+    private Alert openAlert() {
+        Alert alert = new Alert();
+        alert.setId(20L);
+        alert.setPark(park);
+        alert.setType(AlertType.ZONE_BREACH);
+        alert.setSeverity(Severity.HIGH);
+        alert.setStatus(AlertStatus.OPEN);
+        alert.setDevice(collar);
+        alert.setOccurredAt(FIX_TIME);
+        alert.setSlaDueAt(NOW);
+        return alert;
     }
 
     private PatrolLiveResponse onPatrol(Long rangerId) {

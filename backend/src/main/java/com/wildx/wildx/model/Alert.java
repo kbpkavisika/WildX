@@ -2,6 +2,7 @@ package com.wildx.wildx.model;
 
 import com.wildx.wildx.type.AlertStatus;
 import com.wildx.wildx.type.AlertType;
+import com.wildx.wildx.type.Disposition;
 import com.wildx.wildx.type.Severity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,4 +37,10 @@ public class Alert extends Auditable {
     private Instant occurredAt;
     @Column(nullable = false)
     private Instant slaDueAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private AppUser acknowledgedBy;
+    private Instant acknowledgedAt;
+    private Instant resolvedAt;
+    @Enumerated(EnumType.STRING)
+    private Disposition disposition;
 }

@@ -129,7 +129,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `zone` | park_id FK, name, type (`FARMLAND/ROAD/VILLAGE_BUFFER/RESTRICTED`), polygon_geojson |
 | `alert_rule` | park_id FK, zone_type, severity, cooldown_min, ack_sla_min — UNIQUE(park_id, zone_type) |
 | `collar_fix` | device_id FK, lat, lng, battery_pct, recorded_at — UNIQUE(device_id, recorded_at) |
-| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (0..2), sla_due_at, acknowledged_by FK, acknowledged_at, resolved_at, disposition |
+| `alert` | park_id FK, type (`ZONE_BREACH/MORTALITY/DEVICE_HEALTH/HUMAN_DETECTED`), severity, device_id FK NULL, zone_id FK NULL, camera_image_id FK NULL, lat, lng, status (`OPEN/ACKNOWLEDGED/RESOLVED`), occurred_at (breach time from the fix), escalation_level (0..2), sla_due_at, acknowledged_by_id FK, acknowledged_at, resolved_at, disposition |
 | `camera_image` | device_id FK, file_path, captured_at, status (`PENDING/TAGGED/EMPTY/UNIDENTIFIABLE/RESTRICTED`), species, count, reviewed_by FK, reviewed_at — UNIQUE(device_id, captured_at) |
 | `audit_log` | user_id FK, action, entity, entity_id, reason |
 
@@ -187,6 +187,10 @@ Every stored collar fix (not a duplicate) is checked against all zones of the co
 
 For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, taken from `PatrolMonitorService.live`; the `app_user.on_duty` column is not used. Each raised alert sends every such ranger one notification, e.g. title "New HIGH zone breach alert", body "Gemunu (COL-001) entered Kumbukgaha farmland at 22:05" (Asia/Colombo time) and link `/ranger/alerts`. The SMS fallback (CMN-08) is added once UC4's `SmsService` exists.
 
+### Alert acknowledge and resolve (SEN-08, SEN-10)
+
+Rangers, supervisors and managers can act on alerts of their own park; an alert from another park returns 404. `POST /alerts/{id}/acknowledge` moves an `OPEN` alert to `ACKNOWLEDGED` and records `acknowledged_by_id` and `acknowledged_at`; repeating it on an `ACKNOWLEDGED` alert keeps the first values. `POST /alerts/{id}/resolve` with `{disposition}` (`CONFLICT_AVERTED`, `CONFLICT_OCCURRED`, `NO_ACTION`, `FALSE_ALARM`) moves an `OPEN` or `ACKNOWLEDGED` alert to `RESOLVED` and records `resolved_at` and the disposition; resolving an `OPEN` alert also records the resolver and time as the acknowledgement. Acting on a `RESOLVED` alert returns 400. Both return the alert, and alert responses include `acknowledgedByName`, `acknowledgedAt`, `resolvedAt` and `disposition`. Dispatching a responder (CMN-06) arrives with UC2's `DispatchService`, which resolves the alert through the same resolve logic when a dispatch completes.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
@@ -205,7 +209,8 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
 | Shared | `GET /responders?lat=&lng=`, which returns on-duty rangers sorted by distance | — |
 | Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | any except ADMIN |
-| UC3 | `GET /alerts?status=`, `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | staff |
+| UC3 | `GET /alerts?status=` | staff |
+| UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, SUPERVISOR, MANAGER |
 | UC3 | `GET /camera-images?status=`, `POST /camera-images/{id}/tag`, `GET /camera-images/{id}/file?reason=` (audited if restricted) | MANAGER, LEL (restricted) |
 | UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart) | **api-key** |
 | UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}` | ADMIN, MANAGER |

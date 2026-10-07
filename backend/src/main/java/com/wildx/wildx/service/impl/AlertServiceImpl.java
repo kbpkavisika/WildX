@@ -3,6 +3,7 @@ package com.wildx.wildx.service.impl;
 import com.wildx.wildx.constant.AlertConstants;
 import com.wildx.wildx.constant.PatrolConstants;
 import com.wildx.wildx.dto.AlertResponse;
+import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AlertRuleRepository;
@@ -12,9 +13,11 @@ import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.PatrolMonitorService;
 import com.wildx.wildx.type.AlertStatus;
 import com.wildx.wildx.type.AlertType;
+import com.wildx.wildx.type.Disposition;
 import com.wildx.wildx.type.Severity;
 import com.wildx.wildx.type.ZoneType;
 import com.wildx.wildx.util.GeoUtil;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,6 +47,7 @@ public class AlertServiceImpl implements AlertService {
     private final Clock clock;
     private final PatrolMonitorService patrols;
     private final NotificationService notifications;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional
@@ -80,6 +84,48 @@ public class AlertServiceImpl implements AlertService {
         var response = found.stream().map(AlertResponse::from).toList();
         log.info("list alerts completed parkId={} count={}", parkId, response.size());
         return response;
+    }
+
+    @Override
+    @Transactional
+    public AlertResponse acknowledge(Long parkId, Long alertId, Long userId) {
+        log.info("acknowledge alert started alertId={} userId={}", alertId, userId);
+        Alert alert = lockedAlert(parkId, alertId);
+        if (alert.getStatus() == AlertStatus.OPEN) {
+            recordAcknowledgement(alert, userId);
+            alert.setStatus(AlertStatus.ACKNOWLEDGED);
+        }
+        log.info("acknowledge alert completed alertId={} status={}", alertId, alert.getStatus());
+        return AlertResponse.from(alert);
+    }
+
+    @Override
+    @Transactional
+    public AlertResponse resolve(Long parkId, Long alertId, Long userId, Disposition disposition) {
+        log.info("resolve alert started alertId={} userId={} disposition={}", alertId, userId, disposition);
+        Alert alert = lockedAlert(parkId, alertId);
+        if (alert.getAcknowledgedAt() == null) {
+            recordAcknowledgement(alert, userId);
+        }
+        alert.setStatus(AlertStatus.RESOLVED);
+        alert.setResolvedAt(clock.instant().truncatedTo(ChronoUnit.MICROS));
+        alert.setDisposition(disposition);
+        log.info("resolve alert completed alertId={}", alertId);
+        return AlertResponse.from(alert);
+    }
+
+    private Alert lockedAlert(Long parkId, Long alertId) {
+        Alert alert = alerts.findLockedByIdAndParkId(alertId, parkId)
+                .orElseThrow(() -> new NotFoundException("Alert not found"));
+        if (alert.getStatus() == AlertStatus.RESOLVED) {
+            throw new IllegalArgumentException("Alert is already resolved");
+        }
+        return alert;
+    }
+
+    private void recordAcknowledgement(Alert alert, Long userId) {
+        alert.setAcknowledgedBy(entityManager.getReference(AppUser.class, userId));
+        alert.setAcknowledgedAt(clock.instant().truncatedTo(ChronoUnit.MICROS));
     }
 
     private void notifyOnDutyRangers(Long parkId, List<Alert> raised) {
