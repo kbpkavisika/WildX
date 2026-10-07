@@ -2,6 +2,7 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.constant.AlertConstants;
 import com.wildx.wildx.constant.PatrolConstants;
+import com.wildx.wildx.dto.AlertResponse;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AlertRuleRepository;
@@ -53,6 +54,18 @@ public class AlertServiceImpl implements AlertService {
                         alert.getId(), zone.getId(), fix.getDevice().getId());
             }
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AlertResponse> alerts(Long parkId, AlertStatus status) {
+        log.info("list alerts started parkId={} status={}", parkId, status);
+        List<Alert> found = status == null
+                ? alerts.findByParkIdOrderByOccurredAtDescIdDesc(parkId)
+                : alerts.findByParkIdAndStatusOrderByOccurredAtDescIdDesc(parkId, status);
+        var response = found.stream().map(AlertResponse::from).toList();
+        log.info("list alerts completed parkId={} count={}", parkId, response.size());
+        return response;
     }
 
     private boolean coolingDown(Zone zone, CollarFix fix, AlertRule rule) {

@@ -1,5 +1,6 @@
 package com.wildx.wildx.service.impl;
 
+import com.wildx.wildx.dto.AlertResponse;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.*;
 import com.wildx.wildx.type.*;
@@ -107,6 +108,34 @@ class AlertServiceImplTest {
                 .containsExactly(Severity.LOW, Severity.MEDIUM, Severity.MEDIUM, Severity.LOW);
     }
 
+    @Test
+    void listsParkAlertsWithCollarAnimalAndZoneNames() {
+        Alert breach = new Alert();
+        breach.setId(20L);
+        breach.setPark(park);
+        breach.setType(AlertType.ZONE_BREACH);
+        breach.setSeverity(Severity.HIGH);
+        breach.setStatus(AlertStatus.OPEN);
+        breach.setDevice(collar);
+        breach.setZone(zone(10L, ZoneType.FARMLAND, FARMLAND));
+        breach.getZone().setName("Kumbukgaha farmland");
+        breach.setLat(6.305);
+        breach.setLng(81.405);
+        breach.setOccurredAt(FIX_TIME);
+        breach.setSlaDueAt(NOW);
+        Alert bare = new Alert();
+        bare.setId(21L);
+        bare.setPark(park);
+        when(alerts.findByParkIdOrderByOccurredAtDescIdDesc(1L)).thenReturn(List.of(breach, bare));
+        when(alerts.findByParkIdAndStatusOrderByOccurredAtDescIdDesc(1L, AlertStatus.OPEN)).thenReturn(List.of(breach));
+        List<AlertResponse> all = service.alerts(1L, null);
+        assertThat(all.getFirst()).isEqualTo(new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH,
+                AlertStatus.OPEN, 3L, "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.305, 81.405, FIX_TIME, NOW));
+        assertThat(all.get(1)).extracting(AlertResponse::deviceId, AlertResponse::collarCode, AlertResponse::animalName,
+                AlertResponse::zoneId, AlertResponse::zoneName).containsOnlyNulls();
+        assertThat(service.alerts(1L, AlertStatus.OPEN)).extracting(AlertResponse::id).containsExactly(20L);
+    }
+
     private static String square(double lng, double lat) {
         return "{\"type\":\"Polygon\",\"coordinates\":[[[%s,%s],[%s,%s],[%s,%s],[%s,%s],[%s,%s]]]}".formatted(
                 lng, lat, lng + 0.02, lat, lng + 0.02, lat + 0.02, lng, lat + 0.02, lng, lat);
@@ -148,10 +177,12 @@ class AlertServiceImplTest {
     private Device collar() {
         Animal animal = new Animal();
         animal.setId(7L);
+        animal.setName("Gemunu");
         Device device = new Device();
         device.setId(3L);
         device.setPark(park);
         device.setType(DeviceType.COLLAR);
+        device.setCode("COL-001");
         device.setAnimal(animal);
         return device;
     }
