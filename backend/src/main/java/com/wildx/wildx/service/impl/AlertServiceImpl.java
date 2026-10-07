@@ -13,6 +13,7 @@ import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.PatrolMonitorService;
 import com.wildx.wildx.type.AlertStatus;
 import com.wildx.wildx.type.AlertType;
+import com.wildx.wildx.type.Disposition;
 import com.wildx.wildx.type.Severity;
 import com.wildx.wildx.type.ZoneType;
 import com.wildx.wildx.util.GeoUtil;
@@ -95,6 +96,21 @@ public class AlertServiceImpl implements AlertService {
             alert.setStatus(AlertStatus.ACKNOWLEDGED);
         }
         log.info("acknowledge alert completed alertId={} status={}", alertId, alert.getStatus());
+        return AlertResponse.from(alert);
+    }
+
+    @Override
+    @Transactional
+    public AlertResponse resolve(Long parkId, Long alertId, Long userId, Disposition disposition) {
+        log.info("resolve alert started alertId={} userId={} disposition={}", alertId, userId, disposition);
+        Alert alert = lockedAlert(parkId, alertId);
+        if (alert.getAcknowledgedAt() == null) {
+            recordAcknowledgement(alert, userId);
+        }
+        alert.setStatus(AlertStatus.RESOLVED);
+        alert.setResolvedAt(clock.instant().truncatedTo(ChronoUnit.MICROS));
+        alert.setDisposition(disposition);
+        log.info("resolve alert completed alertId={}", alertId);
         return AlertResponse.from(alert);
     }
 

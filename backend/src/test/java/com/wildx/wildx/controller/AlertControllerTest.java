@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.test.context.TestPropertySource;
@@ -87,6 +88,37 @@ class AlertControllerTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("Alert is already resolved"));
         mvc.perform(post("/api/v1/alerts/99/acknowledge").header("Authorization", token("RANGER")))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void rangersSupervisorsAndManagersResolveWithDisposition() throws Exception {
+        var resolved = new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH, AlertStatus.RESOLVED, 3L,
+                "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41, AT, AT, "Ranger", AT, AT,
+                Disposition.CONFLICT_AVERTED);
+        for (Role role : new Role[] {Role.RANGER, Role.SUPERVISOR, Role.MANAGER}) {
+            when(auth.current(any())).thenReturn(new UserResponse(4L, "User", "u@wildx.lk", role, 1L));
+            when(alerts.resolve(1L, 20L, 4L, Disposition.CONFLICT_AVERTED)).thenReturn(resolved);
+            mvc.perform(post("/api/v1/alerts/20/resolve").header("Authorization", token(role.name()))
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"disposition\":\"CONFLICT_AVERTED\"}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("RESOLVED"))
+                    .andExpect(jsonPath("$.disposition").value("CONFLICT_AVERTED"));
+        }
+        verify(alerts, times(3)).resolve(1L, 20L, 4L, Disposition.CONFLICT_AVERTED);
+    }
+
+    @Test
+    void resolveRejectsViewersAndMissingOrUnknownDisposition() throws Exception {
+        for (String role : new String[] {"CLO", "LEL", "ADMIN"}) {
+            mvc.perform(post("/api/v1/alerts/20/resolve").header("Authorization", token(role))
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"disposition\":\"FALSE_ALARM\"}"))
+                    .andExpect(status().isForbidden());
+        }
+        when(auth.current(any())).thenReturn(new UserResponse(4L, "Ranger", "r@wildx.lk", Role.RANGER, 1L));
+        for (String body : new String[] {"{}", "{\"disposition\":\"SOLVED\"}"}) {
+            mvc.perform(post("/api/v1/alerts/20/resolve").header("Authorization", token("RANGER"))
+                    .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(alerts);
     }
 
     private String token(String role) {

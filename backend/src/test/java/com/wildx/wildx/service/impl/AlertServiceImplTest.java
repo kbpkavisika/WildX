@@ -234,6 +234,51 @@ class AlertServiceImplTest {
         assertThat(resolved.getAcknowledgedBy()).isNull();
     }
 
+    @Test
+    void resolveKeepsExistingAcknowledgementAndRecordsDisposition() {
+        Alert alert = openAlert();
+        AppUser ranger = AppUser.builder().name("Ranger").build();
+        alert.setStatus(AlertStatus.ACKNOWLEDGED);
+        alert.setAcknowledgedBy(ranger);
+        alert.setAcknowledgedAt(FIX_TIME);
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(alert));
+        var result = service.resolve(1L, 20L, 6L, Disposition.CONFLICT_AVERTED);
+        assertThat(result.status()).isEqualTo(AlertStatus.RESOLVED);
+        assertThat(result.disposition()).isEqualTo(Disposition.CONFLICT_AVERTED);
+        assertThat(result.resolvedAt()).isEqualTo(NOW);
+        assertThat(result.acknowledgedByName()).isEqualTo("Ranger");
+        assertThat(result.acknowledgedAt()).isEqualTo(FIX_TIME);
+        verifyNoInteractions(entityManager);
+    }
+
+    @Test
+    void resolvingAnOpenAlertAlsoRecordsTheResolverAsAcknowledgement() {
+        Alert alert = openAlert();
+        AppUser manager = AppUser.builder().name("Manager").build();
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(alert));
+        when(entityManager.getReference(AppUser.class, 6L)).thenReturn(manager);
+        var result = service.resolve(1L, 20L, 6L, Disposition.FALSE_ALARM);
+        assertThat(result.status()).isEqualTo(AlertStatus.RESOLVED);
+        assertThat(result.disposition()).isEqualTo(Disposition.FALSE_ALARM);
+        assertThat(result.acknowledgedByName()).isEqualTo("Manager");
+        assertThat(result.acknowledgedAt()).isEqualTo(NOW);
+        assertThat(result.resolvedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void resolveRejectsResolvedAndOtherParkAlerts() {
+        Alert resolved = openAlert();
+        resolved.setStatus(AlertStatus.RESOLVED);
+        resolved.setDisposition(Disposition.NO_ACTION);
+        when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(resolved));
+        assertThatThrownBy(() -> service.resolve(1L, 20L, 6L, Disposition.FALSE_ALARM))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("Alert is already resolved");
+        assertThat(resolved.getDisposition()).isEqualTo(Disposition.NO_ACTION);
+        when(alerts.findLockedByIdAndParkId(20L, 2L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.resolve(2L, 20L, 6L, Disposition.FALSE_ALARM))
+                .isInstanceOf(NotFoundException.class).hasMessage("Alert not found");
+    }
+
     private Alert openAlert() {
         Alert alert = new Alert();
         alert.setId(20L);
