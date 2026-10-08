@@ -34,7 +34,7 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
 |---|---|---|
 | Backend | Spring Boot 4.1, Java 25, Maven | Already scaffolded in `backend/` |
 | Persistence | Spring Data JPA + PostgreSQL | `ddl-auto=update` during development, with no migrations tool. Custom queries use the Criteria API only (no raw SQL/JPQL) |
-| Validation | `spring-boot-starter-validation` | `@Valid` on request DTOs |
+| Validation | `spring-boot-starter-validation`, `zod` (frontend) | `@Valid` on request DTOs. The frontend parses every API response with a zod schema |
 | Auth | `spring-boot-starter-security` + `spring-boot-starter-security-oauth2-resource-server` | Stateless HS256 JWT access token issued by our own `/api/v1/auth/login`, valid 12 h. Claims: `sub` (user id), `role`, `parkId`. No refresh tokens, cookies or sessions, and no external IdP |
 | Boilerplate | Lombok | `@Getter @Setter` on entities, and Java `record` for DTOs |
 | Frontend | Next.js 16 (App Router), React 19, TypeScript | ⚠ Read `frontend/AGENTS.md`, because Next 16 APIs differ from older versions |
@@ -299,15 +299,20 @@ frontend/
 │  ├─ admin/                  # parks, users
 │  └─ report/                 # PUBLIC villager form; [ref]/page.tsx = status
 ├─ components/                # Map (Leaflet), StatusBadge, SeverityBadge, BigButton, PickList, DispatchDialog
+├─ hooks/                     # one React Query hook per screen/resource (use-active-patrols.ts)
 ├─ lib/
-│  ├─ api.ts                  # fetch wrapper: base URL, JWT header, JSON errors
-│  ├─ auth.ts                 # token + user in localStorage, useUser(), role guard
+│  ├─ api/client.ts           # apiGet(path, zodSchema): base URL, JWT header, ApiError, response parsing
+│  ├─ api/<resource>.ts       # one fetcher per endpoint + its zod response schema
+│  ├─ <feature>/mappers.ts    # pure response → view mapping (types.ts, store.ts for UI state)
+│  ├─ auth/store.ts           # Zustand session store (token + user) persisted to localStorage
+│  ├─ enums.ts                # const objects mirroring backend enums
 │  ├─ geo.ts                  # watchPosition wrapper (60 s / 50 m)
 │  └─ i18n.ts                 # { en, si, ta } dictionaries + useT()
 ```
 
 - **Role guard:** each top-level layout redirects the user to `/login` if their role does not match. The backend is the real enforcement.
-- **Data fetching** uses plain `fetch` in client components with `setInterval` polling. There is no state library and no React Query.
+- **Data fetching** goes through React Query (`useQuery`/`useMutation`, with `refetchInterval` for polling). `lib/api/*` only sends requests and returns the zod-validated raw response. Mapping and business logic live in separate mapper/service functions.
+- **Client state** (auth user, UI and filter state) lives in Zustand stores. Server data stays in React Query, not in Zustand.
 - **Status and severity** are always shown as **text plus a colour**, never colour alone.
 - **Mobile UI:** use `min-h-12` (48 px) for tap targets and the `text-base`/`text-lg` text sizes. The primary action is a full-width button pinned to the bottom of the screen.
 
