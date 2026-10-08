@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { INCIDENT_STATUSES } from "@/lib/enums";
+import { defaultReportRange } from "./report-mappers";
 import { ALL, type IncidentQueueFilters } from "./types";
 
 interface IncidentQueueState {
@@ -10,6 +11,17 @@ interface IncidentQueueState {
 export const useIncidentQueue = create<IncidentQueueState>()((set) => ({
   filters: { status: INCIDENT_STATUSES.NEW, typeId: ALL, severity: ALL },
   setFilter: (change) => set((state) => ({ filters: { ...state.filters, ...change } })),
+}));
+
+interface IncidentReportState {
+  from: string;
+  to: string;
+  setRange: (change: Partial<{ from: string; to: string }>) => void;
+}
+
+export const useIncidentReportRange = create<IncidentReportState>()((set) => ({
+  ...defaultReportRange(new Date()),
+  setRange: (change) => set(change),
 }));
 
 export type TriageAction = "dispatch" | "dismiss";
