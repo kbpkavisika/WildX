@@ -28,6 +28,8 @@ public class Alert extends Auditable {
     private Device device;
     @ManyToOne(fetch = FetchType.LAZY)
     private Zone zone;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private CameraImage cameraImage;
     private Double lat;
     private Double lng;
     @Enumerated(EnumType.STRING)

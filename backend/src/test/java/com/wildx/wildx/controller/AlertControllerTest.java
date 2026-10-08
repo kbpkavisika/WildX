@@ -40,7 +40,7 @@ class AlertControllerTest {
         when(auth.current(any())).thenReturn(new UserResponse(7L, "Ranger", "r@wildx.lk", Role.RANGER, 1L));
         when(alerts.alerts(eq(1L), any())).thenReturn(List.of(new AlertResponse(20L, AlertType.ZONE_BREACH,
                 Severity.HIGH, AlertStatus.OPEN, 3L, "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41,
-                AT, AT, null, null, null, null, 0)));
+                AT, AT, null, null, null, null, 0, null)));
         mvc.perform(get("/api/v1/alerts").header("Authorization", token("RANGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].severity").value("HIGH"))
                 .andExpect(jsonPath("$[0].zoneName").value("Kumbukgaha farmland"))
@@ -63,7 +63,7 @@ class AlertControllerTest {
     @Test
     void rangersSupervisorsAndManagersAcknowledgeOwnParkAlerts() throws Exception {
         var acknowledged = new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH, AlertStatus.ACKNOWLEDGED, 3L,
-                "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41, AT, AT, "Ranger", AT, null, null, 0);
+                "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41, AT, AT, "Ranger", AT, null, null, 0, null);
         for (Role role : new Role[] {Role.RANGER, Role.SUPERVISOR, Role.MANAGER}) {
             when(auth.current(any())).thenReturn(new UserResponse(4L, "User", "u@wildx.lk", role, 1L));
             when(alerts.acknowledge(1L, 20L, 4L)).thenReturn(acknowledged);
@@ -94,7 +94,7 @@ class AlertControllerTest {
     void rangersSupervisorsAndManagersResolveWithDisposition() throws Exception {
         var resolved = new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH, AlertStatus.RESOLVED, 3L,
                 "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41, AT, AT, "Ranger", AT, AT,
-                Disposition.CONFLICT_AVERTED, 0);
+                Disposition.CONFLICT_AVERTED, 0, null);
         for (Role role : new Role[] {Role.RANGER, Role.SUPERVISOR, Role.MANAGER}) {
             when(auth.current(any())).thenReturn(new UserResponse(4L, "User", "u@wildx.lk", role, 1L));
             when(alerts.resolve(1L, 20L, 4L, Disposition.CONFLICT_AVERTED)).thenReturn(resolved);

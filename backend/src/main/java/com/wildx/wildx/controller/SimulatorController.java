@@ -1,5 +1,6 @@
 package com.wildx.wildx.controller;
 
+import com.wildx.wildx.dto.CameraSimulationRequest;
 import com.wildx.wildx.dto.SimulationRequest;
 import com.wildx.wildx.dto.SimulationResponse;
 import com.wildx.wildx.service.AuthService;
@@ -25,5 +26,13 @@ public class SimulatorController {
                                        @Valid @RequestBody SimulationRequest request) {
         auth.requireParkAccess(jwt, parkId);
         return simulator.simulate(parkId, request);
+    }
+
+    @PostMapping(value = "/camera-images", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public SimulationResponse simulateCamera(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt,
+                                             @Valid @RequestBody CameraSimulationRequest request) {
+        auth.requireParkAccess(jwt, parkId);
+        return simulator.simulateCamera(parkId, request);
     }
 }

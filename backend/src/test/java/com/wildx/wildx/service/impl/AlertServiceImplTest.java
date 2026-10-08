@@ -150,18 +150,21 @@ class AlertServiceImplTest {
         handled.setResolvedAt(NOW);
         handled.setDisposition(Disposition.CONFLICT_AVERTED);
         handled.setEscalationLevel(2);
+        CameraImage image = new CameraImage();
+        image.setId(40L);
+        handled.setCameraImage(image);
         when(alerts.findByParkIdOrderByOccurredAtDescIdDesc(1L)).thenReturn(List.of(breach, bare, handled));
         when(alerts.findByParkIdAndStatusOrderByOccurredAtDescIdDesc(1L, AlertStatus.OPEN)).thenReturn(List.of(breach));
         List<AlertResponse> all = service.alerts(1L, null);
         assertThat(all.getFirst()).isEqualTo(new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH,
-                AlertStatus.OPEN, 3L, "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.305, 81.405, FIX_TIME, NOW, null, null, null, null, 0));
+                AlertStatus.OPEN, 3L, "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.305, 81.405, FIX_TIME, NOW, null, null, null, null, 0, null));
         assertThat(all.get(1)).extracting(AlertResponse::deviceId, AlertResponse::collarCode, AlertResponse::animalName,
                 AlertResponse::zoneId, AlertResponse::zoneName, AlertResponse::acknowledgedByName,
                 AlertResponse::disposition).containsOnlyNulls();
         assertThat(all.get(2)).extracting(AlertResponse::status, AlertResponse::acknowledgedByName,
                 AlertResponse::acknowledgedAt, AlertResponse::resolvedAt, AlertResponse::disposition,
-                AlertResponse::escalationLevel)
-                .containsExactly(AlertStatus.RESOLVED, "Ranger", FIX_TIME, NOW, Disposition.CONFLICT_AVERTED, 2);
+                AlertResponse::escalationLevel, AlertResponse::cameraImageId)
+                .containsExactly(AlertStatus.RESOLVED, "Ranger", FIX_TIME, NOW, Disposition.CONFLICT_AVERTED, 2, 40L);
         assertThat(service.alerts(1L, AlertStatus.OPEN)).extracting(AlertResponse::id).containsExactly(20L);
     }
 

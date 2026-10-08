@@ -19,9 +19,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({org.springframework.web.method.annotation.HandlerMethodValidationException.class,
             org.springframework.http.converter.HttpMessageNotReadableException.class,
-            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.multipart.support.MissingServletRequestPartException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class})
     public ResponseEntity<Map<String, String>> handleRequestError(Exception ex) {
         return error(HttpStatus.BAD_REQUEST, "Invalid request payload or parameter");
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleTooLarge(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        return error(HttpStatus.PAYLOAD_TOO_LARGE, "File is too large");
     }
 
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
