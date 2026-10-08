@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { AlertDetail } from "@/components/alerts/alert-detail";
 import { AlertList } from "@/components/alerts/alert-list";
 import { PageHeader } from "@/components/layout/page-header";
+import { NotificationsCard } from "@/components/notifications/notifications-card";
 import { Card } from "@/components/ui/card";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { LiveChip } from "@/components/ui/live-chip";
@@ -63,6 +64,7 @@ export default function AlertsPage() {
           </Card>
           <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-5">
             <AlertDetail view={view.selected} />
+            <NotificationsCard />
           </div>
         </div>
       )}

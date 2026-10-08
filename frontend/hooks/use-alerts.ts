@@ -30,8 +30,8 @@ export function useAlerts() {
   return {
     signedIn,
     hasPark: parkId !== null,
-    isPending: alerts.isPending,
+    isPending: alerts.isPending || zones.isPending,
     isError: alerts.isError,
-    view: alerts.data && toAlertsView(alerts.data, zones.data ?? [], filter, selectedId, role, new Date()),
+    view: alerts.data && !zones.isPending ? toAlertsView(alerts.data, zones.data ?? [], filter, selectedId, role, new Date()) : undefined,
   };
 }

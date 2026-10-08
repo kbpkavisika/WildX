@@ -5,7 +5,7 @@ import { MapContainer, Marker, Polygon } from "react-leaflet";
 import { FitToData } from "@/components/map/fit-to-data";
 import { useAlertsPage } from "@/lib/alerts/store";
 import type { AlertsView } from "@/lib/alerts/types";
-import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants";
+import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_MAX_ZOOM } from "@/lib/constants";
 import type { LatLng } from "@/lib/patrols/types";
 import { alertIcon } from "./alert-icons";
 import { ALERT_TONE_STYLES } from "./alert-tones";
@@ -50,6 +50,7 @@ export default function AlertMap({ view }: { view: AlertsView }) {
       <MapContainer
         center={MAP_DEFAULT_CENTER}
         zoom={MAP_DEFAULT_ZOOM}
+        maxZoom={MAP_MAX_ZOOM}
         zoomControl={false}
         attributionControl={false}
         className="absolute! inset-0 isolate bg-map-ground! font-sans"
