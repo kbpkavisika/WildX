@@ -18,6 +18,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -61,9 +63,12 @@ class IncidentControllerTest {
     @Test
     void rejectsMissingTypeOrLocationAndNonRangers() throws Exception {
         mvc.perform(multipart("/api/v1/incidents").file(data("{\"lat\":6.5,\"lng\":81.5,\"locationSource\":\"GPS\"}"))
-                .header("Authorization", token("RANGER"))).andExpect(status().isBadRequest());
+                .header("Authorization", token("RANGER"))).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("typeId must not be null"));
         mvc.perform(multipart("/api/v1/incidents").file(data("{\"typeId\":4,\"locationSource\":\"MANUAL\"}"))
-                .header("Authorization", token("RANGER"))).andExpect(status().isBadRequest());
+                        .header("Authorization", token("RANGER"))).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(allOf(containsString("lat must not be null"),
+                        containsString("lng must not be null"))));
         mvc.perform(multipart("/api/v1/incidents").file(data("{\"typeId\":4,\"lat\":95,\"lng\":81.5,\"locationSource\":\"GPS\"}"))
                 .header("Authorization", token("RANGER"))).andExpect(status().isBadRequest());
         mvc.perform(multipart("/api/v1/incidents").file(data(DATA)).header("Authorization", token("SUPERVISOR")))
