@@ -290,6 +290,7 @@ Screens designed so far (`docs/prototypes/`):
 - **Patrols · Active** (`active-patrols.html`): a full-bleed live map of teams in the field, with a floating "In the field" list.
 - **Patrols · All** (`all-patrols.html`): a filterable table of every patrol, with a New patrol action. The add form opens inline above the table.
 - **Sign in** (`sign-in.html`): a bordered xl split card with a park photo panel and the email and password form.
+- **Alerts** (`alerts.html`): an alert map, the alert queue with status filters, the selected alert's detail with Acknowledge, Resolve and Dispatch, and the user's notifications.
 
 ### Voice
 
@@ -408,6 +409,16 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - An inline panel on `surface-form` with an lg radius, a "New patrol" title and a close button.
   - Fields: route, ranger (both pick-lists) and date. Missing fields are outlined in negative red with a caption below.
   - Cancel and Create patrol buttons, right-aligned.
+- **Alerts page.**
+  - A pulsing **Live** chip sits next to the title. The subtitle counts open alerts and those escalated past their acknowledge time. Zones and rules and Report are secondary buttons on the right; there is no primary action, because sensors raise alerts.
+  - The alert map is a 360px card in `map-ground`. High-risk zones are drawn in `negative-bg` with a 1.5px dashed `negative` outline. Each listed alert has a 24px numbered marker on a 3px white stroke, in its status colour; the selected marker gets the 18px halo. The legend sits bottom-left (Open, Acknowledged, Resolved, High-risk zone) and zoom +/− bottom-right. The map shows only the alerts in the current filter.
+  - Below the map, the alert queue (`3 1 420px`) sits beside a column (`2 1 340px`) holding the alert detail and the notifications.
+  - The queue has filter pills (Open, Acknowledged, Resolved, All with counts; Open by default) and lists alerts newest first. Each row is a button: the numbered marker, a "Type · zone" title (or "Type · device code" without a zone), a "Gemunu (COL-001) · Today · 22:05" caption, a severity chip (High and Critical negative, Low and Medium neutral) and a status dot + word. The selected row uses the `surface-sunken` fill.
+  - Status words and colours: Open and Escalated (open and escalated at least once) in negative, Acknowledged in responding, Resolved in positive.
+  - The alert detail card shows the title as `card-title`, the severity chip and status, then a fact list: Device, Occurred, Acknowledge by (with "overdue" once passed), Escalation ("Escalated 1 time"), Acknowledged (name · time) and Resolved (time · outcome). Without a selection it says "Select an alert to see its detail."
+  - Rangers, supervisors and managers get Acknowledge (primary, 40px) while the alert is open and Resolve (secondary) until it is resolved. Managers and supervisors also get Dispatch ranger (secondary), which opens the shared dispatch form inline. A resolved alert has no actions.
+  - The resolve form is an inline panel on `surface-form` with an lg radius and a "Resolve alert" `form-title`. The four outcomes (Conflict averted, Conflict occurred, No action required, False alarm) are 48px radio rows; the checked row gets a pine border and the lime-soft ring. A missing choice is outlined in negative red with a caption. Cancel and Resolve alert are right-aligned.
+  - The notifications card has a "Notifications" `card-title` with a coral count badge for unread ones (hidden at 0). Each row shows the title (600 and ink when unread, with a pine dot and the word "New"), the body in `ink-body` and the time as a muted caption. Selecting a row marks it read and opens its link.
 
 ## Do's and Don'ts
 
