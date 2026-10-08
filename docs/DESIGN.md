@@ -289,6 +289,7 @@ Screens designed so far (`docs/prototypes/`):
 - **Dashboard** (`dashboard.html`): park activity metrics, a human–elephant conflict bar chart and the patrol schedule.
 - **Patrols · Active** (`active-patrols.html`): a full-bleed live map of teams in the field, with a floating "In the field" list.
 - **Patrols · All** (`all-patrols.html`): a filterable table of every patrol, with a New patrol action. The add form opens inline above the table.
+- **Sign in** (`sign-in.html`): a bordered xl split card with a park photo panel and the email and password form.
 
 ### Voice
 
@@ -398,6 +399,11 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
 - **Patrols table (All patrols).**
   - Filter pills (All / Active / Scheduled / Completed with counts; the active pill is ink-filled).
   - Columns: Patrol (route name + `PT-` ID), Leader (28px initials avatar + ranger name), Schedule (day, then the actual start – end time once started), Distance (covered km for completed patrols, otherwise —), Status chip (Active positive, Scheduled neutral, Completed done, Cancelled neutral), and a more-options button.
+- **Sign in.**
+  - A centred card (max 1120px, xl radius, 12px padding, `line` border) that wraps into two equal panels and stacks on phones.
+  - Left: a lg-radius photo panel with a `page-title` tagline at the top and a white xs-radius "Udawalawe NP · 30,821 ha" location chip at the bottom.
+  - Right: a 380px form with the logo, a "Sign in" `page-title` and a 15px `ink-body` subtitle, a `line` divider, Work email and Password fields ("Forgot password?" link beside the password label), a "Keep me signed in on this device" checkbox in pine, a full-width 48px primary button and a centred "New to WildX? Create an account" line.
+  - A focused input gets a pine border and a 3px `lime-soft` ring. A failed sign-in shows a negative caption above the button.
 - **New patrol form.**
   - An inline panel on `surface-form` with an lg radius, a "New patrol" title and a close button.
   - Fields: route, ranger (both pick-lists) and date. Missing fields are outlined in negative red with a caption below.
