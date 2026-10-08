@@ -43,13 +43,13 @@ class IncidentControllerTest {
     void rangerReportsIncidentWithPhoto() throws Exception {
         when(auth.current(any())).thenReturn(ranger);
         when(incidents.report(eq(ranger), any(), eq(JPEG))).thenReturn(new IncidentResponse(10L, 1L, 4L, "Snare", 7L,
-                "Ranger", 6.5, 81.5, LocationSource.GPS, null, null, "Snare", "incidents/1/a.jpg", Severity.HIGH,
+                "Ranger", 3L, 6.5, 81.5, LocationSource.GPS, null, null, "Snare", "incidents/1/a.jpg", Severity.HIGH,
                 IncidentStatus.NEW, Instant.parse("2026-10-08T04:00:00Z")));
         mvc.perform(multipart("/api/v1/incidents").file(data(DATA))
                         .file(new MockMultipartFile("photo", "snare.jpg", "image/jpeg", JPEG))
                         .header("Authorization", token("RANGER")))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("NEW"))
-                .andExpect(jsonPath("$.severity").value("HIGH"));
+                .andExpect(jsonPath("$.severity").value("HIGH")).andExpect(jsonPath("$.patrolId").value(3));
     }
 
     @Test

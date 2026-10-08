@@ -13,6 +13,7 @@ import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.FileStorage;
 import com.wildx.wildx.service.IncidentService;
 import com.wildx.wildx.service.ParkService;
+import com.wildx.wildx.service.PatrolService;
 import com.wildx.wildx.type.IncidentStatus;
 import com.wildx.wildx.util.GeoUtil;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class IncidentServiceImpl implements IncidentService {
     private final IncidentTypeRepository types;
     private final AuthService auth;
     private final ParkService parks;
+    private final PatrolService patrols;
     private final FileStorage storage;
     private final Clock clock;
 
@@ -53,6 +55,7 @@ public class IncidentServiceImpl implements IncidentService {
         }
         Incident incident = new Incident();
         incident.setReporter(auth.requireRanger(caller.id(), caller.parkId()));
+        incident.setPatrol(patrols.activePatrol(caller.id(), caller.parkId()).orElse(null));
         incident.setPark(type.getPark());
         incident.setType(type);
         incident.setLat(request.lat());
@@ -67,7 +70,8 @@ public class IncidentServiceImpl implements IncidentService {
             incident.setPhotoPath(storage.save(PHOTO_FOLDER + caller.parkId(), photoExtension, photo));
         }
         IncidentResponse response = IncidentResponse.from(incidents.save(incident));
-        log.info("report incident completed incidentId={} sectorId={}", response.id(), response.sectorId());
+        log.info("report incident completed incidentId={} sectorId={} patrolId={}", response.id(), response.sectorId(),
+                response.patrolId());
         return response;
     }
 
