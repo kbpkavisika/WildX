@@ -8,6 +8,7 @@ import com.wildx.wildx.repository.IncidentRepository;
 import com.wildx.wildx.repository.IncidentTypeRepository;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.FileStorage;
+import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.ParkService;
 import com.wildx.wildx.service.PatrolService;
 import com.wildx.wildx.type.*;
@@ -32,9 +33,10 @@ class IncidentServiceImplTest {
     private final AuthService auth = mock(AuthService.class);
     private final ParkService parks = mock(ParkService.class);
     private final PatrolService patrols = mock(PatrolService.class);
+    private final NotificationService notifications = mock(NotificationService.class);
     private final FileStorage storage = mock(FileStorage.class);
-    private final IncidentServiceImpl service = new IncidentServiceImpl(incidents, types, auth, parks, patrols, storage,
-            Clock.fixed(NOW, ZoneOffset.UTC));
+    private final IncidentServiceImpl service = new IncidentServiceImpl(incidents, types, auth, parks, patrols,
+            notifications, storage, Clock.fixed(NOW, ZoneOffset.UTC));
     private final UserResponse ranger = new UserResponse(7L, "Ranger", "ranger@wildx.lk", Role.RANGER, 1L);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
     private final IncidentType snare = new IncidentType();
@@ -86,6 +88,36 @@ class IncidentServiceImplTest {
     }
 
     @Test
+    void notifiesSupervisorsAndManagersOfHighAndCriticalIncidents() {
+        Sector sector = new Sector();
+        sector.setId(2L);
+        sector.setName("Sector 3");
+        sector.setPolygonGeojson(SQUARE);
+        when(parks.sectorShapes(1L)).thenReturn(List.of(sector));
+        when(auth.activeUserIds(1L, Role.SUPERVISOR)).thenReturn(List.of(2L));
+        when(auth.activeUserIds(1L, Role.MANAGER)).thenReturn(List.of(3L));
+
+        service.report(ranger, request(4L, null), null);
+        verify(notifications).notifyUsers(List.of(2L, 3L), "New HIGH incident", "Snare, Sector 3", "/dashboard/incidents");
+
+        snare.setDefaultSeverity(Severity.CRITICAL);
+        when(parks.sectorShapes(1L)).thenReturn(List.of());
+        service.report(ranger, request(4L, null), null);
+        verify(notifications).notifyUsers(List.of(2L, 3L), "New CRITICAL incident", "Snare", "/dashboard/incidents");
+    }
+
+    @Test
+    void doesNotNotifyForLowOrMediumIncidents() {
+        snare.setDefaultSeverity(Severity.MEDIUM);
+        service.report(ranger, request(4L, null), null);
+        snare.setDefaultSeverity(Severity.LOW);
+        service.report(ranger, request(4L, null), null);
+        verify(incidents, times(2)).save(any());
+        verifyNoInteractions(notifications);
+        verify(auth, never()).activeUserIds(any(), any());
+    }
+
+    @Test
     void reportsManualLocationOutsideSectorsWithoutPhotoOrPatrolAtCurrentTime() {
         when(parks.sectorShapes(1L)).thenReturn(List.of());
         when(patrols.activePatrol(7L, 1L)).thenReturn(Optional.empty());
@@ -117,7 +149,7 @@ class IncidentServiceImplTest {
         assertThatThrownBy(() -> service.report(ranger, request(4L, null), null))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Incident type is not active");
         verify(incidents, never()).save(any());
-        verifyNoInteractions(storage);
+        verifyNoInteractions(storage, notifications);
     }
 
     private IncidentCreateRequest request(Long typeId, Instant occurredAt) {
