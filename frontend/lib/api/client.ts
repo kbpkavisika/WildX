@@ -21,7 +21,12 @@ async function request<T extends z.ZodType>(path: string, schema: T, init?: Requ
   if (token) headers.set("Authorization", `Bearer ${token}`);
   const response = await fetch(`${API_URL}${path}`, { ...init, headers });
   const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) throw new ApiError(response.status, errorSchema.safeParse(body).data?.error);
+  if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      useAuthStore.getState().clearSession();
+    }
+    throw new ApiError(response.status, errorSchema.safeParse(body).data?.error);
+  }
   return schema.parse(body);
 }
 
@@ -40,7 +45,12 @@ export function apiPost<T extends z.ZodType>(path: string, body: unknown, schema
 export async function apiGetBlob(path: string): Promise<Blob> {
   const token = useAuthStore.getState().token;
   const response = await fetch(`${API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-  if (!response.ok) throw new ApiError(response.status);
+  if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      useAuthStore.getState().clearSession();
+    }
+    throw new ApiError(response.status);
+  }
   return response.blob();
 }
 
