@@ -21,6 +21,8 @@ public class Incident extends Auditable {
     private IncidentType type;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private AppUser reporter;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Patrol patrol;
     @Column(nullable = false)
     private Double lat;
     @Column(nullable = false)
