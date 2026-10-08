@@ -43,4 +43,6 @@ public class Incident extends Auditable {
     private IncidentStatus status;
     @Column(nullable = false)
     private Instant occurredAt;
+    @Column(length = 1000)
+    private String resolutionNote;
 }
