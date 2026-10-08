@@ -16,7 +16,7 @@ public final class PatrolCsv {
         return csv.toString();
     }
 
-    private static String cell(String value) {
+    public static String cell(String value) {
         String stripped = value.stripLeading();
         if (!stripped.isEmpty() && "=+-@".indexOf(stripped.charAt(0)) >= 0) {
             value = "'" + value;
