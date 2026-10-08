@@ -1,14 +1,18 @@
 import { z } from "zod";
-import { INCIDENT_STATUSES, type LocationSource } from "@/lib/enums";
+import { INCIDENT_STATUSES, SEVERITIES, type LocationSource } from "@/lib/enums";
 import { apiGet, apiPostForm } from "./client";
 
 const incidentSchema = z.object({
   id: z.number(),
+  typeId: z.number(),
   typeName: z.string(),
+  reporterName: z.string(),
   lat: z.number().nullable(),
   lng: z.number().nullable(),
   sectorName: z.string().nullable(),
+  severity: z.enum(SEVERITIES),
   status: z.enum(INCIDENT_STATUSES),
+  occurredAt: z.iso.datetime({ offset: true }),
 });
 
 export type IncidentResponse = z.infer<typeof incidentSchema>;

@@ -1,12 +1,32 @@
 import type { IncidentTypeResponse } from "@/lib/api/incident-types";
-import { SEVERITIES, type Severity } from "@/lib/enums";
-import type { ChipView, IncidentTypeRow, IncidentTypesView } from "./types";
+import type { IncidentResponse } from "@/lib/api/incidents";
+import { INCIDENT_STATUSES, SEVERITIES, type IncidentStatus, type Severity } from "@/lib/enums";
+import { formatDayLabel, formatTime, isSameDay } from "@/lib/format";
+import {
+  ALL,
+  type ChipView,
+  type IncidentQueueFilters,
+  type IncidentQueueView,
+  type IncidentRow,
+  type IncidentTypeRow,
+  type IncidentTypesView,
+  type StatusFilterOption,
+} from "./types";
+
+const NO_SECTOR = "Outside sectors";
 
 export const SEVERITY_DISPLAY: Record<Severity, ChipView> = {
   [SEVERITIES.LOW]: { tone: "neutral", label: "Low" },
   [SEVERITIES.MEDIUM]: { tone: "neutral", label: "Medium" },
   [SEVERITIES.HIGH]: { tone: "negative", label: "High" },
   [SEVERITIES.CRITICAL]: { tone: "negative", label: "Critical" },
+};
+
+export const INCIDENT_STATUS_DISPLAY: Record<IncidentStatus, ChipView> = {
+  [INCIDENT_STATUSES.NEW]: { tone: "negative", label: "New" },
+  [INCIDENT_STATUSES.ASSIGNED]: { tone: "positive", label: "Assigned" },
+  [INCIDENT_STATUSES.RESOLVED]: { tone: "done", label: "Resolved" },
+  [INCIDENT_STATUSES.DISMISSED]: { tone: "neutral", label: "Dismissed" },
 };
 
 const ACTIVE_DISPLAY: ChipView = { tone: "positive", label: "Active" };
@@ -29,4 +49,57 @@ export function toIncidentTypesView(types: IncidentTypeResponse[]): IncidentType
   const sorted = [...types].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name));
   const activeCount = types.filter((type) => type.active).length;
   return { rows: sorted.map(toIncidentTypeRow), activeCount, inactiveCount: types.length - activeCount };
+}
+
+export function toTypeFilter(value: string): IncidentQueueFilters["typeId"] {
+  return value === ALL ? ALL : Number(value);
+}
+
+export function toSeverityFilter(value: string): IncidentQueueFilters["severity"] {
+  return Object.values(SEVERITIES).find((severity) => severity === value) ?? ALL;
+}
+
+function reportedLabel(occurredAt: Date, now: Date): string {
+  const day = isSameDay(occurredAt, now) ? "Today" : formatDayLabel(occurredAt);
+  return `${day} · ${formatTime(occurredAt)}`;
+}
+
+function toIncidentRow(incident: IncidentResponse, now: Date): IncidentRow {
+  return {
+    id: incident.id,
+    title: incident.typeName,
+    code: `INC-${incident.id}`,
+    sector: incident.sectorName ?? NO_SECTOR,
+    reporter: incident.reporterName,
+    reported: reportedLabel(new Date(incident.occurredAt), now),
+    severity: SEVERITY_DISPLAY[incident.severity],
+    status: INCIDENT_STATUS_DISPLAY[incident.status],
+  };
+}
+
+function matchesTypeAndSeverity(incident: IncidentResponse, filters: IncidentQueueFilters): boolean {
+  return (filters.typeId === ALL || incident.typeId === filters.typeId)
+    && (filters.severity === ALL || incident.severity === filters.severity);
+}
+
+function statusOptions(incidents: IncidentResponse[]): StatusFilterOption[] {
+  const all: StatusFilterOption = { value: ALL, label: "All", count: incidents.length };
+  return [
+    all,
+    ...Object.values(INCIDENT_STATUSES).map((status) => ({
+      value: status,
+      label: INCIDENT_STATUS_DISPLAY[status].label,
+      count: incidents.filter((incident) => incident.status === status).length,
+    })),
+  ];
+}
+
+export function toIncidentQueueView(incidents: IncidentResponse[], filters: IncidentQueueFilters, now: Date): IncidentQueueView {
+  const narrowed = incidents.filter((incident) => matchesTypeAndSeverity(incident, filters));
+  const shown = filters.status === ALL ? narrowed : narrowed.filter((incident) => incident.status === filters.status);
+  return {
+    rows: shown.map((incident) => toIncidentRow(incident, now)),
+    statusOptions: statusOptions(narrowed),
+    newCount: incidents.filter((incident) => incident.status === INCIDENT_STATUSES.NEW).length,
+  };
 }

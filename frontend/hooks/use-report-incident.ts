@@ -1,21 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchIncidentTypes } from "@/lib/api/incident-types";
 import { reportIncident } from "@/lib/api/incidents";
 import { fetchSectors } from "@/lib/api/parks";
-import { useAuthStore } from "@/lib/auth/store";
 import { toActiveTypeOptions } from "@/lib/incidents/mappers";
 import { toIncidentCreateRequest, type ReportIncidentSubmit } from "@/lib/incidents/report-form";
 import { toSectorShape } from "@/lib/patrols/mappers";
+import { useParkIncidentTypes } from "./use-incident-types";
 
 export function useReportIncident() {
   const queryClient = useQueryClient();
-  const parkId = useAuthStore((state) => state.user?.parkId ?? null);
-
-  const types = useQuery({
-    queryKey: ["parks", parkId, "incident-types"],
-    queryFn: () => fetchIncidentTypes(parkId as number),
-    enabled: parkId !== null,
-  });
+  const types = useParkIncidentTypes();
+  const parkId = types.parkId;
 
   const sectors = useQuery({
     queryKey: ["parks", parkId, "sectors"],

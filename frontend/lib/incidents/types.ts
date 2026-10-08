@@ -1,4 +1,5 @@
 import type { ChipTone } from "@/lib/dashboard/types";
+import type { IncidentStatus, Severity } from "@/lib/enums";
 
 export interface ChipView {
   tone: ChipTone;
@@ -16,4 +17,37 @@ export interface IncidentTypesView {
   rows: IncidentTypeRow[];
   activeCount: number;
   inactiveCount: number;
+}
+
+export const ALL = "ALL";
+
+export type StatusFilter = IncidentStatus | typeof ALL;
+
+export interface IncidentQueueFilters {
+  status: StatusFilter;
+  typeId: number | typeof ALL;
+  severity: Severity | typeof ALL;
+}
+
+export interface IncidentRow {
+  id: number;
+  title: string;
+  code: string;
+  sector: string;
+  reporter: string;
+  reported: string;
+  severity: ChipView;
+  status: ChipView;
+}
+
+export interface StatusFilterOption {
+  value: StatusFilter;
+  label: string;
+  count: number;
+}
+
+export interface IncidentQueueView {
+  rows: IncidentRow[];
+  statusOptions: StatusFilterOption[];
+  newCount: number;
 }

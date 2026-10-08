@@ -10,37 +10,43 @@ interface SaveInput {
   values: IncidentTypeRequestValues;
 }
 
-export function useIncidentTypes() {
-  const queryClient = useQueryClient();
-  const parkId = useAuthStore((state) => state.user?.parkId ?? null);
-  const canManage = useAuthStore((state) => state.user?.role === ROLES.MANAGER);
-  const queryKey = ["parks", parkId, "incident-types"];
+function incidentTypesKey(parkId: number | null) {
+  return ["parks", parkId, "incident-types"];
+}
 
-  const types = useQuery({
-    queryKey,
+export function useParkIncidentTypes() {
+  const parkId = useAuthStore((state) => state.user?.parkId ?? null);
+  const query = useQuery({
+    queryKey: incidentTypesKey(parkId),
     queryFn: () => fetchIncidentTypes(parkId as number),
     enabled: parkId !== null,
   });
+  return { parkId, ...query };
+}
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey });
+export function useIncidentTypes() {
+  const queryClient = useQueryClient();
+  const canManage = useAuthStore((state) => state.user?.role === ROLES.MANAGER);
+  const types = useParkIncidentTypes();
+  const parkId = types.parkId as number;
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: incidentTypesKey(types.parkId) });
 
   const save = useMutation({
     mutationFn: ({ typeId, values }: SaveInput) => {
       const request = toIncidentTypeRequest(values);
-      return typeId === null
-        ? createIncidentType(parkId as number, request)
-        : updateIncidentType(parkId as number, typeId, request);
+      return typeId === null ? createIncidentType(parkId, request) : updateIncidentType(parkId, typeId, request);
     },
     onSuccess: refresh,
   });
 
   const remove = useMutation({
-    mutationFn: (typeId: number) => deleteIncidentType(parkId as number, typeId),
+    mutationFn: (typeId: number) => deleteIncidentType(parkId, typeId),
     onSuccess: refresh,
   });
 
   return {
-    hasPark: parkId !== null,
+    hasPark: types.parkId !== null,
     canManage,
     isPending: types.isPending,
     isError: types.isError,
