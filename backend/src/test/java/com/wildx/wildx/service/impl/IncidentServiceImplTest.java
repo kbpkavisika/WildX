@@ -195,6 +195,30 @@ class IncidentServiceImplTest {
     }
 
     @Test
+    void resolvesAssignedIncidentWithOutcome() {
+        Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.ASSIGNED);
+        when(incidents.findById(1L)).thenReturn(Optional.of(incident));
+        service.resolve(1L, "Snare removed");
+        assertThat(incident.getStatus()).isEqualTo(IncidentStatus.RESOLVED);
+        assertThat(incident.getResolutionNote()).isEqualTo("Snare removed");
+        service.reopen(1L);
+        assertThat(incident.getStatus()).isEqualTo(IncidentStatus.RESOLVED);
+    }
+
+    @Test
+    void reopensAssignedIncidentAndIgnoresOtherStatuses() {
+        Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.ASSIGNED);
+        when(incidents.findById(1L)).thenReturn(Optional.of(incident));
+        service.reopen(1L);
+        assertThat(incident.getStatus()).isEqualTo(IncidentStatus.NEW);
+        service.resolve(1L, "Snare removed");
+        assertThat(incident.getStatus()).isEqualTo(IncidentStatus.NEW);
+        assertThat(incident.getResolutionNote()).isNull();
+        when(incidents.findById(9L)).thenReturn(Optional.empty());
+        assertThatCode(() -> service.resolve(9L, "x")).doesNotThrowAnyException();
+    }
+
+    @Test
     void rejectsClosedIncidentChangesAndOtherParks() {
         Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.RESOLVED);
         when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(incident));

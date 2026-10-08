@@ -249,9 +249,7 @@ public class DispatchServiceImpl implements DispatchService {
                     alertService.resolve(alert.getPark().getId(), alert.getId(), dispatch.getResponder().getId(), Disposition.CONFLICT_AVERTED);
                 }
             }
-            case INCIDENT -> {
-                log.info("Dispatch completed for incident id={}", dispatch.getSourceId());
-            }
+            case INCIDENT -> incidentService.resolve(dispatch.getSourceId(), request.outcome().strip());
         }
 
         log.info("complete dispatch completed id={} outcome={}", saved.getId(), saved.getOutcome());
@@ -283,6 +281,9 @@ public class DispatchServiceImpl implements DispatchService {
                 report.setStatus(CommunityReportStatus.VALIDATED);
                 communityReportRepository.save(report);
             }
+        }
+        if (dispatch.getSourceType() == SourceType.INCIDENT) {
+            incidentService.reopen(dispatch.getSourceId());
         }
 
         log.info("decline dispatch completed id={}", saved.getId());
