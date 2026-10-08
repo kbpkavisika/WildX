@@ -42,6 +42,15 @@ class PatrolControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
     }
 
+    @Test
+    void staffListRangersOfTheirPark() throws Exception {
+        when(auth.current(any())).thenReturn(new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 1L));
+        when(auth.activeUsers(1L, Role.RANGER)).thenReturn(List.of(new UserResponse(9L, "K. Bandara", "r@wildx.lk", Role.RANGER, 1L)));
+        mvc.perform(get("/api/v1/rangers").header("Authorization", token("SUPERVISOR")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].name").value("K. Bandara"));
+        mvc.perform(get("/api/v1/rangers").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
+    }
+
     private String token(String role) {
         Instant now = Instant.now();
         var claims = JwtClaimsSet.builder().subject("7").issuedAt(now).expiresAt(now.plusSeconds(60))

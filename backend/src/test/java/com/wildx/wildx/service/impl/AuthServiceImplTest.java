@@ -2,6 +2,7 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.LoginRequest;
 import com.wildx.wildx.dto.LoginResponse;
+import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.exception.UnauthorizedException;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.Park;
@@ -25,6 +26,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -150,6 +152,16 @@ class AuthServiceImplTest {
                 .thenReturn(List.of(first, second));
         assertThat(authService.activeUserIds(3L, Role.SUPERVISOR)).containsExactly(7L, 8L);
         assertThat(authService.activeUserIds(3L, Role.MANAGER)).isEmpty();
+    }
+
+    @Test
+    void listsActiveUsersWithRoleInPark() {
+        Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
+        when(userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(3L, Role.RANGER))
+                .thenReturn(List.of(user(Role.RANGER, park, true)));
+        assertThat(authService.activeUsers(3L, Role.RANGER))
+                .extracting(UserResponse::id, UserResponse::role, UserResponse::parkId)
+                .containsExactly(tuple(7L, Role.RANGER, 3L));
     }
 
     @Test

@@ -15,4 +15,5 @@ public interface AuthService {
     void requireParkAccess(Jwt jwt, Long parkId);
     AppUser requireRanger(Long userId, Long parkId);
     List<Long> activeUserIds(Long parkId, Role role);
+    List<UserResponse> activeUsers(Long parkId, Role role);
 }

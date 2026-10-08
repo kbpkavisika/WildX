@@ -123,4 +123,11 @@ public class AuthServiceImpl implements AuthService {
         return userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, role).stream()
                 .map(AppUser::getId).toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> activeUsers(Long parkId, Role role) {
+        return userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, role).stream()
+                .map(UserMapper::toResponse).toList();
+    }
 }
