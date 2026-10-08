@@ -180,3 +180,11 @@ Content-Type: application/json
   "lat": 6.33024,
   "lng": 81.45
 }
+
+### Alert report for today: counts per type and zone with median acknowledge and resolve minutes
+GET {{baseUrl}}/reports/alerts?from={{$datetime 'YYYY-MM-DD'}}&to={{$datetime 'YYYY-MM-DD'}}
+Authorization: Bearer {{login.response.body.token}}
+
+### The same alert report as a CSV download
+GET {{baseUrl}}/reports/alerts?from={{$datetime 'YYYY-MM-DD'}}&to={{$datetime 'YYYY-MM-DD'}}&format=csv
+Authorization: Bearer {{login.response.body.token}}
