@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.*;
 import java.util.List;
+import java.util.Optional;
 import com.wildx.wildx.type.PatrolStatus;
 import com.wildx.wildx.exception.NotFoundException;
 import org.springframework.security.access.AccessDeniedException;
@@ -52,6 +53,13 @@ public class PatrolServiceImpl implements PatrolService {
                 LocalDate.now(clock.withZone(PatrolConstants.PARK_ZONE))).stream().map(PatrolResponse::from).toList();
         log.info("today patrols completed rangerId={}", caller.id());
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Patrol> activePatrol(Long rangerId, Long parkId) {
+        return repository.findFirstByRangerIdAndRouteParkIdAndStatusOrderByStartedAtDescIdDesc(rangerId, parkId,
+                PatrolStatus.ACTIVE);
     }
 
     @Override
