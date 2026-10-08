@@ -29,7 +29,7 @@ public class CameraImageController {
     private final CameraImageService images;
     private final AuthService auth;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping
     @PreAuthorize(VIEWERS)
     public List<CameraBurstResponse> bursts(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt,
                                             @RequestParam(required = false) CameraImageStatus status) {
@@ -48,7 +48,7 @@ public class CameraImageController {
                 .body(file.content());
     }
 
-    @PostMapping(value = "/{imageId}/tag", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/{imageId}/tag")
     @PreAuthorize("hasRole('MANAGER')")
     public CameraImageResponse tag(@PathVariable Long parkId, @PathVariable Long imageId,
                                    @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CameraImageTagRequest request) {

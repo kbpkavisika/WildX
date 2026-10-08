@@ -7,7 +7,6 @@ import com.wildx.wildx.service.CollarFixService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +17,7 @@ public class CollarIngestController {
     private final CollarFixService collarFixes;
     private final ApiKeyGuard apiKey;
 
-    @PostMapping(value = "/collar-fixes", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/collar-fixes")
     public ResponseEntity<CollarFixResponse> ingest(@RequestHeader(value = ApiKeyGuard.HEADER, required = false) String key,
                                                     @Valid @RequestBody CollarFixRequest request) {
         apiKey.require(key);

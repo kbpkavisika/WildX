@@ -20,8 +20,7 @@ public class CameraIngestController {
     private final CameraImageService images;
     private final ApiKeyGuard apiKey;
 
-    @PostMapping(value = "/camera-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/camera-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CameraImageUploadResponse> ingest(
             @RequestHeader(value = ApiKeyGuard.HEADER, required = false) String key,
             @RequestParam String cameraCode,
