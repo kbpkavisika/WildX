@@ -7,7 +7,6 @@ import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.SimulatorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -20,7 +19,7 @@ public class SimulatorController {
     private final SimulatorService simulator;
     private final AuthService auth;
 
-    @PostMapping(value = "/collar-fixes", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/collar-fixes")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public SimulationResponse simulate(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt,
                                        @Valid @RequestBody SimulationRequest request) {
@@ -28,7 +27,7 @@ public class SimulatorController {
         return simulator.simulate(parkId, request);
     }
 
-    @PostMapping(value = "/camera-images", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/camera-images")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public SimulationResponse simulateCamera(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt,
                                              @Valid @RequestBody CameraSimulationRequest request) {

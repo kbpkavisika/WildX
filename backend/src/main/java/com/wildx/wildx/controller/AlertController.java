@@ -8,7 +8,6 @@ import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.type.AlertStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -24,21 +23,21 @@ public class AlertController {
     private final AlertService alerts;
     private final AuthService auth;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping
     @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR','RANGER','CLO','LEL')")
     public List<AlertResponse> alerts(@AuthenticationPrincipal Jwt jwt,
                                       @RequestParam(required = false) AlertStatus status) {
         return alerts.alerts(auth.current(jwt).parkId(), status);
     }
 
-    @PostMapping(value = "/{id}/acknowledge", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/{id}/acknowledge")
     @PreAuthorize(HANDLERS)
     public AlertResponse acknowledge(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
         UserResponse user = auth.current(jwt);
         return alerts.acknowledge(user.parkId(), id, user.id());
     }
 
-    @PostMapping(value = "/{id}/resolve", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/{id}/resolve")
     @PreAuthorize(HANDLERS)
     public AlertResponse resolve(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt,
                                  @Valid @RequestBody AlertResolveRequest request) {
