@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import com.wildx.wildx.type.PatrolStatus;
+import com.wildx.wildx.type.Role;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -25,6 +26,12 @@ public class PatrolController {
     public ResponseEntity<PatrolResponse> assign(@AuthenticationPrincipal Jwt jwt,
                                                 @Valid @RequestBody PatrolAssignRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(patrols.assign(auth.current(jwt).parkId(), request));
+    }
+
+    @GetMapping("/rangers")
+    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    public List<UserResponse> rangers(@AuthenticationPrincipal Jwt jwt) {
+        return auth.activeUsers(auth.current(jwt).parkId(), Role.RANGER);
     }
 
     @GetMapping("/me/patrols")

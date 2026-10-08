@@ -65,7 +65,7 @@ The backend keeps the existing layer packages under `com.wildx.wildx` and adds `
 
 ```
 com.wildx.wildx
-├─ config/      SecurityConfig, JwtConfig, WebConfig (CORS), DataSeeder
+├─ config/      SecurityConfig (JWT, CORS), DataSeeder
 ├─ constant/    Roles, AppConstants (night hours, thresholds)
 ├─ controller/  AuthController, AdminController, Park*Controller,
 │               Patrol*, Incident*, Dispatch*, Alert*, Device*, CameraImage*, Community*, Sms*, Report*
@@ -160,7 +160,7 @@ Patrol transitions and point writes lock the patrol row. Repeated start/end requ
 
 Today and date-range boundaries use Asia/Colombo. Coverage includes never-visited sectors, derives neglect from the park setting and orders neglected sectors first. GET `/patrols/history` returns completed patrols with distance in metres and duration in seconds, newest scheduled date first; GET `/patrols/{id}/track` provides replay points in timestamp order. Live responses expose the last recorded location/time and consider it offline after five minutes without an accepted patrol request. GPS-status requests can serve as heartbeats during GPS loss.
 
-Sector configuration is exposed at `/parks/{id}/sectors`; updates do not retroactively remap historical points. Sector deletion is rejected when track points reference it. `PUT /parks/{id}/coverage-settings` accepts `{neglectDays}` for a manager's own park. GET `/reports/coverage?from=YYYY-MM-DD&to=YYYY-MM-DD` uses inclusive park-local dates and returns every sector with its recorded point count, distinct patrol count and latest visit within the range. Missing or reversed dates are rejected. `format=csv` downloads UTF-8 CSV with escaped fields and spreadsheet-formula protection; the default is JSON.
+GET `/rangers` (Manager, Supervisor) lists the active rangers of the caller's park for the assign pick-list. Sector configuration is exposed at `/parks/{id}/sectors`; updates do not retroactively remap historical points. Sector deletion is rejected when track points reference it. `PUT /parks/{id}/coverage-settings` accepts `{neglectDays}` for a manager's own park. GET `/reports/coverage?from=YYYY-MM-DD&to=YYYY-MM-DD` uses inclusive park-local dates and returns every sector with its recorded point count, distinct patrol count and latest visit within the range. Missing or reversed dates are rejected. `format=csv` downloads UTF-8 CSV with escaped fields and spreadsheet-formula protection; the default is JSON.
 
 ### Device registry contract (SEN-01)
 
@@ -318,7 +318,7 @@ frontend/
 
 ## 9. Configuration and local setup
 
-Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`, `UPLOAD_DIR`). Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
+Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`, `UPLOAD_DIR`, `CORS_ORIGINS`). `CORS_ORIGINS` is a comma-separated list of allowed browser origins and defaults to `http://localhost:3000`. Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
 
 To run the system, start PostgreSQL (`docker-compose.yml` in the repo root, `postgres:17-alpine`), the backend and the frontend:
 
@@ -335,10 +335,12 @@ cd frontend && npm run dev
 ```
 
 **Seed data:** `config/DataSeeder` runs only when the DB is empty. It creates:
-- park **Yala**, with 4 sectors, 2 routes and 2 zones (Kumbukgaha farmland, and a road);
+- park **Yala**, with 2 zones (Kumbukgaha farmland, and a road);
 - alert rules, 5 incident types and 3 boundary segments (`KUMB`, `PAL`, `KAT`);
 - 1 collar on elephant "Gemunu" and 1 camera;
 - one user per role (`ranger@wildx.lk`, `supervisor@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `lel@wildx.lk`, `admin@wildx.lk`), with the test password `password`.
+
+`config/PatrolSeeder` runs after it, only when there are no patrols, so it also fills an existing DB. It adds 4 sectors, 3 routes, 3 more rangers (`kasun@`, `nimal@`, `saman@wildx.lk`, same password) and 8 patrols relative to today: 2 active with GPS tracks (one offline for 20 min), 2 planned, 3 completed with tracks and 1 cancelled.
 
 Simulation scripts live in `docs/sim/*.http` (IntelliJ/VS Code REST client) and send a fix inside the farmland zone, a camera image and an SMS.
 
