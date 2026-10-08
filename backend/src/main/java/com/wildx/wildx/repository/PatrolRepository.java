@@ -20,4 +20,6 @@ public interface PatrolRepository extends JpaRepository<Patrol, Long> {
     Optional<Patrol> findByIdAndRouteParkId(Long id, Long parkId);
     @EntityGraph(attributePaths = {"route", "route.park", "ranger"})
     List<Patrol> findByRouteParkIdAndStatusOrderByIdAsc(Long parkId, com.wildx.wildx.type.PatrolStatus status);
+    Optional<Patrol> findFirstByRangerIdAndRouteParkIdAndStatusOrderByStartedAtDescIdDesc(Long rangerId, Long parkId,
+                                                                                          com.wildx.wildx.type.PatrolStatus status);
 }
