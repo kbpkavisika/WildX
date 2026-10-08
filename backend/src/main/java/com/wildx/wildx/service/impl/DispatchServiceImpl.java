@@ -6,12 +6,14 @@ import com.wildx.wildx.model.Alert;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.CommunityReport;
 import com.wildx.wildx.model.Dispatch;
+import com.wildx.wildx.model.Incident;
 import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.CommunityReportRepository;
 import com.wildx.wildx.repository.DispatchRepository;
 import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.service.DispatchService;
+import com.wildx.wildx.service.IncidentService;
 import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.PatrolMonitorService;
 import com.wildx.wildx.service.SmsService;
@@ -37,6 +39,7 @@ public class DispatchServiceImpl implements DispatchService {
     private final CommunityReportRepository communityReportRepository;
     private final AlertRepository alertRepository;
     private final AlertService alertService;
+    private final IncidentService incidentService;
     private final PatrolMonitorService patrolMonitorService;
     private final NotificationService notificationService;
     private final SmsService smsService;
@@ -125,7 +128,13 @@ public class DispatchServiceImpl implements DispatchService {
                 description = "alert " + alert.getId();
             }
             case INCIDENT -> {
-                description = "incident " + request.sourceId();
+                Incident incident = incidentService.assign(caller.parkId(), request.sourceId());
+                if (responder.getPark() != null && !incident.getPark().getId().equals(responder.getPark().getId())) {
+                    throw new IllegalArgumentException("Responder and incident belong to different parks");
+                }
+                severity = incident.getSeverity();
+                description = incident.getType().getName() + " incident"
+                        + (incident.getSector() != null ? " in " + incident.getSector().getName() : "");
             }
             default -> throw new IllegalArgumentException("Unsupported source type " + request.sourceType());
         }
@@ -240,9 +249,7 @@ public class DispatchServiceImpl implements DispatchService {
                     alertService.resolve(alert.getPark().getId(), alert.getId(), dispatch.getResponder().getId(), Disposition.CONFLICT_AVERTED);
                 }
             }
-            case INCIDENT -> {
-                log.info("Dispatch completed for incident id={}", dispatch.getSourceId());
-            }
+            case INCIDENT -> incidentService.resolve(dispatch.getSourceId(), request.outcome().strip());
         }
 
         log.info("complete dispatch completed id={} outcome={}", saved.getId(), saved.getOutcome());
@@ -274,6 +281,9 @@ public class DispatchServiceImpl implements DispatchService {
                 report.setStatus(CommunityReportStatus.VALIDATED);
                 communityReportRepository.save(report);
             }
+        }
+        if (dispatch.getSourceType() == SourceType.INCIDENT) {
+            incidentService.reopen(dispatch.getSourceId());
         }
 
         log.info("decline dispatch completed id={}", saved.getId());

@@ -11,6 +11,10 @@ import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.CommunityReportRepository;
 import com.wildx.wildx.repository.DispatchRepository;
 import com.wildx.wildx.service.AlertService;
+import com.wildx.wildx.service.IncidentService;
+import com.wildx.wildx.model.Incident;
+import com.wildx.wildx.model.IncidentType;
+import com.wildx.wildx.model.Sector;
 import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.PatrolMonitorService;
 import com.wildx.wildx.service.SmsService;
@@ -43,6 +47,7 @@ class DispatchServiceImplTest {
     @Mock CommunityReportRepository communityReportRepository;
     @Mock AlertRepository alertRepository;
     @Mock AlertService alertService;
+    @Mock IncidentService incidentService;
     @Mock PatrolMonitorService patrolMonitorService;
     @Mock NotificationService notificationService;
     @Mock SmsService smsService;
@@ -62,6 +67,7 @@ class DispatchServiceImplTest {
                 communityReportRepository,
                 alertRepository,
                 alertService,
+                incidentService,
                 patrolMonitorService,
                 notificationService,
                 smsService,
@@ -109,6 +115,50 @@ class DispatchServiceImplTest {
         assertThat(responders.get(0).id()).isEqualTo(102L);
         assertThat(responders.get(1).id()).isEqualTo(101L);
         assertThat(responders.get(0).distanceM()).isLessThan(responders.get(1).distanceM());
+    }
+
+    @Test
+    void createDispatchForIncidentAssignsItAndUsesItsSeverity() {
+        IncidentType snare = new IncidentType();
+        snare.setName("Snare");
+        Sector sector = new Sector();
+        sector.setName("Sector 3");
+        Incident incident = new Incident();
+        incident.setId(60L);
+        incident.setPark(park);
+        incident.setType(snare);
+        incident.setSector(sector);
+        incident.setSeverity(Severity.CRITICAL);
+        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
+        when(appUserRepository.findById(101L)).thenReturn(Optional.of(ranger1));
+        when(appUserRepository.findById(5L)).thenReturn(Optional.empty());
+        when(incidentService.assign(1L, 60L)).thenReturn(incident);
+        when(patrolMonitorService.live(1L)).thenReturn(List.of());
+        when(dispatchRepository.save(any(Dispatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DispatchResponse response = service.createDispatch(supervisor,
+                new DispatchCreateRequest(SourceType.INCIDENT, 60L, 101L, null));
+
+        assertThat(response.sourceType()).isEqualTo(SourceType.INCIDENT);
+        verify(notificationService).notifyUsers(List.of(101L), "New dispatch",
+                "You have been dispatched to Snare incident in Sector 3", "/ranger/tasks");
+        verify(smsService).sendSms("+94771111111", "WildX Dispatch: You have been dispatched to Snare incident in Sector 3");
+    }
+
+    @Test
+    void createDispatchForIncidentInAnotherParkIsRejected() {
+        Park other = new Park();
+        other.setId(2L);
+        Incident incident = new Incident();
+        incident.setPark(other);
+        when(appUserRepository.findById(101L)).thenReturn(Optional.of(ranger1));
+        when(appUserRepository.findById(5L)).thenReturn(Optional.empty());
+        when(incidentService.assign(1L, 60L)).thenReturn(incident);
+        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
+
+        assertThatThrownBy(() -> service.createDispatch(supervisor, new DispatchCreateRequest(SourceType.INCIDENT, 60L, 101L, null)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("Responder and incident belong to different parks");
+        verify(dispatchRepository, never()).save(any());
     }
 
     @Test
@@ -222,6 +272,44 @@ class DispatchServiceImplTest {
         assertThat(response.status()).isEqualTo(DispatchStatus.DECLINED);
         assertThat(dispatch.getNote()).isEqualTo("Vehicle broken down, cannot respond");
         assertThat(report.getStatus()).isEqualTo(CommunityReportStatus.VALIDATED);
+    }
+
+    @Test
+    void completingIncidentDispatchResolvesIncidentWithOutcome() {
+        Dispatch dispatch = incidentDispatch();
+        when(dispatchRepository.findWithDetailsById(99L)).thenReturn(Optional.of(dispatch));
+        when(dispatchRepository.save(any(Dispatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        UserResponse caller = new UserResponse(101L, "Ranger One", "ranger@wildx.lk", Role.RANGER, 1L);
+
+        DispatchResponse response = service.completeDispatch(caller, 99L, new DispatchCompleteRequest(" Snare removed "));
+
+        assertThat(response.status()).isEqualTo(DispatchStatus.COMPLETED);
+        verify(incidentService).resolve(60L, "Snare removed");
+        verify(incidentService, never()).reopen(any());
+    }
+
+    @Test
+    void decliningIncidentDispatchReturnsIncidentToQueue() {
+        Dispatch dispatch = incidentDispatch();
+        when(dispatchRepository.findWithDetailsById(99L)).thenReturn(Optional.of(dispatch));
+        when(dispatchRepository.save(any(Dispatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        UserResponse caller = new UserResponse(101L, "Ranger One", "ranger@wildx.lk", Role.RANGER, 1L);
+
+        DispatchResponse response = service.declineDispatch(caller, 99L, null);
+
+        assertThat(response.status()).isEqualTo(DispatchStatus.DECLINED);
+        verify(incidentService).reopen(60L);
+        verify(incidentService, never()).resolve(any(), any());
+    }
+
+    private Dispatch incidentDispatch() {
+        Dispatch dispatch = new Dispatch();
+        dispatch.setId(99L);
+        dispatch.setSourceType(SourceType.INCIDENT);
+        dispatch.setSourceId(60L);
+        dispatch.setResponder(ranger1);
+        dispatch.setStatus(DispatchStatus.ACKNOWLEDGED);
+        return dispatch;
     }
 
     @Test

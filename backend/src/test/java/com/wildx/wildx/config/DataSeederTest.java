@@ -5,6 +5,7 @@ import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.EscalationStep;
+import com.wildx.wildx.model.IncidentType;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AlertRuleRepository;
@@ -13,6 +14,7 @@ import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.BoundarySegmentRepository;
 import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.EscalationStepRepository;
+import com.wildx.wildx.repository.IncidentTypeRepository;
 import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
@@ -46,8 +48,10 @@ class DataSeederTest {
     private final AlertRuleRepository alertRuleRepository = mock(AlertRuleRepository.class);
     private final BoundarySegmentRepository boundarySegmentRepository = mock(BoundarySegmentRepository.class);
     private final EscalationStepRepository escalationStepRepository = mock(EscalationStepRepository.class);
+    private final IncidentTypeRepository incidentTypeRepository = mock(IncidentTypeRepository.class);
     private final DataSeeder seeder = new DataSeeder(parkRepository, userRepository, passwordEncoder,
-            animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository, escalationStepRepository);
+            animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository,
+            escalationStepRepository, incidentTypeRepository);
 
 
     @Test
@@ -94,6 +98,11 @@ class DataSeederTest {
         verify(escalationStepRepository).saveAll(steps.capture());
         assertThat(steps.getValue()).extracting(EscalationStep::getStepNo, EscalationStep::getRole)
                 .containsExactly(tuple(1, Role.SUPERVISOR), tuple(2, Role.MANAGER));
+        ArgumentCaptor<List<IncidentType>> incidentTypes = ArgumentCaptor.forClass(List.class);
+        verify(incidentTypeRepository).saveAll(incidentTypes.capture());
+        assertThat(incidentTypes.getValue()).extracting(IncidentType::getName).containsExactly(
+                "Snare", "Carcass", "Illegal campsite", "At-risk species sign", "Human-wildlife conflict");
+        assertThat(incidentTypes.getValue()).allMatch(type -> type.isActive() && type.getPark() != null);
     }
 
     @Test
@@ -103,7 +112,7 @@ class DataSeederTest {
         seeder.run();
 
 
-        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository ,escalationStepRepository);
+        verifyNoInteractions(parkRepository, animalRepository, deviceRepository, zoneRepository, alertRuleRepository, boundarySegmentRepository ,escalationStepRepository, incidentTypeRepository);
 
         verify(userRepository, never()).saveAll(any());
     }
