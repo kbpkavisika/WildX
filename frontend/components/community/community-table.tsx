@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MapPin, MessageSquare, PhoneCall, Send, X } from "lucide-react";
+import { Check, ExternalLink, MapPin, MessageSquare, PhoneCall, Send, X } from "lucide-react";
 import { formatAgo } from "@/lib/format";
 import type { CommunityReport } from "@/lib/api/community";
 
@@ -139,26 +139,40 @@ export function CommunityTable({
                 </td>
 
                 <td className="px-4 py-3.5">
-                  {report.segmentName ? (
-                    <div className="flex items-center gap-1.5 text-ink-body">
-                      <MapPin className="size-4 shrink-0 text-primary" />
-                      <span>{report.segmentName}</span>
-                      {report.segmentCode && (
-                        <span className="rounded bg-surface-sunken px-1 text-caption font-mono text-ink-muted">
-                          {report.segmentCode}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onOpenLocation(report)}
-                      className="inline-flex items-center gap-1 rounded border border-negative-line bg-negative-bg px-2 py-0.5 text-caption font-medium text-negative hover:underline"
-                    >
-                      <MapPin className="size-3" />
-                      Assign segment
-                    </button>
-                  )}
+                  <div className="flex flex-col gap-0.5">
+                    {report.segmentName ? (
+                      <div className="flex items-center gap-1.5 text-ink-body">
+                        <MapPin className="size-4 shrink-0 text-primary" />
+                        <span className="font-medium text-ink">{report.segmentName}</span>
+                        {report.segmentCode && (
+                          <span className="rounded bg-surface-sunken px-1 text-caption font-mono text-ink-muted">
+                            {report.segmentCode}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onOpenLocation(report)}
+                        className="inline-flex items-center gap-1 self-start rounded border border-negative-line bg-negative-bg px-2 py-0.5 text-caption font-medium text-negative hover:underline"
+                      >
+                        <MapPin className="size-3" />
+                        Assign segment
+                      </button>
+                    )}
+                    {report.lat !== null && report.lng !== null && (
+                      <a
+                        href={`https://www.google.com/maps?q=${report.lat},${report.lng}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-mono text-primary hover:underline"
+                        title="Open in Google Maps"
+                      >
+                        <ExternalLink className="size-3" />
+                        <span>{report.lat.toFixed(4)}, {report.lng.toFixed(4)}</span>
+                      </a>
+                    )}
+                  </div>
                 </td>
 
                 <td className="px-4 py-3.5 text-caption text-ink-muted whitespace-nowrap">
