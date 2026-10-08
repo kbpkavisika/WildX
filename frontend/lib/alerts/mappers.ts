@@ -1,12 +1,25 @@
 import type { AlertResponse } from "@/lib/api/alerts";
 import type { ZoneResponse } from "@/lib/api/zones";
-import { ALERT_STATUSES, ALERT_TYPES, type AlertType } from "@/lib/enums";
+import { ALERT_STATUSES, ALERT_TYPES, DISPOSITIONS, ROLES, type AlertType, type Disposition, type Role } from "@/lib/enums";
 import { formatDayTime } from "@/lib/format";
 import { SEVERITY_DISPLAY } from "@/lib/incidents/mappers";
 import { toSectorShape } from "@/lib/patrols/mappers";
-import { ALERT_FILTERS, type AlertFilter, type AlertFilterOption, type AlertRow, type AlertStatusView, type AlertsView } from "./types";
+import type { LatLng } from "@/lib/patrols/types";
+import type { DetailFact } from "@/lib/incidents/types";
+import {
+  ALERT_FILTERS,
+  type AlertDetailView,
+  type AlertFilter,
+  type AlertFilterOption,
+  type AlertRow,
+  type AlertStatusView,
+  type AlertsView,
+} from "./types";
 
 const UNKNOWN_DEVICE = "Unknown device";
+const NO_VALUE = "—";
+const HANDLER_ROLES = new Set<Role>([ROLES.RANGER, ROLES.SUPERVISOR, ROLES.MANAGER]);
+const DISPATCHER_ROLES = new Set<Role>([ROLES.SUPERVISOR, ROLES.MANAGER]);
 
 const TYPE_LABELS: Record<AlertType, string> = {
   [ALERT_TYPES.ZONE_BREACH]: "Zone breach",
@@ -22,7 +35,14 @@ const FILTER_LABELS: Record<AlertFilter, string> = {
   [ALERT_FILTERS.ALL]: "All",
 };
 
-export const EMPTY_ALERTS: AlertsView = { rows: [], filters: [], zones: [], openCount: 0, escalatedCount: 0 };
+export const DISPOSITION_LABELS: Record<Disposition, string> = {
+  [DISPOSITIONS.CONFLICT_AVERTED]: "Conflict averted",
+  [DISPOSITIONS.CONFLICT_OCCURRED]: "Conflict occurred",
+  [DISPOSITIONS.NO_ACTION]: "No action required",
+  [DISPOSITIONS.FALSE_ALARM]: "False alarm",
+};
+
+export const EMPTY_ALERTS: AlertsView = { rows: [], filters: [], zones: [], selected: null, openCount: 0, escalatedCount: 0 };
 
 function isEscalated(alert: AlertResponse): boolean {
   return alert.status === ALERT_STATUSES.OPEN && alert.escalationLevel > 0;
@@ -43,6 +63,60 @@ function alertStatus(alert: AlertResponse): AlertStatusView {
   return { tone: "negative", label: isEscalated(alert) ? "Escalated" : "Open" };
 }
 
+function positionOf(alert: AlertResponse): LatLng | null {
+  return alert.lat !== null && alert.lng !== null ? [alert.lat, alert.lng] : null;
+}
+
+function escalationText(level: number): string {
+  if (level === 0) return "Not escalated";
+  return level === 1 ? "Escalated 1 time" : `Escalated ${level} times`;
+}
+
+function acknowledgeByText(alert: AlertResponse, now: Date): string {
+  if (alert.status !== ALERT_STATUSES.OPEN || !alert.slaDueAt) return NO_VALUE;
+  const due = new Date(alert.slaDueAt);
+  return due < now ? `${formatDayTime(due, now)} · overdue` : formatDayTime(due, now);
+}
+
+function acknowledgedText(alert: AlertResponse, now: Date): string {
+  if (!alert.acknowledgedAt) return NO_VALUE;
+  const time = formatDayTime(new Date(alert.acknowledgedAt), now);
+  return alert.acknowledgedByName ? `${alert.acknowledgedByName} · ${time}` : time;
+}
+
+function resolvedText(alert: AlertResponse, now: Date): string {
+  if (!alert.resolvedAt) return NO_VALUE;
+  const time = formatDayTime(new Date(alert.resolvedAt), now);
+  return alert.disposition ? `${time} · ${DISPOSITION_LABELS[alert.disposition]}` : time;
+}
+
+function alertFacts(alert: AlertResponse, now: Date): DetailFact[] {
+  return [
+    { label: "Device", value: deviceLabel(alert) },
+    { label: "Occurred", value: formatDayTime(new Date(alert.occurredAt), now) },
+    { label: "Acknowledge by", value: acknowledgeByText(alert, now) },
+    { label: "Escalation", value: escalationText(alert.escalationLevel) },
+    { label: "Acknowledged", value: acknowledgedText(alert, now) },
+    { label: "Resolved", value: resolvedText(alert, now) },
+  ];
+}
+
+function toAlertDetail(alert: AlertResponse, role: Role | null, now: Date): AlertDetailView {
+  const handler = role !== null && HANDLER_ROLES.has(role);
+  const unresolved = alert.status !== ALERT_STATUSES.RESOLVED;
+  return {
+    id: alert.id,
+    title: alertTitle(alert),
+    severity: SEVERITY_DISPLAY[alert.severity],
+    status: alertStatus(alert),
+    facts: alertFacts(alert, now),
+    position: positionOf(alert),
+    canAcknowledge: handler && alert.status === ALERT_STATUSES.OPEN,
+    canResolve: handler && unresolved,
+    canDispatch: role !== null && DISPATCHER_ROLES.has(role) && unresolved,
+  };
+}
+
 function toAlertRow(alert: AlertResponse, index: number, now: Date): AlertRow {
   return {
     id: alert.id,
@@ -51,7 +125,7 @@ function toAlertRow(alert: AlertResponse, index: number, now: Date): AlertRow {
     caption: `${deviceLabel(alert)} · ${formatDayTime(new Date(alert.occurredAt), now)}`,
     severity: SEVERITY_DISPLAY[alert.severity],
     status: alertStatus(alert),
-    position: alert.lat !== null && alert.lng !== null ? [alert.lat, alert.lng] : null,
+    position: positionOf(alert),
   };
 }
 
@@ -71,12 +145,16 @@ export function toAlertsView(
   alerts: AlertResponse[],
   zones: ZoneResponse[],
   filter: AlertFilter,
+  selectedId: number | null,
+  role: Role | null,
   now: Date,
 ): AlertsView {
+  const selected = alerts.find((alert) => alert.id === selectedId);
   return {
     rows: alerts.filter((alert) => matches(alert, filter)).map((alert, index) => toAlertRow(alert, index, now)),
     filters: filterOptions(alerts),
     zones: zones.flatMap((zone) => toSectorShape(zone) ?? []),
+    selected: selected ? toAlertDetail(selected, role, now) : null,
     openCount: alerts.filter((alert) => alert.status === ALERT_STATUSES.OPEN).length,
     escalatedCount: alerts.filter(isEscalated).length,
   };

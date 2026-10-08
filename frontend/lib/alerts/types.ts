@@ -1,6 +1,6 @@
 import type { StatusTone } from "@/components/ui/status-dot";
 import { ALERT_STATUSES } from "@/lib/enums";
-import type { ChipView } from "@/lib/incidents/types";
+import type { ChipView, DetailFact } from "@/lib/incidents/types";
 import type { LatLng, SectorShape } from "@/lib/patrols/types";
 
 export const ALERT_FILTERS = { ...ALERT_STATUSES, ALL: "ALL" } as const;
@@ -27,10 +27,25 @@ export interface AlertFilterOption {
   count: number;
 }
 
+export interface AlertDetailView {
+  id: number;
+  title: string;
+  severity: ChipView;
+  status: AlertStatusView;
+  facts: DetailFact[];
+  position: LatLng | null;
+  canAcknowledge: boolean;
+  canResolve: boolean;
+  canDispatch: boolean;
+}
+
 export interface AlertsView {
   rows: AlertRow[];
   filters: AlertFilterOption[];
   zones: SectorShape[];
+  selected: AlertDetailView | null;
   openCount: number;
   escalatedCount: number;
 }
+
+export type AlertAction = "resolve" | "dispatch";

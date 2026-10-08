@@ -9,7 +9,9 @@ import { ALERTS_REFETCH_MS } from "@/lib/constants";
 export function useAlerts() {
   const signedIn = useAuthStore((state) => state.token !== null);
   const parkId = useAuthStore((state) => state.user?.parkId ?? null);
+  const role = useAuthStore((state) => state.user?.role ?? null);
   const filter = useAlertsPage((state) => state.filter);
+  const selectedId = useAlertsPage((state) => state.selectedId);
   const enabled = signedIn && parkId !== null;
 
   const alerts = useQuery({
@@ -30,6 +32,6 @@ export function useAlerts() {
     hasPark: parkId !== null,
     isPending: alerts.isPending,
     isError: alerts.isError,
-    view: alerts.data && toAlertsView(alerts.data, zones.data ?? [], filter, new Date()),
+    view: alerts.data && toAlertsView(alerts.data, zones.data ?? [], filter, selectedId, role, new Date()),
   };
 }

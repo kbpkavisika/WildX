@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { AlertDetail } from "@/components/alerts/alert-detail";
 import { AlertList } from "@/components/alerts/alert-list";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
@@ -60,6 +61,9 @@ export default function AlertsPage() {
             </div>
             <AlertList rows={view.rows} emptyLabel={emptyLabel(view, filter)} />
           </Card>
+          <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-5">
+            <AlertDetail view={view.selected} />
+          </div>
         </div>
       )}
     </>
