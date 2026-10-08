@@ -2,6 +2,7 @@ package com.wildx.wildx.controller;
 
 import com.wildx.wildx.dto.IncidentCreateRequest;
 import com.wildx.wildx.dto.IncidentDismissRequest;
+import com.wildx.wildx.dto.IncidentPhoto;
 import com.wildx.wildx.dto.IncidentResponse;
 import com.wildx.wildx.dto.IncidentSeverityRequest;
 import com.wildx.wildx.service.AuthService;
@@ -10,6 +11,7 @@ import com.wildx.wildx.type.IncidentStatus;
 import com.wildx.wildx.type.Severity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +54,14 @@ public class IncidentController {
     @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER')")
     public IncidentResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return incidents.get(auth.current(jwt), id);
+    }
+
+    @GetMapping("/incidents/{id}/photo")
+    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER')")
+    public ResponseEntity<byte[]> photo(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        IncidentPhoto photo = incidents.photo(auth.current(jwt), id);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(photo.contentType()))
+                .cacheControl(CacheControl.noCache().cachePrivate()).body(photo.content());
     }
 
     @GetMapping("/me/incidents")

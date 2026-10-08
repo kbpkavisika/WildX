@@ -1,9 +1,8 @@
 import type { PatrolHistoryResponse, PatrolResponse } from "@/lib/api/patrols";
 import { PATROL_STATUSES, type PatrolStatus } from "@/lib/enums";
-import { formatDayLabel, formatTime, fromIsoDate, initialsOf, isSameDay } from "@/lib/format";
+import { formatDayLabel, formatKm, formatTime, fromIsoDate, initialsOf, isSameDay } from "@/lib/format";
 import { PATROL_FILTERS, type PatrolFilter, type PatrolFilterOption, type PatrolRow, type PatrolTableView } from "./types";
 
-const METRES_PER_KM = 1000;
 const NO_VALUE = "—";
 
 const STATUS_DISPLAY: Record<PatrolStatus, Pick<PatrolRow, "status" | "filter">> = {
@@ -36,7 +35,7 @@ export function toPatrolRow(patrol: PatrolResponse, distanceM: number | undefine
     leaderInitials: initialsOf(patrol.rangerName),
     day: isSameDay(scheduled, now) ? "Today" : formatDayLabel(scheduled),
     time: timeRange(patrol),
-    distance: distanceM === undefined ? NO_VALUE : `${(distanceM / METRES_PER_KM).toFixed(1)} km`,
+    distance: distanceM === undefined ? NO_VALUE : formatKm(distanceM),
     ...STATUS_DISPLAY[patrol.status],
   };
 }

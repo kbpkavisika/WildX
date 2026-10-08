@@ -11,6 +11,10 @@ export class ApiError extends Error {
   }
 }
 
+export function apiErrorMessage(error: Error): string {
+  return error instanceof ApiError ? error.message : "Could not reach WildX. Try again.";
+}
+
 async function request<T extends z.ZodType>(path: string, schema: T, init?: RequestInit): Promise<z.infer<T>> {
   const token = useAuthStore.getState().token;
   const headers = new Headers(init?.headers);
@@ -25,10 +29,33 @@ export function apiGet<T extends z.ZodType>(path: string, schema: T): Promise<z.
   return request(path, schema);
 }
 
+function jsonInit(method: string, body: unknown): RequestInit {
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+}
+
 export function apiPost<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {
-  return request(path, schema, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return request(path, schema, jsonInit("POST", body));
+}
+
+export async function apiGetBlob(path: string): Promise<Blob> {
+  const token = useAuthStore.getState().token;
+  const response = await fetch(`${API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!response.ok) throw new ApiError(response.status);
+  return response.blob();
+}
+
+export function apiPatch<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {
+  return request(path, schema, jsonInit("PATCH", body));
+}
+
+export function apiPostForm<T extends z.ZodType>(path: string, body: FormData, schema: T): Promise<z.infer<T>> {
+  return request(path, schema, { method: "POST", body });
+}
+
+export function apiPut<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {
+  return request(path, schema, jsonInit("PUT", body));
+}
+
+export async function apiDelete(path: string): Promise<void> {
+  await request(path, z.null(), { method: "DELETE" });
 }

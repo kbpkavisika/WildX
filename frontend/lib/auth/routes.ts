@@ -9,3 +9,7 @@ export function homePath(role: Role): string {
 export function canUseDashboard(role: Role): boolean {
   return role !== ROLES.RANGER;
 }
+
+export function canUseRangerApp(role: Role): boolean {
+  return role === ROLES.RANGER;
+}

@@ -1,6 +1,7 @@
 package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.IncidentCreateRequest;
+import com.wildx.wildx.dto.IncidentPhoto;
 import com.wildx.wildx.dto.IncidentResponse;
 import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.exception.NotFoundException;
@@ -103,13 +104,24 @@ public class IncidentServiceImpl implements IncidentService {
     @Transactional(readOnly = true)
     public IncidentResponse get(UserResponse caller, Long id) {
         log.info("get incident started incidentId={} callerId={}", id, caller.id());
-        Incident incident = requireIncident(caller.parkId(), id);
-        if (caller.role() == Role.RANGER && !incident.getReporter().getId().equals(caller.id())
-                && !dispatches.existsBySourceTypeAndSourceIdAndResponderId(SourceType.INCIDENT, id, caller.id())) {
-            throw new NotFoundException("Incident not found");
-        }
+        Incident incident = requireVisible(caller, id);
         log.info("get incident completed incidentId={}", id);
         return IncidentResponse.from(incident);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public IncidentPhoto photo(UserResponse caller, Long id) {
+        log.info("incident photo started incidentId={} callerId={}", id, caller.id());
+        Incident incident = requireVisible(caller, id);
+        String path = incident.getPhotoPath();
+        if (path == null) {
+            throw new NotFoundException("Incident has no photo");
+        }
+        String contentType = path.endsWith(".png") ? "image/png" : "image/jpeg";
+        IncidentPhoto photo = new IncidentPhoto(storage.read(path), contentType);
+        log.info("incident photo completed incidentId={}", id);
+        return photo;
     }
 
     @Override
@@ -177,6 +189,15 @@ public class IncidentServiceImpl implements IncidentService {
         Incident incident = requireIncident(parkId, id);
         if (incident.getStatus() != IncidentStatus.NEW) {
             throw new IllegalStateException("Incident cannot be " + action + " in status " + incident.getStatus());
+        }
+        return incident;
+    }
+
+    private Incident requireVisible(UserResponse caller, Long id) {
+        Incident incident = requireIncident(caller.parkId(), id);
+        if (caller.role() == Role.RANGER && !incident.getReporter().getId().equals(caller.id())
+                && !dispatches.existsBySourceTypeAndSourceIdAndResponderId(SourceType.INCIDENT, id, caller.id())) {
+            throw new NotFoundException("Incident not found");
         }
         return incident;
     }
