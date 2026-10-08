@@ -34,7 +34,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -42,8 +41,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CameraImageServiceImpl implements CameraImageService {
-    private static final byte[] JPEG_START = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
-    private static final byte[] PNG_START = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
     private static final Duration BURST_GAP = Duration.ofMinutes(1);
     private static final String VIEW_RESTRICTED_IMAGE = "VIEW_RESTRICTED_IMAGE";
     private static final String CAMERA_IMAGE_ENTITY = "camera_image";
@@ -66,7 +63,7 @@ public class CameraImageServiceImpl implements CameraImageService {
         if (captured.isAfter(clock.instant())) {
             throw new IllegalArgumentException("Capture time must not be in the future");
         }
-        String extension = extension(content);
+        String extension = FileStorage.imageExtension(content);
         Device camera = devices.findByCode(cameraCode.strip())
                 .filter(device -> device.getType() == DeviceType.CAMERA)
                 .orElseThrow(() -> new NotFoundException("Camera not found"));
@@ -208,17 +205,4 @@ public class CameraImageServiceImpl implements CameraImageService {
                 members.getLast().getCapturedAt(), members.stream().map(CameraImageResponse::from).toList());
     }
 
-    private String extension(byte[] content) {
-        if (startsWith(content, JPEG_START)) {
-            return "jpg";
-        }
-        if (startsWith(content, PNG_START)) {
-            return "png";
-        }
-        throw new IllegalArgumentException("Only JPEG and PNG images are accepted");
-    }
-
-    private boolean startsWith(byte[] content, byte[] prefix) {
-        return content.length >= prefix.length && Arrays.equals(content, 0, prefix.length, prefix, 0, prefix.length);
-    }
 }

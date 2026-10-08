@@ -32,6 +32,15 @@ class FileStorageTest {
     }
 
     @Test
+    void detectsImageTypeFromFirstBytes() {
+        assertThat(FileStorage.imageExtension(new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 1})).isEqualTo("jpg");
+        assertThat(FileStorage.imageExtension(new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}))
+                .isEqualTo("png");
+        assertThatThrownBy(() -> FileStorage.imageExtension(new byte[] {(byte) 0xFF})).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Only JPEG and PNG images are accepted");
+    }
+
+    @Test
     void missingFilesAndUnwritableFoldersFailClearly() throws Exception {
         FileStorage storage = new FileStorage(uploads.toString());
         assertThatThrownBy(() -> storage.read("camera/missing.jpg")).isInstanceOf(UncheckedIOException.class)
