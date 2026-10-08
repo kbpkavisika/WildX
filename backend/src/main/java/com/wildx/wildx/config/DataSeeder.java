@@ -6,6 +6,7 @@ import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.Device;
 import com.wildx.wildx.model.EscalationStep;
+import com.wildx.wildx.model.IncidentType;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.Zone;
 import com.wildx.wildx.repository.AlertRuleRepository;
@@ -14,6 +15,7 @@ import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.BoundarySegmentRepository;
 import com.wildx.wildx.repository.DeviceRepository;
 import com.wildx.wildx.repository.EscalationStepRepository;
+import com.wildx.wildx.repository.IncidentTypeRepository;
 import com.wildx.wildx.repository.ParkRepository;
 import com.wildx.wildx.repository.ZoneRepository;
 import com.wildx.wildx.type.DeviceType;
@@ -52,6 +54,7 @@ public class DataSeeder implements CommandLineRunner {
     private final AlertRuleRepository alertRuleRepository;
     private final BoundarySegmentRepository boundarySegmentRepository;
     private final EscalationStepRepository escalationStepRepository;
+    private final IncidentTypeRepository incidentTypeRepository;
 
     @Override
     @Transactional
@@ -79,7 +82,22 @@ public class DataSeeder implements CommandLineRunner {
                 seedSegment(yala, "Palatupana", "PAL", 6.2700, 81.4400),
                 seedSegment(yala, "Katagamuwa", "KAT", 6.3800, 81.4800)));
         escalationStepRepository.saveAll(List.of(seedStep(yala, 1, Role.SUPERVISOR), seedStep(yala, 2, Role.MANAGER)));
+        incidentTypeRepository.saveAll(List.of(
+                seedIncidentType(yala, "Snare", Severity.HIGH),
+                seedIncidentType(yala, "Carcass", Severity.MEDIUM),
+                seedIncidentType(yala, "Illegal campsite", Severity.HIGH),
+                seedIncidentType(yala, "At-risk species sign", Severity.MEDIUM),
+                seedIncidentType(yala, "Human-wildlife conflict", Severity.HIGH)));
         log.info("Seeded park {} and {} users", yala.getCode(), users.size());
+    }
+
+    private IncidentType seedIncidentType(Park park, String name, Severity defaultSeverity) {
+        IncidentType type = new IncidentType();
+        type.setPark(park);
+        type.setName(name);
+        type.setDefaultSeverity(defaultSeverity);
+        type.setActive(true);
+        return type;
     }
 
     private BoundarySegment seedSegment(Park park, String name, String code, double lat, double lng) {
