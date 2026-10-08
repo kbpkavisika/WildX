@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import { DispatchForm } from "@/components/dispatch/dispatch-form";
 import type { CommunityReport } from "@/lib/api/community";
 import type { DispatchResponse } from "@/lib/api/dispatches";
@@ -17,14 +17,31 @@ export function CommunityDispatchDialog({ report, open, onClose, onDispatched }:
   if (!open || !report) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
-      <div className="relative w-full max-w-lg rounded-xl border border-line bg-surface p-6 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-lg rounded-xl border border-line bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between border-b border-line pb-3">
           <div>
             <h2 className="text-card-title font-semibold text-ink">Dispatch Ranger</h2>
-            <p className="text-caption text-ink-muted">
-              Report <strong className="text-ink">{report.referenceCode}</strong> · {report.segmentName || "No segment"}
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-caption text-ink-muted">
+              <span>Report <strong className="text-ink">{report.referenceCode}</strong></span>
+              <span>·</span>
+              <span>{report.segmentName || "No segment"}</span>
+              {report.lat !== null && report.lng !== null && (
+                <>
+                  <span>·</span>
+                  <a
+                    href={`https://www.google.com/maps?q=${report.lat},${report.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 font-mono font-medium text-primary hover:underline"
+                    title="Open exact coordinates in Google Maps"
+                  >
+                    <ExternalLink className="size-3" />
+                    <span>{report.lat.toFixed(4)}, {report.lng.toFixed(4)}</span>
+                  </a>
+                </>
+              )}
+            </div>
           </div>
           <button
             type="button"

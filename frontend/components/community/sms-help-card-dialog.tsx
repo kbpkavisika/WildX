@@ -19,8 +19,8 @@ export function SmsHelpCardDialog({ open, onClose }: SmsHelpCardDialogProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
-      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-lg print:border-none print:shadow-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 backdrop-blur-sm p-4">
+      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-line bg-white shadow-2xl print:border-none print:shadow-none">
         <div className="flex items-center justify-between border-b border-line px-5 py-4 print:hidden">
           <h2 className="text-card-title font-semibold text-ink">Printable SMS Help Card</h2>
           <button

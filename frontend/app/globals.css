@@ -54,6 +54,7 @@
   --color-lime-soft: var(--lime-soft);
   --color-coral: var(--coral);
   --color-coral-deep: var(--coral-deep);
+  --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
   --color-surface-sunken: var(--surface-sunken);
   --color-surface-form: var(--surface-form);
@@ -169,6 +170,7 @@
   --lime-soft: #e9f1da;
   --coral: #ff7a59;
   --coral-deep: #e8603f;
+  --surface: #ffffff;
   --surface-muted: #f6f6f3;
   --surface-sunken: #f2f1ee;
   --surface-form: #f7f8f4;
