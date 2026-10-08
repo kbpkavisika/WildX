@@ -12,6 +12,16 @@ export const useIncidentQueue = create<IncidentQueueState>()((set) => ({
   setFilter: (change) => set((state) => ({ filters: { ...state.filters, ...change } })),
 }));
 
+interface IncidentDetailPageState {
+  dismissingId: number | null;
+  setDismissingId: (id: number | null) => void;
+}
+
+export const useIncidentDetailPage = create<IncidentDetailPageState>()((set) => ({
+  dismissingId: null,
+  setDismissingId: (dismissingId) => set({ dismissingId }),
+}));
+
 interface IncidentTypesPageState {
   formOpen: boolean;
   editingId: number | null;

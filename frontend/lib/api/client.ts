@@ -37,6 +37,17 @@ export function apiPost<T extends z.ZodType>(path: string, body: unknown, schema
   return request(path, schema, jsonInit("POST", body));
 }
 
+export async function apiGetBlob(path: string): Promise<Blob> {
+  const token = useAuthStore.getState().token;
+  const response = await fetch(`${API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!response.ok) throw new ApiError(response.status);
+  return response.blob();
+}
+
+export function apiPatch<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {
+  return request(path, schema, jsonInit("PATCH", body));
+}
+
 export function apiPostForm<T extends z.ZodType>(path: string, body: FormData, schema: T): Promise<z.infer<T>> {
   return request(path, schema, { method: "POST", body });
 }

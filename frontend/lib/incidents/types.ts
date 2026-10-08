@@ -1,5 +1,6 @@
 import type { ChipTone } from "@/lib/dashboard/types";
 import type { IncidentStatus, Severity } from "@/lib/enums";
+import type { LatLng } from "@/lib/patrols/types";
 
 export interface ChipView {
   tone: ChipTone;
@@ -38,6 +39,24 @@ export interface IncidentRow {
   reported: string;
   severity: ChipView;
   status: ChipView;
+}
+
+export interface DetailFact {
+  label: string;
+  value: string;
+}
+
+export interface IncidentDetailView {
+  id: number;
+  title: string;
+  subtitle: string;
+  status: ChipView;
+  severity: Severity;
+  position: LatLng | null;
+  facts: DetailFact[];
+  hasPhoto: boolean;
+  canChangeSeverity: boolean;
+  canDismiss: boolean;
 }
 
 export interface StatusFilterOption {

@@ -1,10 +1,19 @@
 import type { IncidentTypeResponse } from "@/lib/api/incident-types";
 import type { IncidentResponse } from "@/lib/api/incidents";
-import { INCIDENT_STATUSES, SEVERITIES, type IncidentStatus, type Severity } from "@/lib/enums";
+import {
+  INCIDENT_STATUSES,
+  LOCATION_SOURCES,
+  SEVERITIES,
+  type IncidentStatus,
+  type LocationSource,
+  type Severity,
+} from "@/lib/enums";
 import { formatDayLabel, formatTime, isSameDay } from "@/lib/format";
 import {
   ALL,
   type ChipView,
+  type DetailFact,
+  type IncidentDetailView,
   type IncidentQueueFilters,
   type IncidentQueueView,
   type IncidentRow,
@@ -92,6 +101,42 @@ function statusOptions(incidents: IncidentResponse[]): StatusFilterOption[] {
       count: incidents.filter((incident) => incident.status === status).length,
     })),
   ];
+}
+
+const NO_VALUE = "—";
+
+const LOCATION_SOURCE_LABELS: Record<LocationSource, string> = {
+  [LOCATION_SOURCES.GPS]: "GPS",
+  [LOCATION_SOURCES.MANUAL]: "Tapped on map",
+};
+
+const CLOSED_STATUSES = new Set<IncidentStatus>([INCIDENT_STATUSES.RESOLVED, INCIDENT_STATUSES.DISMISSED]);
+
+function closingFact(incident: IncidentResponse): DetailFact[] {
+  if (!incident.resolutionNote) return [];
+  const label = incident.status === INCIDENT_STATUSES.DISMISSED ? "Dismissal reason" : "Outcome";
+  return [{ label, value: incident.resolutionNote }];
+}
+
+export function toIncidentDetailView(incident: IncidentResponse, now: Date): IncidentDetailView {
+  return {
+    id: incident.id,
+    title: incident.typeName,
+    subtitle: `INC-${incident.id} · reported by ${incident.reporterName} · ${reportedLabel(new Date(incident.occurredAt), now)}`,
+    status: INCIDENT_STATUS_DISPLAY[incident.status],
+    severity: incident.severity,
+    position: incident.lat !== null && incident.lng !== null ? [incident.lat, incident.lng] : null,
+    facts: [
+      { label: "Sector", value: incident.sectorName ?? NO_SECTOR },
+      { label: "Location", value: LOCATION_SOURCE_LABELS[incident.locationSource] },
+      { label: "Patrol", value: incident.patrolId === null ? NO_VALUE : `PT-${incident.patrolId}` },
+      { label: "Description", value: incident.description ?? NO_VALUE },
+      ...closingFact(incident),
+    ],
+    hasPhoto: incident.photoPath !== null,
+    canChangeSeverity: !CLOSED_STATUSES.has(incident.status),
+    canDismiss: incident.status === INCIDENT_STATUSES.NEW,
+  };
 }
 
 export function toIncidentQueueView(incidents: IncidentResponse[], filters: IncidentQueueFilters, now: Date): IncidentQueueView {

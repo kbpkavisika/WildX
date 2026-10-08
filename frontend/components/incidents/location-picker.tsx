@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils";
 interface LocationPickerProps {
   value: LatLng | null;
   sectors: SectorShape[];
-  invalid: boolean;
-  onPick: (position: LatLng) => void;
+  invalid?: boolean;
+  onPick?: (position: LatLng) => void;
 }
 
 function TapToPick({ onPick }: { onPick: (position: LatLng) => void }) {
@@ -30,7 +30,7 @@ function FollowValue({ value }: { value: LatLng | null }) {
   return null;
 }
 
-export default function LocationPicker({ value, sectors, invalid, onPick }: LocationPickerProps) {
+export default function LocationPicker({ value, sectors, invalid = false, onPick }: LocationPickerProps) {
   return (
     <div className={cn("relative h-[280px] overflow-hidden rounded-xl border bg-map-ground", invalid ? "border-negative" : "border-line")}>
       <MapContainer
@@ -43,7 +43,7 @@ export default function LocationPicker({ value, sectors, invalid, onPick }: Loca
         <FitToData points={sectors.flatMap((sector) => sector.rings.flat())} />
         <SectorLayer sectors={sectors} />
         {value && <Marker position={value} icon={incidentIcon} title="Incident location" />}
-        <TapToPick onPick={onPick} />
+        {onPick && <TapToPick onPick={onPick} />}
         <FollowValue value={value} />
       </MapContainer>
     </div>

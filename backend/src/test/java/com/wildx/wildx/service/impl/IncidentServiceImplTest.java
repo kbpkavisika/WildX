@@ -254,6 +254,34 @@ class IncidentServiceImplTest {
     }
 
     @Test
+    void servesVisibleIncidentPhotoWithContentType() {
+        Incident jpeg = stored(1L, snare, Severity.HIGH, IncidentStatus.NEW);
+        jpeg.setPhotoPath("incidents/1/a.jpg");
+        Incident png = stored(2L, snare, Severity.HIGH, IncidentStatus.NEW);
+        png.setPhotoPath("incidents/1/b.png");
+        Incident none = stored(3L, snare, Severity.HIGH, IncidentStatus.NEW);
+        Incident unrelated = stored(4L, snare, Severity.HIGH, IncidentStatus.NEW);
+        unrelated.setPhotoPath("incidents/1/c.jpg");
+        unrelated.setReporter(AppUser.builder().id(8L).name("Other").role(Role.RANGER).park(park).active(true).build());
+        when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(jpeg));
+        when(incidents.findByIdAndParkId(2L, 1L)).thenReturn(Optional.of(png));
+        when(incidents.findByIdAndParkId(3L, 1L)).thenReturn(Optional.of(none));
+        when(incidents.findByIdAndParkId(4L, 1L)).thenReturn(Optional.of(unrelated));
+        when(storage.read("incidents/1/a.jpg")).thenReturn(JPEG);
+        when(storage.read("incidents/1/b.png")).thenReturn(JPEG);
+
+        var photo = service.photo(ranger, 1L);
+        assertThat(photo.content()).isEqualTo(JPEG);
+        assertThat(photo.contentType()).isEqualTo("image/jpeg");
+        assertThat(service.photo(supervisor(), 2L).contentType()).isEqualTo("image/png");
+        assertThatThrownBy(() -> service.photo(ranger, 3L)).isInstanceOf(NotFoundException.class)
+                .hasMessage("Incident has no photo");
+        assertThatThrownBy(() -> service.photo(ranger, 4L)).isInstanceOf(NotFoundException.class)
+                .hasMessage("Incident not found");
+        verify(storage, never()).read("incidents/1/c.jpg");
+    }
+
+    @Test
     void listsRangersOwnReportedIncidents() {
         when(incidents.findByReporterIdOrderByOccurredAtDescIdDesc(7L))
                 .thenReturn(List.of(stored(2L, snare, Severity.HIGH, IncidentStatus.NEW),

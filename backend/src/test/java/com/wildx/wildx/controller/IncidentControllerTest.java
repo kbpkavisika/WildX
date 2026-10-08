@@ -1,6 +1,7 @@
 package com.wildx.wildx.controller;
 
 import com.wildx.wildx.config.SecurityConfig;
+import com.wildx.wildx.dto.IncidentPhoto;
 import com.wildx.wildx.dto.IncidentResponse;
 import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.service.AuthService;
@@ -118,6 +119,17 @@ class IncidentControllerTest {
         mvc.perform(get("/api/v1/incidents/10").header("Authorization", token("RANGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ASSIGNED"));
         mvc.perform(get("/api/v1/me/incidents").header("Authorization", token("SUPERVISOR")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void servesIncidentPhotoToStaffAndRangers() throws Exception {
+        when(auth.current(any())).thenReturn(ranger);
+        when(incidents.photo(ranger, 10L)).thenReturn(new IncidentPhoto(JPEG, "image/jpeg"));
+        mvc.perform(get("/api/v1/incidents/10/photo").header("Authorization", token("RANGER")))
+                .andExpect(status().isOk()).andExpect(content().contentType("image/jpeg"))
+                .andExpect(content().bytes(JPEG)).andExpect(header().string("Cache-Control", "no-cache, private"));
+        mvc.perform(get("/api/v1/incidents/10/photo").header("Authorization", token("CLO")))
                 .andExpect(status().isForbidden());
     }
 
