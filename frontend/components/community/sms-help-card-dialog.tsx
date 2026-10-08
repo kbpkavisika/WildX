@@ -59,7 +59,7 @@ export function SmsHelpCardDialog({ open, onClose }: SmsHelpCardDialogProps) {
                   {helpCard.format}
                 </div>
                 <p className="mt-1.5 text-caption text-ink-muted">
-                  Example: <span className="font-semibold text-ink">{helpCard.exampleMessage}</span>
+                  Example: <span className="font-semibold text-ink font-mono">{helpCard.example}</span>
                 </p>
               </div>
 
@@ -72,16 +72,18 @@ export function SmsHelpCardDialog({ open, onClose }: SmsHelpCardDialogProps) {
                     <thead className="bg-surface-muted font-semibold text-ink">
                       <tr>
                         <th className="px-3 py-2">Report Type</th>
-                        <th className="px-3 py-2">Accepted Keywords</th>
+                        <th className="px-3 py-2">English</th>
+                        <th className="px-3 py-2">සිංහල</th>
+                        <th className="px-3 py-2">தமிழ்</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
-                      {Object.entries(helpCard.keywords).map(([category, words]) => (
-                        <tr key={category}>
-                          <td className="px-3 py-2 font-medium text-ink">{category}</td>
-                          <td className="px-3 py-2 font-mono font-medium text-ink-body">
-                            {words.join(" / ")}
-                          </td>
+                      {helpCard.keywords.map((kw) => (
+                        <tr key={kw.type}>
+                          <td className="px-3 py-2 font-medium text-ink">{kw.label}</td>
+                          <td className="px-3 py-2 font-mono font-semibold text-primary">{kw.english}</td>
+                          <td className="px-3 py-2 font-mono font-semibold text-primary">{kw.sinhala}</td>
+                          <td className="px-3 py-2 font-mono font-semibold text-primary">{kw.tamil}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -91,14 +93,14 @@ export function SmsHelpCardDialog({ open, onClose }: SmsHelpCardDialogProps) {
 
               <div>
                 <span className="text-caption font-semibold uppercase tracking-wider text-ink-muted">
-                  Landmark Codes (Yala Park)
+                  Landmark Codes ({helpCard.parkName} Park)
                 </span>
                 <div className="mt-1.5 grid grid-cols-2 gap-2 text-caption">
-                  {Object.entries(helpCard.landmarkCodes).map(([code, name]) => (
-                    <div key={code} className="flex items-center justify-between rounded border border-line bg-surface p-2">
-                      <span className="text-ink-body">{name}</span>
+                  {helpCard.landmarks.map((lm) => (
+                    <div key={lm.id} className="flex items-center justify-between rounded border border-line bg-surface p-2">
+                      <span className="text-ink-body font-medium">{lm.name}</span>
                       <span className="rounded bg-surface-sunken px-1.5 py-0.5 font-mono font-bold text-primary">
-                        {code}
+                        {lm.code}
                       </span>
                     </div>
                   ))}
