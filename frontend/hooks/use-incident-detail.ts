@@ -43,5 +43,6 @@ export function useIncidentDetail(id: number) {
     sectors,
     severity,
     dismiss,
+    refresh,
   };
 }

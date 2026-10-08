@@ -11,15 +11,16 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { useIncidentDetail } from "@/hooks/use-incident-detail";
 import { apiErrorMessage } from "@/lib/api/client";
-import { useIncidentDetailPage } from "@/lib/incidents/store";
+import { useIncidentDetailPage, type TriageAction } from "@/lib/incidents/store";
 
 const LocationPicker = dynamic(() => import("@/components/incidents/location-picker"), { ssr: false });
 
 export default function IncidentDetailPage() {
   const id = Number(useParams<{ id: string }>().id);
-  const { isPending, error, view, photoUrl, photoError, sectors, severity, dismiss } = useIncidentDetail(id);
-  const { dismissingId, setDismissingId } = useIncidentDetailPage();
-  const setDismissOpen = (open: boolean) => setDismissingId(open ? id : null);
+  const { isPending, error, view, photoUrl, photoError, sectors, severity, dismiss, refresh } = useIncidentDetail(id);
+  const { open, openAction, close } = useIncidentDetailPage();
+  const action = open?.incidentId === id ? open.action : null;
+  const setAction = (next: TriageAction | null) => (next === null ? close() : openAction(id, next));
 
   return (
     <>
@@ -44,17 +45,19 @@ export default function IncidentDetailPage() {
             <Card label="Triage">
               <CardTitle>Triage</CardTitle>
               <TriagePanel
-                severity={view.severity}
-                canChangeSeverity={view.canChangeSeverity}
-                canDismiss={view.canDismiss}
+                view={view}
+                openAction={action}
                 severitySaving={severity.isPending}
                 severityError={severity.error}
-                onSeverityChange={(value) => severity.mutate(value)}
-                dismissOpen={dismissingId === id}
                 dismissSaving={dismiss.isPending}
                 dismissError={dismiss.error}
-                onDismissOpen={setDismissOpen}
-                onDismiss={(reason) => dismiss.mutate(reason, { onSuccess: () => setDismissOpen(false) })}
+                onSeverityChange={(value) => severity.mutate(value)}
+                onOpenAction={setAction}
+                onDismiss={(reason) => dismiss.mutate(reason, { onSuccess: close })}
+                onDispatched={() => {
+                  close();
+                  void refresh();
+                }}
               />
             </Card>
             <Card label="Details" className="lg:col-span-2">

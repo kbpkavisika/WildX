@@ -12,14 +12,18 @@ export const useIncidentQueue = create<IncidentQueueState>()((set) => ({
   setFilter: (change) => set((state) => ({ filters: { ...state.filters, ...change } })),
 }));
 
+export type TriageAction = "dispatch" | "dismiss";
+
 interface IncidentDetailPageState {
-  dismissingId: number | null;
-  setDismissingId: (id: number | null) => void;
+  open: { incidentId: number; action: TriageAction } | null;
+  openAction: (incidentId: number, action: TriageAction) => void;
+  close: () => void;
 }
 
 export const useIncidentDetailPage = create<IncidentDetailPageState>()((set) => ({
-  dismissingId: null,
-  setDismissingId: (dismissingId) => set({ dismissingId }),
+  open: null,
+  openAction: (incidentId, action) => set({ open: { incidentId, action } }),
+  close: () => set({ open: null }),
 }));
 
 interface IncidentTypesPageState {

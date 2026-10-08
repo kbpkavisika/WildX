@@ -37,3 +37,18 @@ export const LOCATION_SOURCES = {
   MANUAL: "MANUAL",
 } as const;
 export type LocationSource = (typeof LOCATION_SOURCES)[keyof typeof LOCATION_SOURCES];
+
+export const SOURCE_TYPES = {
+  INCIDENT: "INCIDENT",
+  ALERT: "ALERT",
+  COMMUNITY_REPORT: "COMMUNITY_REPORT",
+} as const;
+export type SourceType = (typeof SOURCE_TYPES)[keyof typeof SOURCE_TYPES];
+
+export const DISPATCH_STATUSES = {
+  ASSIGNED: "ASSIGNED",
+  ACKNOWLEDGED: "ACKNOWLEDGED",
+  COMPLETED: "COMPLETED",
+  DECLINED: "DECLINED",
+} as const;
+export type DispatchStatus = (typeof DISPATCH_STATUSES)[keyof typeof DISPATCH_STATUSES];

@@ -135,7 +135,7 @@ export function toIncidentDetailView(incident: IncidentResponse, now: Date): Inc
     ],
     hasPhoto: incident.photoPath !== null,
     canChangeSeverity: !CLOSED_STATUSES.has(incident.status),
-    canDismiss: incident.status === INCIDENT_STATUSES.NEW,
+    canDispatchOrDismiss: incident.status === INCIDENT_STATUSES.NEW,
   };
 }
 

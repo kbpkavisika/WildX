@@ -56,7 +56,7 @@ export interface IncidentDetailView {
   facts: DetailFact[];
   hasPhoto: boolean;
   canChangeSeverity: boolean;
-  canDismiss: boolean;
+  canDispatchOrDismiss: boolean;
 }
 
 export interface StatusFilterOption {
