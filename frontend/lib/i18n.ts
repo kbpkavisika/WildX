@@ -59,6 +59,8 @@ export const DICTIONARIES = {
     loading: "Loading…",
     errorSubmitting: "Could not submit report. Check your details and try again.",
     backToHome: "Back to report",
+    haveReferenceCode: "Already submitted a report?",
+    trackExisting: "Track status",
   },
   si: {
     appTitle: "WildX",
@@ -110,6 +112,8 @@ export const DICTIONARIES = {
     loading: "පූරණය වෙමින් පවතී…",
     errorSubmitting: "වාර්තාව යැවීමට නොහැකි විය. නැවත උත්සාහ කරන්න.",
     backToHome: "ආපසු මුල් පිටුවට",
+    haveReferenceCode: "කලින් වාර්තාවක් ඉදිරිපත් කළාද?",
+    trackExisting: "තත්ත්වය බලන්න",
   },
   ta: {
     appTitle: "WildX",
@@ -161,6 +165,8 @@ export const DICTIONARIES = {
     loading: "ஏற்றப்படுகிறது…",
     errorSubmitting: "அறிக்கையை சமர்ப்பிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
     backToHome: "முகப்புக்குத் திரும்பு",
+    haveReferenceCode: "ஏற்கனவே அறிக்கை சமர்ப்பிக்கப்பட்டதா?",
+    trackExisting: "நிலையைக் காண்க",
   },
 } as const;
 
