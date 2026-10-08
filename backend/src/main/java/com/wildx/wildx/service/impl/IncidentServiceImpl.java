@@ -12,9 +12,12 @@ import com.wildx.wildx.repository.IncidentTypeRepository;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.FileStorage;
 import com.wildx.wildx.service.IncidentService;
+import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.ParkService;
 import com.wildx.wildx.service.PatrolService;
 import com.wildx.wildx.type.IncidentStatus;
+import com.wildx.wildx.type.Role;
+import com.wildx.wildx.type.Severity;
 import com.wildx.wildx.util.GeoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,18 +26,22 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class IncidentServiceImpl implements IncidentService {
     private static final String PHOTO_FOLDER = "incidents/";
+    private static final String INCIDENTS_LINK = "/dashboard/incidents";
 
     private final IncidentRepository incidents;
     private final IncidentTypeRepository types;
     private final AuthService auth;
     private final ParkService parks;
     private final PatrolService patrols;
+    private final NotificationService notifications;
     private final FileStorage storage;
     private final Clock clock;
 
@@ -70,9 +77,20 @@ public class IncidentServiceImpl implements IncidentService {
             incident.setPhotoPath(storage.save(PHOTO_FOLDER + caller.parkId(), photoExtension, photo));
         }
         IncidentResponse response = IncidentResponse.from(incidents.save(incident));
+        notifyIfUrgent(response);
         log.info("report incident completed incidentId={} sectorId={} patrolId={}", response.id(), response.sectorId(),
                 response.patrolId());
         return response;
+    }
+
+    private void notifyIfUrgent(IncidentResponse incident) {
+        if (incident.severity() != Severity.HIGH && incident.severity() != Severity.CRITICAL) {
+            return;
+        }
+        List<Long> recipients = new ArrayList<>(auth.activeUserIds(incident.parkId(), Role.SUPERVISOR));
+        recipients.addAll(auth.activeUserIds(incident.parkId(), Role.MANAGER));
+        String body = incident.sectorName() == null ? incident.typeName() : incident.typeName() + ", " + incident.sectorName();
+        notifications.notifyUsers(recipients, "New " + incident.severity() + " incident", body, INCIDENTS_LINK);
     }
 
     private Sector sectorAt(Long parkId, double lat, double lng) {
