@@ -75,3 +75,11 @@ export const DISPOSITIONS = {
   FALSE_ALARM: "FALSE_ALARM",
 } as const;
 export type Disposition = (typeof DISPOSITIONS)[keyof typeof DISPOSITIONS];
+
+export const ZONE_TYPES = {
+  FARMLAND: "FARMLAND",
+  ROAD: "ROAD",
+  VILLAGE_BUFFER: "VILLAGE_BUFFER",
+  RESTRICTED: "RESTRICTED",
+} as const;
+export type ZoneType = (typeof ZONE_TYPES)[keyof typeof ZONE_TYPES];

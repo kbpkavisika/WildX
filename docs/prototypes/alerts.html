@@ -88,7 +88,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
 <div style="display: flex; flex-direction: column; gap: 6px; margin-right: auto">
 <div style="display: flex; align-items: center; gap: 12px"><h1 style="margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em">Alerts</h1><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #2F7A2E; background: #E8F6E6; border: 1px solid #BFE3B9; border-radius: 6px; padding: 2px 8px"><span class="wx-live" style="width: 7px; height: 7px; border-radius: 50%; background: #3DBE6B"></span>Live</span></div>
-<p style="margin: 0; font-size: 15px; color: #3B433E"><strong style="font-weight: 600; color: #16201B">3 open</strong>, 1 escalated past its acknowledge time.</p>
+<p style="margin: 0; font-size: 15px; color: #3B433E"><strong style="font-weight: 600; color: #16201B">3 open</strong>, 1 escalated past the acknowledge time.</p>
 </div>
 <div style="display: flex; flex-wrap: wrap; gap: 12px">
 <a href="#" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 1px solid #E4E7E0; border-radius: 12px; background: #FFFFFF; color: #16201B; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none">Zones and rules</a>
@@ -99,7 +99,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section aria-label="Alert map" style="position: relative; height: 360px; background: #F4F6EF; border: 1px solid #E4E7E0; border-radius: 18px; overflow: hidden">
 <svg viewBox="0 0 900 360" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style="position: absolute; inset: 0; display: block" role="img" aria-label="Map of the listed alerts and high-risk zones">
 <path d="M0 0H900V360H0Z" fill="#F4F6EF"></path>
-<path d="M90 60L280 30L470 44L640 96L700 210L620 310L380 330L170 300L70 200Z" fill="#E6EED9" stroke="#1F4D43" stroke-width="1.5" stroke-dasharray="6 5"></path>
 <path d="M520 120L640 110L672 196L560 220Z" fill="#FDECEA" stroke="#B42E22" stroke-width="1.5" stroke-dasharray="6 5"></path>
 <text x="596" y="200" font-size="11" fill="#B42E22" font-family="Geist, sans-serif" text-anchor="middle">Kumbukgaha farmland</text>
 <path d="M120 236L420 250L600 300" fill="none" stroke="#F3C1BA" stroke-width="10" stroke-linecap="round"></path>
@@ -117,10 +116,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #C2410C; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #DADDD4"></span>Acknowledged</span>
 <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #2F7A2E; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #DADDD4"></span>Resolved</span>
 <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 16px; height: 10px; background: #FDECEA; border: 1.5px dashed #B42E22; box-sizing: border-box"></span>High-risk zone</span>
-</div>
-<div style="position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; border: 1px solid #E4E7E0; border-radius: 10px; background: #FFFFFF; overflow: hidden">
-<button aria-label="Zoom in" style="width: 34px; height: 34px; border: 0; border-bottom: 1px solid #E4E7E0; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
-<button aria-label="Zoom out" style="width: 34px; height: 34px; border: 0; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16201B" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>
 </div>
 </section>
 
@@ -140,12 +135,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </button>
 <button aria-pressed="false" class="wx-alert" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box">
 <span style="width: 24px; height: 24px; border-radius: 50%; background: #B42E22; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">2</span>
-<span style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 200px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">Human detected · CAM-001</span><span style="font-size: 12px; color: #6B726C">Suspected poacher · Today · 21:48</span></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 200px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">Human detected · CAM-001</span><span style="font-size: 12px; color: #6B726C">CAM-001 · Today · 21:48</span></span>
 <span style="display: inline-flex; align-items: center; gap: 10px"><span style="font-size: 12px; border-radius: 6px; padding: 2px 6px; white-space: nowrap; color: #B42E22; background: #FDECEA; border: 1px solid #F3C1BA">Critical</span><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: #B42E22"><span style="width: 7px; height: 7px; border-radius: 50%; background: #B42E22"></span>Open</span></span>
 </button>
 <button aria-pressed="false" class="wx-alert" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box">
 <span style="width: 24px; height: 24px; border-radius: 50%; background: #B42E22; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0">3</span>
-<span style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 200px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">Device health · COL-002</span><span style="font-size: 12px; color: #6B726C">Battery at 10% · Today · 20:30</span></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 200px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: #16201B">Device health · COL-002</span><span style="font-size: 12px; color: #6B726C">COL-002 · Today · 20:30</span></span>
 <span style="display: inline-flex; align-items: center; gap: 10px"><span style="font-size: 12px; border-radius: 6px; padding: 2px 6px; white-space: nowrap; color: #3B433E; background: #F6F6F3; border: 1px solid #E4E7E0">Medium</span><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: #B42E22"><span style="width: 7px; height: 7px; border-radius: 50%; background: #B42E22"></span>Open</span></span>
 </button>
 </div>
