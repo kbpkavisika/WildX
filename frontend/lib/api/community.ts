@@ -39,12 +39,31 @@ export const hotspotSchema = z.object({
 
 export type Hotspot = z.infer<typeof hotspotSchema>;
 
+export const keywordHelpSchema = z.object({
+  type: z.string(),
+  label: z.string(),
+  english: z.string(),
+  sinhala: z.string(),
+  tamil: z.string(),
+});
+
+export const landmarkHelpSchema = z.object({
+  id: z.number(),
+  code: z.string(),
+  name: z.string(),
+  centerLat: z.number().optional().nullable(),
+  centerLng: z.number().optional().nullable(),
+});
+
 export const smsHelpCardSchema = z.object({
+  parkId: z.number(),
+  parkName: z.string(),
   shortCode: z.string(),
   format: z.string(),
-  keywords: z.record(z.string(), z.array(z.string())),
-  landmarkCodes: z.record(z.string(), z.string()),
-  exampleMessage: z.string(),
+  example: z.string(),
+  helpReply: z.string(),
+  keywords: z.array(keywordHelpSchema),
+  landmarks: z.array(landmarkHelpSchema),
 });
 
 export type SmsHelpCard = z.infer<typeof smsHelpCardSchema>;
