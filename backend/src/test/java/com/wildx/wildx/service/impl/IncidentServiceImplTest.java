@@ -5,6 +5,7 @@ import com.wildx.wildx.dto.IncidentResponse;
 import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.*;
+import com.wildx.wildx.repository.DispatchRepository;
 import com.wildx.wildx.repository.IncidentRepository;
 import com.wildx.wildx.repository.IncidentTypeRepository;
 import com.wildx.wildx.service.AuthService;
@@ -31,12 +32,13 @@ class IncidentServiceImplTest {
 
     private final IncidentRepository incidents = mock(IncidentRepository.class);
     private final IncidentTypeRepository types = mock(IncidentTypeRepository.class);
+    private final DispatchRepository dispatches = mock(DispatchRepository.class);
     private final AuthService auth = mock(AuthService.class);
     private final ParkService parks = mock(ParkService.class);
     private final PatrolService patrols = mock(PatrolService.class);
     private final NotificationService notifications = mock(NotificationService.class);
     private final FileStorage storage = mock(FileStorage.class);
-    private final IncidentServiceImpl service = new IncidentServiceImpl(incidents, types, auth, parks, patrols,
+    private final IncidentServiceImpl service = new IncidentServiceImpl(incidents, types, dispatches, auth, parks, patrols,
             notifications, storage, Clock.fixed(NOW, ZoneOffset.UTC));
     private final UserResponse ranger = new UserResponse(7L, "Ranger", "ranger@wildx.lk", Role.RANGER, 1L);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
@@ -176,7 +178,7 @@ class IncidentServiceImplTest {
         Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.NEW);
         when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(incident));
 
-        assertThat(service.get(1L, 1L).typeName()).isEqualTo("Snare");
+        assertThat(service.get(supervisor(), 1L).typeName()).isEqualTo("Snare");
         assertThat(service.changeSeverity(1L, 1L, Severity.LOW).severity()).isEqualTo(Severity.LOW);
         var dismissed = service.dismiss(1L, 1L, " Old snare, already removed ");
         assertThat(dismissed.status()).isEqualTo(IncidentStatus.DISMISSED);
@@ -226,7 +228,41 @@ class IncidentServiceImplTest {
                 .hasMessage("Incident severity cannot change in status RESOLVED");
         assertThat(incident.getSeverity()).isEqualTo(Severity.HIGH);
         when(incidents.findByIdAndParkId(1L, 2L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.get(2L, 1L)).isInstanceOf(NotFoundException.class).hasMessage("Incident not found");
+        UserResponse otherParkSupervisor = new UserResponse(5L, "Supervisor", "s@wildx.lk", Role.SUPERVISOR, 2L);
+        assertThatThrownBy(() -> service.get(otherParkSupervisor, 1L)).isInstanceOf(NotFoundException.class)
+                .hasMessage("Incident not found");
+    }
+
+    @Test
+    void rangerOpensOnlyIncidentsTheyReportedOrWereDispatchedTo() {
+        AppUser otherRanger = AppUser.builder().id(8L).name("Other").role(Role.RANGER).park(park).active(true).build();
+        Incident own = stored(1L, snare, Severity.HIGH, IncidentStatus.NEW);
+        Incident dispatched = stored(2L, snare, Severity.HIGH, IncidentStatus.ASSIGNED);
+        dispatched.setReporter(otherRanger);
+        Incident unrelated = stored(3L, snare, Severity.HIGH, IncidentStatus.NEW);
+        unrelated.setReporter(otherRanger);
+        when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(own));
+        when(incidents.findByIdAndParkId(2L, 1L)).thenReturn(Optional.of(dispatched));
+        when(incidents.findByIdAndParkId(3L, 1L)).thenReturn(Optional.of(unrelated));
+        when(dispatches.existsBySourceTypeAndSourceIdAndResponderId(SourceType.INCIDENT, 2L, 7L)).thenReturn(true);
+
+        assertThat(service.get(ranger, 1L).id()).isEqualTo(1L);
+        assertThat(service.get(ranger, 2L).id()).isEqualTo(2L);
+        assertThatThrownBy(() -> service.get(ranger, 3L)).isInstanceOf(NotFoundException.class)
+                .hasMessage("Incident not found");
+        assertThat(service.get(supervisor(), 3L).id()).isEqualTo(3L);
+    }
+
+    @Test
+    void listsRangersOwnReportedIncidents() {
+        when(incidents.findByReporterIdOrderByOccurredAtDescIdDesc(7L))
+                .thenReturn(List.of(stored(2L, snare, Severity.HIGH, IncidentStatus.NEW),
+                        stored(1L, snare, Severity.HIGH, IncidentStatus.RESOLVED)));
+        assertThat(service.mine(7L)).extracting(IncidentResponse::id).containsExactly(2L, 1L);
+    }
+
+    private UserResponse supervisor() {
+        return new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
     }
 
     private Incident stored(Long id, IncidentType type, Severity severity, IncidentStatus status) {

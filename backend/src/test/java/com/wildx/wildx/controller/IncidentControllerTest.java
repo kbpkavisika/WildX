@@ -80,7 +80,7 @@ class IncidentControllerTest {
         UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
         when(auth.current(any())).thenReturn(supervisor);
         when(incidents.list(1L, IncidentStatus.NEW, 4L, Severity.HIGH)).thenReturn(List.of(incident(IncidentStatus.NEW, null)));
-        when(incidents.get(1L, 10L)).thenReturn(incident(IncidentStatus.NEW, null));
+        when(incidents.get(supervisor, 10L)).thenReturn(incident(IncidentStatus.NEW, null));
         when(incidents.changeSeverity(1L, 10L, Severity.CRITICAL)).thenReturn(incident(IncidentStatus.NEW, null));
         when(incidents.dismiss(1L, 10L, "Old snare")).thenReturn(incident(IncidentStatus.DISMISSED, "Old snare"));
 
@@ -106,6 +106,19 @@ class IncidentControllerTest {
         mvc.perform(post("/api/v1/incidents/10/dismiss").header("Authorization", token("SUPERVISOR"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\" \"}")).andExpect(status().isBadRequest());
         verifyNoInteractions(incidents);
+    }
+
+    @Test
+    void rangerSeesOwnIncidentsAndOpensOne() throws Exception {
+        when(auth.current(any())).thenReturn(ranger);
+        when(incidents.mine(7L)).thenReturn(List.of(incident(IncidentStatus.NEW, null)));
+        when(incidents.get(ranger, 10L)).thenReturn(incident(IncidentStatus.ASSIGNED, null));
+        mvc.perform(get("/api/v1/me/incidents").header("Authorization", token("RANGER")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].reporterId").value(7));
+        mvc.perform(get("/api/v1/incidents/10").header("Authorization", token("RANGER")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ASSIGNED"));
+        mvc.perform(get("/api/v1/me/incidents").header("Authorization", token("SUPERVISOR")))
+                .andExpect(status().isForbidden());
     }
 
     private IncidentResponse incident(IncidentStatus status, String resolutionNote) {
