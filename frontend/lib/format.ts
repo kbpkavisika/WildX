@@ -39,6 +39,11 @@ export function formatAgo(date: Date, now: Date): string {
   return `at ${formatTime(date)}`;
 }
 
+export function formatDayTime(date: Date, now: Date): string {
+  const day = isSameDay(date, now) ? "Today" : formatDayLabel(date);
+  return `${day} · ${formatTime(date)}`;
+}
+
 const METRES_PER_KM = 1000;
 
 export function formatKm(metres: number): string {

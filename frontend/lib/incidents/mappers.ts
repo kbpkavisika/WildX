@@ -8,7 +8,7 @@ import {
   type LocationSource,
   type Severity,
 } from "@/lib/enums";
-import { formatDayLabel, formatTime, isSameDay } from "@/lib/format";
+import { formatDayTime } from "@/lib/format";
 import {
   ALL,
   type ChipView,
@@ -68,11 +68,6 @@ export function toSeverityFilter(value: string): IncidentQueueFilters["severity"
   return Object.values(SEVERITIES).find((severity) => severity === value) ?? ALL;
 }
 
-function reportedLabel(occurredAt: Date, now: Date): string {
-  const day = isSameDay(occurredAt, now) ? "Today" : formatDayLabel(occurredAt);
-  return `${day} · ${formatTime(occurredAt)}`;
-}
-
 function toIncidentRow(incident: IncidentResponse, now: Date): IncidentRow {
   return {
     id: incident.id,
@@ -80,7 +75,7 @@ function toIncidentRow(incident: IncidentResponse, now: Date): IncidentRow {
     code: `INC-${incident.id}`,
     sector: incident.sectorName ?? NO_SECTOR,
     reporter: incident.reporterName,
-    reported: reportedLabel(new Date(incident.occurredAt), now),
+    reported: formatDayTime(new Date(incident.occurredAt), now),
     severity: SEVERITY_DISPLAY[incident.severity],
     status: INCIDENT_STATUS_DISPLAY[incident.status],
   };
@@ -122,7 +117,7 @@ export function toIncidentDetailView(incident: IncidentResponse, now: Date): Inc
   return {
     id: incident.id,
     title: incident.typeName,
-    subtitle: `INC-${incident.id} · reported by ${incident.reporterName} · ${reportedLabel(new Date(incident.occurredAt), now)}`,
+    subtitle: `INC-${incident.id} · reported by ${incident.reporterName} · ${formatDayTime(new Date(incident.occurredAt), now)}`,
     status: INCIDENT_STATUS_DISPLAY[incident.status],
     severity: incident.severity,
     position: incident.lat !== null && incident.lng !== null ? [incident.lat, incident.lng] : null,

@@ -46,3 +46,23 @@ export function fetchResponders(position: LatLng | null): Promise<ResponderRespo
 export function createDispatch(request: DispatchCreateRequest): Promise<DispatchResponse> {
   return apiPost("/dispatches", request, dispatchSchema);
 }
+
+export function fetchMyDispatches(): Promise<DispatchResponse[]> {
+  return apiGet("/me/dispatches", z.array(dispatchSchema));
+}
+
+export function fetchDispatch(id: number): Promise<DispatchResponse> {
+  return apiGet(`/dispatches/${id}`, dispatchSchema);
+}
+
+export function acknowledgeDispatch(id: number): Promise<DispatchResponse> {
+  return apiPost(`/dispatches/${id}/acknowledge`, {}, dispatchSchema);
+}
+
+export function completeDispatch(id: number, outcome: string): Promise<DispatchResponse> {
+  return apiPost(`/dispatches/${id}/complete`, { outcome }, dispatchSchema);
+}
+
+export function declineDispatch(id: number, reason: string | null): Promise<DispatchResponse> {
+  return apiPost(`/dispatches/${id}/decline`, { reason }, dispatchSchema);
+}

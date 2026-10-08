@@ -35,6 +35,10 @@ export function fetchIncidents(): Promise<IncidentResponse[]> {
   return apiGet("/incidents", z.array(incidentSchema));
 }
 
+export function fetchMyIncidents(): Promise<IncidentResponse[]> {
+  return apiGet("/me/incidents", z.array(incidentSchema));
+}
+
 export function fetchIncident(id: number): Promise<IncidentResponse> {
   return apiGet(`/incidents/${id}`, incidentSchema);
 }

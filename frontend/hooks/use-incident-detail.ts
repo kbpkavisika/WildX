@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { changeIncidentSeverity, dismissIncident, fetchIncident, fetchIncidentPhoto } from "@/lib/api/incidents";
+import { changeIncidentSeverity, dismissIncident, fetchIncident } from "@/lib/api/incidents";
 import type { Severity } from "@/lib/enums";
-import { blobToDataUrl } from "@/lib/files";
 import { toIncidentDetailView } from "@/lib/incidents/mappers";
+import { useIncidentPhoto } from "./use-incident-photo";
 import { useParkSectors } from "./use-park-sectors";
 
 export function useIncidentDetail(id: number) {
@@ -14,13 +14,7 @@ export function useIncidentDetail(id: number) {
     queryFn: () => fetchIncident(id),
   });
 
-  const hasPhoto = incident.data?.photoPath != null;
-  const photo = useQuery({
-    queryKey: ["incident-photo", id],
-    queryFn: () => fetchIncidentPhoto(id).then(blobToDataUrl),
-    enabled: hasPhoto,
-    staleTime: Infinity,
-  });
+  const photo = useIncidentPhoto(id, incident.data?.photoPath != null);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["incidents"] });
 
@@ -38,8 +32,7 @@ export function useIncidentDetail(id: number) {
     isPending: incident.isPending,
     error: incident.error,
     view: incident.data && toIncidentDetailView(incident.data, new Date()),
-    photoUrl: photo.data ?? null,
-    photoError: photo.isError,
+    ...photo,
     sectors,
     severity,
     dismiss,
