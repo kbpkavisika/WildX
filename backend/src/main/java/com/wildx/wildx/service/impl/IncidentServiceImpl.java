@@ -83,6 +83,72 @@ public class IncidentServiceImpl implements IncidentService {
         return response;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<IncidentResponse> list(Long parkId, IncidentStatus status, Long typeId, Severity severity) {
+        log.info("list incidents started parkId={} status={} typeId={} severity={}", parkId, status, typeId, severity);
+        var response = incidents.findByParkIdOrderByOccurredAtDescIdDesc(parkId).stream()
+                .filter(incident -> status == null || incident.getStatus() == status)
+                .filter(incident -> typeId == null || incident.getType().getId().equals(typeId))
+                .filter(incident -> severity == null || incident.getSeverity() == severity)
+                .map(IncidentResponse::from).toList();
+        log.info("list incidents completed parkId={} count={}", parkId, response.size());
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public IncidentResponse get(Long parkId, Long id) {
+        log.info("get incident started incidentId={}", id);
+        IncidentResponse response = IncidentResponse.from(requireIncident(parkId, id));
+        log.info("get incident completed incidentId={}", id);
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public IncidentResponse changeSeverity(Long parkId, Long id, Severity severity) {
+        log.info("change incident severity started incidentId={} severity={}", id, severity);
+        Incident incident = requireIncident(parkId, id);
+        if (incident.getStatus() == IncidentStatus.RESOLVED || incident.getStatus() == IncidentStatus.DISMISSED) {
+            throw new IllegalStateException("Incident severity cannot change in status " + incident.getStatus());
+        }
+        incident.setSeverity(severity);
+        log.info("change incident severity completed incidentId={}", id);
+        return IncidentResponse.from(incident);
+    }
+
+    @Override
+    @Transactional
+    public IncidentResponse dismiss(Long parkId, Long id, String reason) {
+        log.info("dismiss incident started incidentId={}", id);
+        Incident incident = requireNew(parkId, id, "dismissed");
+        incident.setStatus(IncidentStatus.DISMISSED);
+        incident.setResolutionNote(reason.strip());
+        log.info("dismiss incident completed incidentId={}", id);
+        return IncidentResponse.from(incident);
+    }
+
+    @Override
+    @Transactional
+    public Incident assign(Long parkId, Long id) {
+        Incident incident = requireNew(parkId, id, "dispatched");
+        incident.setStatus(IncidentStatus.ASSIGNED);
+        return incident;
+    }
+
+    private Incident requireNew(Long parkId, Long id, String action) {
+        Incident incident = requireIncident(parkId, id);
+        if (incident.getStatus() != IncidentStatus.NEW) {
+            throw new IllegalStateException("Incident cannot be " + action + " in status " + incident.getStatus());
+        }
+        return incident;
+    }
+
+    private Incident requireIncident(Long parkId, Long id) {
+        return incidents.findByIdAndParkId(id, parkId).orElseThrow(() -> new NotFoundException("Incident not found"));
+    }
+
     private void notifyIfUrgent(IncidentResponse incident) {
         if (incident.severity() != Severity.HIGH && incident.severity() != Severity.CRITICAL) {
             return;
