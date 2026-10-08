@@ -186,7 +186,7 @@ Every stored collar fix (not a duplicate) is checked against all zones of the co
 
 `NotificationService` (owned by UC3) is the shared way to notify users: `notifyUsers(userIds, title, body, link)` stores one `notification` row per user. `GET /me/notifications` returns `{unreadCount, notifications}` with the caller's latest 50 notifications, newest first; `unreadCount` counts every unread one and drives the badge. `POST /notifications/{id}/read` marks the caller's own notification read and keeps the first `read_at` on repeats; another user's notification returns 404. Both endpoints are for every role except Admin.
 
-For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, taken from `PatrolMonitorService.live`; the `app_user.on_duty` column is not used. Each raised alert sends every such ranger one notification, e.g. title "New HIGH zone breach alert", body "Gemunu (COL-001) entered Kumbukgaha farmland at 22:05" (Asia/Colombo time) and link `/ranger/alerts`. The SMS fallback (CMN-08) is added once UC4's `SmsService` exists.
+For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, taken from `PatrolMonitorService.live`; the `app_user.on_duty` column is not used. Each raised alert sends every such ranger one notification, e.g. title "New HIGH zone breach alert", body "Gemunu (COL-001) entered Kumbukgaha farmland at 22:05" (Asia/Colombo time) and link `/ranger/alerts`. For `HIGH` and `CRITICAL` alerts, `AlertNotifier` also sends the SMS fallback (CMN-08) through UC4's `SmsService` to each of those rangers who is offline (no patrol contact for more than 5 minutes) and has a phone number, with the text "WildX Alert [SEVERITY]: " followed by the notification body.
 
 ### Alert acknowledge and resolve (SEN-08, SEN-10)
 
@@ -209,6 +209,10 @@ Each park lists its escalation steps in `escalation_step`, ordered by `step_no`;
 `GET /parks/{id}/camera-images/{imageId}/file?reason=` returns the image to Managers and Admins, and to an LEL only when it is `RESTRICTED` (otherwise 404). Viewing a `RESTRICTED` image requires a non-blank `reason` (otherwise 400), writes an `audit_log` row (user, action `VIEW_RESTRICTED_IMAGE`, entity `camera_image`, id, reason) and is sent with `Cache-Control: no-store`. No other role can open camera images, so restricted images never reach unauthorised users (NFR-06). Alert responses include `cameraImageId`.
 
 For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}` (1–10, Manager or Admin) generates placeholder JPEGs 20 s apart, ending now, and sends them through the same upload logic.
+
+### Alert report (SEN-16)
+
+`GET /reports/alerts?from=YYYY-MM-DD&to=YYYY-MM-DD` covers the alerts of the caller's park raised (`created_at`) on those Asia/Colombo days, inclusive; missing or reversed dates and formats other than `json`/`csv` return 400. The JSON response is `{from, to, total, medianAcknowledgeMinutes, medianResolveMinutes, rows}` with one row per alert type and zone (`{type, zoneId, zoneName, count, medianAcknowledgeMinutes, medianResolveMinutes}`; alerts without a zone share one row per type with no zone), highest count first. Time to acknowledge is `acknowledged_at` minus the raise time and time to resolve is `resolved_at` minus the raise time; medians are in minutes with one decimal, use only alerts that have the value, and are `null` when none do. `format=csv` downloads `type,zone,count,median_acknowledge_minutes,median_resolve_minutes` with an `ALL` totals row first, using the same escaping and spreadsheet-formula protection as the coverage report.
 
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
