@@ -1,6 +1,7 @@
 package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.IncidentCreateRequest;
+import com.wildx.wildx.dto.IncidentResponse;
 import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.*;
@@ -150,6 +151,69 @@ class IncidentServiceImplTest {
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Incident type is not active");
         verify(incidents, never()).save(any());
         verifyNoInteractions(storage, notifications);
+    }
+
+    @Test
+    void listsParkQueueFilteredByStatusTypeAndSeverity() {
+        IncidentType carcass = new IncidentType();
+        carcass.setId(5L);
+        carcass.setPark(park);
+        carcass.setName("Carcass");
+        Incident newSnare = stored(1L, snare, Severity.HIGH, IncidentStatus.NEW);
+        Incident newCarcass = stored(2L, carcass, Severity.MEDIUM, IncidentStatus.NEW);
+        Incident dismissedSnare = stored(3L, snare, Severity.HIGH, IncidentStatus.DISMISSED);
+        when(incidents.findByParkIdOrderByOccurredAtDescIdDesc(1L)).thenReturn(List.of(newSnare, newCarcass, dismissedSnare));
+
+        assertThat(service.list(1L, null, null, null)).extracting(IncidentResponse::id).containsExactly(1L, 2L, 3L);
+        assertThat(service.list(1L, IncidentStatus.NEW, null, null)).extracting(IncidentResponse::id).containsExactly(1L, 2L);
+        assertThat(service.list(1L, null, 4L, null)).extracting(IncidentResponse::id).containsExactly(1L, 3L);
+        assertThat(service.list(1L, IncidentStatus.NEW, 4L, Severity.HIGH)).extracting(IncidentResponse::id).containsExactly(1L);
+        assertThat(service.list(1L, null, null, Severity.LOW)).isEmpty();
+    }
+
+    @Test
+    void getsChangesSeverityAndDismissesWithReason() {
+        Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.NEW);
+        when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(incident));
+
+        assertThat(service.get(1L, 1L).typeName()).isEqualTo("Snare");
+        assertThat(service.changeSeverity(1L, 1L, Severity.LOW).severity()).isEqualTo(Severity.LOW);
+        var dismissed = service.dismiss(1L, 1L, " Old snare, already removed ");
+        assertThat(dismissed.status()).isEqualTo(IncidentStatus.DISMISSED);
+        assertThat(dismissed.resolutionNote()).isEqualTo("Old snare, already removed");
+    }
+
+    @Test
+    void assignsOnlyNewIncidents() {
+        Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.NEW);
+        when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(incident));
+        assertThat(service.assign(1L, 1L).getStatus()).isEqualTo(IncidentStatus.ASSIGNED);
+        assertThatThrownBy(() -> service.assign(1L, 1L)).isInstanceOf(IllegalStateException.class)
+                .hasMessage("Incident cannot be dispatched in status ASSIGNED");
+        assertThatThrownBy(() -> service.dismiss(1L, 1L, "late")).isInstanceOf(IllegalStateException.class)
+                .hasMessage("Incident cannot be dismissed in status ASSIGNED");
+    }
+
+    @Test
+    void rejectsClosedIncidentChangesAndOtherParks() {
+        Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.RESOLVED);
+        when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(incident));
+        assertThatThrownBy(() -> service.changeSeverity(1L, 1L, Severity.LOW)).isInstanceOf(IllegalStateException.class)
+                .hasMessage("Incident severity cannot change in status RESOLVED");
+        assertThat(incident.getSeverity()).isEqualTo(Severity.HIGH);
+        when(incidents.findByIdAndParkId(1L, 2L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.get(2L, 1L)).isInstanceOf(NotFoundException.class).hasMessage("Incident not found");
+    }
+
+    private Incident stored(Long id, IncidentType type, Severity severity, IncidentStatus status) {
+        Incident incident = new Incident();
+        incident.setId(id);
+        incident.setPark(park);
+        incident.setType(type);
+        incident.setReporter(reporter);
+        incident.setSeverity(severity);
+        incident.setStatus(status);
+        return incident;
     }
 
     private IncidentCreateRequest request(Long typeId, Instant occurredAt) {

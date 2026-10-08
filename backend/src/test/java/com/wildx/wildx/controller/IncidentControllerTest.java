@@ -18,6 +18,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
+import java.util.List;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.*;
@@ -42,9 +43,7 @@ class IncidentControllerTest {
     @Test
     void rangerReportsIncidentWithPhoto() throws Exception {
         when(auth.current(any())).thenReturn(ranger);
-        when(incidents.report(eq(ranger), any(), eq(JPEG))).thenReturn(new IncidentResponse(10L, 1L, 4L, "Snare", 7L,
-                "Ranger", 3L, 6.5, 81.5, LocationSource.GPS, null, null, "Snare", "incidents/1/a.jpg", Severity.HIGH,
-                IncidentStatus.NEW, Instant.parse("2026-10-08T04:00:00Z")));
+        when(incidents.report(eq(ranger), any(), eq(JPEG))).thenReturn(incident(IncidentStatus.NEW, null));
         mvc.perform(multipart("/api/v1/incidents").file(data(DATA))
                         .file(new MockMultipartFile("photo", "snare.jpg", "image/jpeg", JPEG))
                         .header("Authorization", token("RANGER")))
@@ -74,6 +73,44 @@ class IncidentControllerTest {
         mvc.perform(multipart("/api/v1/incidents").file(data(DATA)).header("Authorization", token("SUPERVISOR")))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(incidents);
+    }
+
+    @Test
+    void supervisorsAndManagersTriageTheParkQueue() throws Exception {
+        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
+        when(auth.current(any())).thenReturn(supervisor);
+        when(incidents.list(1L, IncidentStatus.NEW, 4L, Severity.HIGH)).thenReturn(List.of(incident(IncidentStatus.NEW, null)));
+        when(incidents.get(1L, 10L)).thenReturn(incident(IncidentStatus.NEW, null));
+        when(incidents.changeSeverity(1L, 10L, Severity.CRITICAL)).thenReturn(incident(IncidentStatus.NEW, null));
+        when(incidents.dismiss(1L, 10L, "Old snare")).thenReturn(incident(IncidentStatus.DISMISSED, "Old snare"));
+
+        mvc.perform(get("/api/v1/incidents?status=NEW&type=4&severity=HIGH").header("Authorization", token("SUPERVISOR")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(10));
+        mvc.perform(get("/api/v1/incidents/10").header("Authorization", token("MANAGER")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.typeName").value("Snare"));
+        mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("SUPERVISOR"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"severity\":\"CRITICAL\"}")).andExpect(status().isOk());
+        mvc.perform(post("/api/v1/incidents/10/dismiss").header("Authorization", token("MANAGER"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Old snare\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DISMISSED"))
+                .andExpect(jsonPath("$.resolutionNote").value("Old snare"));
+    }
+
+    @Test
+    void triageRejectsOtherRolesAndInvalidBodies() throws Exception {
+        mvc.perform(get("/api/v1/incidents").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
+        mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("CLO"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"severity\":\"LOW\"}")).andExpect(status().isForbidden());
+        mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("SUPERVISOR"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"severity\":\"EXTREME\"}")).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/incidents/10/dismiss").header("Authorization", token("SUPERVISOR"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\" \"}")).andExpect(status().isBadRequest());
+        verifyNoInteractions(incidents);
+    }
+
+    private IncidentResponse incident(IncidentStatus status, String resolutionNote) {
+        return new IncidentResponse(10L, 1L, 4L, "Snare", 7L, "Ranger", 3L, 6.5, 81.5, LocationSource.GPS, null, null,
+                "Snare", "incidents/1/a.jpg", Severity.HIGH, status, Instant.parse("2026-10-08T04:00:00Z"), resolutionNote);
     }
 
     private MockMultipartFile data(String json) {
