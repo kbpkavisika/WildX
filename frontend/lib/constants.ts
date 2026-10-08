@@ -1,3 +1,9 @@
 export const DASHBOARD_REFETCH_MS = 30_000;
 export const BAR_MAX_HEIGHT_PCT = 92;
 export const DAYS_IN_WEEK = 7;
+export const LIVE_PATROLS_REFETCH_MS = 15_000;
+export const GPS_INTERVAL_S = 60;
+export const TRACK_COLOR_COUNT = 4;
+export const MAP_DEFAULT_CENTER: [number, number] = [7.87, 80.77];
+export const MAP_DEFAULT_ZOOM = 8;
+export const MAP_FIT_PADDING_PX = 48;
