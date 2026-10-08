@@ -13,7 +13,7 @@ Understand the problem fully first, then stop at the first rung that holds:
 2. Already in this codebase? Reuse it.
 3. Stdlib / framework (Spring, Next.js, React) does it? Use it.
 4. Native platform feature covers it? (HTML input over a widget, CSS over JS, DB constraint over app code.)
-5. Already-installed dependency solves it? Use it. Never add a new one.
+5. Already-installed dependency solves it? Use it. Never add a new one (Zustand and React Query are the approved state and data libraries).
 6. Only then: the minimum code that works.
 
 Rules: no single-implementation interfaces or one-product factories, no config for constants, no scaffolding "for later", deletion over addition, fewest files, shortest working diff. Bug fix = root cause in the shared function, not a patch per caller. Never simplify away input validation, security, data-loss error handling, accessibility basics, or anything explicitly required.

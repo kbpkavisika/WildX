@@ -117,7 +117,6 @@ spacing:
   space-6: 24px
   space-7: 28px
   sidebar-width: 248px
-  content-max: 1240px
 components:
   card:
     backgroundColor: "{colors.surface}"
@@ -337,9 +336,9 @@ Page subtitles are 15px `ink-body`, with the key figure in a 600-weight `ink` sp
 
 ## Layout
 
-- **Shell.** A 248px sidebar with a 1px `line` right border, then a fluid column holding a top bar and the main area. The two wrap on narrow screens, with the sidebar stacking above.
+- **Shell.** A 248px sidebar with a 1px `line` right border, then a fluid column holding a top bar and the main area. From 768px up the sidebar is sticky and exactly one viewport tall: its nav scrolls on its own when it runs out of room, so the user card stays pinned and visible at the bottom on a laptop screen. Below 768px the two stack, with the sidebar above.
 - **Top bar.** 16px × 28px padding, bottom border, a 280px search field with a `⌘ K` hint on the left, and 40px circular icon buttons (Help, Notifications) on the right. There is no user menu here: the user lives at the bottom of the sidebar.
-- **Main.** Padded `space-7` (28px), with a `space-5` (20px) gap between blocks, capped at 1240px. The Active patrols map page drops the cap and lets the map grow to fill all remaining height (minimum 640px).
+- **Main.** Padded `space-7` (28px), with a `space-5` (20px) gap between blocks. It fills the full width of the column, with no max-width cap, so wide screens are not left with empty space on the right. The Active patrols map page also lets the map grow to fill all remaining height (minimum 640px).
 - **Page header.** Title and subtitle on the left, the primary action (48px button) on the right.
 - **Cards.** Padded 22px × 24px, with an 18px gap inside. Rows of cards use flex-wrap with weighted bases (e.g. `3 1 420px` beside `2 1 340px`) so they reflow to one column without breakpoints.
 - **Metric strip.** An auto-fit grid of 180px-minimum cells, split by 1px `line` dividers under a top rule.
@@ -379,7 +378,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
 - **Sidebar.**
   - Order: logo, then the park switcher (bordered 12px button: map icon tile, "Udawalawe NP / 30,821 ha", chevron), then the nav, then the user card pinned to the bottom above a top border (pine avatar with lime initials and an online dot, name, role, up/down chevron).
   - Nav items are 44px pills with a 20px icon and 12px gap. The active item gets the lime fill and 500 weight.
-  - Expandable groups (Patrols → Active patrols, All patrols; Sensors → Collars, Camera traps) show a chevron. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
+  - Expandable groups (Patrols → Active patrols, All patrols; Sensors → Collars, Camera traps) are buttons that expand and collapse their children on click, with a chevron pointing up when open and down when closed. Groups start open. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
   - Alerts carries a coral count badge.
 - **Buttons.**
   - Primary: pine, 48px tall in page headers, 40px in forms, with a leading plus icon for create actions.
