@@ -11,6 +11,10 @@ export class ApiError extends Error {
   }
 }
 
+export function apiErrorMessage(error: Error): string {
+  return error instanceof ApiError ? error.message : "Could not reach WildX. Try again.";
+}
+
 async function request<T extends z.ZodType>(path: string, schema: T, init?: RequestInit): Promise<z.infer<T>> {
   const token = useAuthStore.getState().token;
   const headers = new Headers(init?.headers);
@@ -31,6 +35,10 @@ function jsonInit(method: string, body: unknown): RequestInit {
 
 export function apiPost<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {
   return request(path, schema, jsonInit("POST", body));
+}
+
+export function apiPostForm<T extends z.ZodType>(path: string, body: FormData, schema: T): Promise<z.infer<T>> {
+  return request(path, schema, { method: "POST", body });
 }
 
 export function apiPut<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {

@@ -7,3 +7,6 @@ export const TRACK_COLOR_COUNT = 4;
 export const MAP_DEFAULT_CENTER: [number, number] = [7.87, 80.77];
 export const MAP_DEFAULT_ZOOM = 8;
 export const MAP_FIT_PADDING_PX = 48;
+export const GPS_TIMEOUT_MS = 15_000;
+export const PHOTO_MAX_MB = 5;
+export const INCIDENT_DESCRIPTION_MAX = 500;

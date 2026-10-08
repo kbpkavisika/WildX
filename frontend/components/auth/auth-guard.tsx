@@ -3,16 +3,30 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuthStore } from "@/lib/auth/store";
-import { canUseDashboard, LOGIN_PATH } from "@/lib/auth/routes";
+import { canUseDashboard, canUseRangerApp, LOGIN_PATH } from "@/lib/auth/routes";
+import type { Role } from "@/lib/enums";
 
-export function DashboardGuard({ children }: { children: React.ReactNode }) {
+interface RoleGuardProps {
+  allows: (role: Role) => boolean;
+  children: React.ReactNode;
+}
+
+function RoleGuard({ allows, children }: RoleGuardProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     const current = useAuthStore.getState().user;
-    if (current === null || !canUseDashboard(current.role)) router.replace(LOGIN_PATH);
-  }, [user, router]);
+    if (current === null || !allows(current.role)) router.replace(LOGIN_PATH);
+  }, [user, router, allows]);
 
   return children;
+}
+
+export function DashboardGuard({ children }: { children: React.ReactNode }) {
+  return <RoleGuard allows={canUseDashboard}>{children}</RoleGuard>;
+}
+
+export function RangerGuard({ children }: { children: React.ReactNode }) {
+  return <RoleGuard allows={canUseRangerApp}>{children}</RoleGuard>;
 }

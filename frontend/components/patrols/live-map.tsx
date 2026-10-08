@@ -3,9 +3,11 @@
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap } from "leaflet";
 import { Minus, Plus } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { MapContainer, Marker, Polygon, Polyline, useMap } from "react-leaflet";
-import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_FIT_PADDING_PX } from "@/lib/constants";
+import { useRef } from "react";
+import { MapContainer, Marker, Polyline } from "react-leaflet";
+import { FitToData } from "@/components/map/fit-to-data";
+import { SectorLayer } from "@/components/map/sector-layer";
+import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants";
 import { usePatrolSelection } from "@/lib/patrols/store";
 import type { ActivePatrolsView, LatLng } from "@/lib/patrols/types";
 import { FieldPanel } from "./field-panel";
@@ -13,21 +15,9 @@ import { incidentIcon, teamIcon } from "./map-icons";
 import { MapLegend } from "./map-legend";
 import { TRACK_STYLES } from "./track-styles";
 
-const SECTOR_STYLE = { className: "fill-map-land stroke-primary", weight: 1.5, dashArray: "6 5", fillOpacity: 1 };
 const TRACK_WEIGHT = { selected: 5, idle: 3 };
 const TRACK_OPACITY = { selected: 1, idle: 0.5 };
 const SELECTED_MARKER_Z = 1000;
-
-function FitToData({ points }: { points: LatLng[] }) {
-  const map = useMap();
-  const fitted = useRef(false);
-  useEffect(() => {
-    if (fitted.current || points.length === 0) return;
-    map.fitBounds(points, { padding: [MAP_FIT_PADDING_PX, MAP_FIT_PADDING_PX] });
-    fitted.current = true;
-  }, [map, points]);
-  return null;
-}
 
 function ZoomControls({ mapRef }: { mapRef: React.RefObject<LeafletMap | null> }) {
   const buttonClass = "flex size-[34px] cursor-pointer items-center justify-center bg-card text-ink";
@@ -63,9 +53,7 @@ export default function LiveMap({ view }: { view: ActivePatrolsView }) {
         className="absolute! inset-0 isolate bg-map-ground! font-sans"
       >
         <FitToData points={points} />
-        {view.sectors.map((sector) => (
-          <Polygon key={sector.id} positions={sector.rings} pathOptions={SECTOR_STYLE} />
-        ))}
+        <SectorLayer sectors={view.sectors} />
         {view.patrols.map((patrol) => {
           const selected = patrol.id === selectedId;
           return (

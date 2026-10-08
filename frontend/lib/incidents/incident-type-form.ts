@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, apiErrorMessage } from "@/lib/api/client";
 import type { IncidentTypeRequest, IncidentTypeResponse } from "@/lib/api/incident-types";
 import { SEVERITIES } from "@/lib/enums";
 
@@ -34,5 +34,5 @@ export function incidentTypeErrorMessage(error: Error): string {
   if (error instanceof ApiError && error.status === CONFLICT_STATUS) {
     return "This name is taken, or the type is used by incidents. Set it inactive instead.";
   }
-  return error instanceof ApiError ? error.message : "Could not reach WildX. Try again.";
+  return apiErrorMessage(error);
 }

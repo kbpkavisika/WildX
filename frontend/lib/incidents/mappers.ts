@@ -21,6 +21,10 @@ function toIncidentTypeRow(type: IncidentTypeResponse): IncidentTypeRow {
   };
 }
 
+export function toActiveTypeOptions(types: IncidentTypeResponse[]): IncidentTypeResponse[] {
+  return types.filter((type) => type.active).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function toIncidentTypesView(types: IncidentTypeResponse[]): IncidentTypesView {
   const sorted = [...types].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name));
   const activeCount = types.filter((type) => type.active).length;

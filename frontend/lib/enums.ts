@@ -31,3 +31,9 @@ export const SEVERITIES = {
   CRITICAL: "CRITICAL",
 } as const;
 export type Severity = (typeof SEVERITIES)[keyof typeof SEVERITIES];
+
+export const LOCATION_SOURCES = {
+  GPS: "GPS",
+  MANUAL: "MANUAL",
+} as const;
+export type LocationSource = (typeof LOCATION_SOURCES)[keyof typeof LOCATION_SOURCES];
