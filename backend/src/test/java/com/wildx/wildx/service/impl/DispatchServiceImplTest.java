@@ -275,6 +275,44 @@ class DispatchServiceImplTest {
     }
 
     @Test
+    void completingIncidentDispatchResolvesIncidentWithOutcome() {
+        Dispatch dispatch = incidentDispatch();
+        when(dispatchRepository.findWithDetailsById(99L)).thenReturn(Optional.of(dispatch));
+        when(dispatchRepository.save(any(Dispatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        UserResponse caller = new UserResponse(101L, "Ranger One", "ranger@wildx.lk", Role.RANGER, 1L);
+
+        DispatchResponse response = service.completeDispatch(caller, 99L, new DispatchCompleteRequest(" Snare removed "));
+
+        assertThat(response.status()).isEqualTo(DispatchStatus.COMPLETED);
+        verify(incidentService).resolve(60L, "Snare removed");
+        verify(incidentService, never()).reopen(any());
+    }
+
+    @Test
+    void decliningIncidentDispatchReturnsIncidentToQueue() {
+        Dispatch dispatch = incidentDispatch();
+        when(dispatchRepository.findWithDetailsById(99L)).thenReturn(Optional.of(dispatch));
+        when(dispatchRepository.save(any(Dispatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        UserResponse caller = new UserResponse(101L, "Ranger One", "ranger@wildx.lk", Role.RANGER, 1L);
+
+        DispatchResponse response = service.declineDispatch(caller, 99L, null);
+
+        assertThat(response.status()).isEqualTo(DispatchStatus.DECLINED);
+        verify(incidentService).reopen(60L);
+        verify(incidentService, never()).resolve(any(), any());
+    }
+
+    private Dispatch incidentDispatch() {
+        Dispatch dispatch = new Dispatch();
+        dispatch.setId(99L);
+        dispatch.setSourceType(SourceType.INCIDENT);
+        dispatch.setSourceId(60L);
+        dispatch.setResponder(ranger1);
+        dispatch.setStatus(DispatchStatus.ACKNOWLEDGED);
+        return dispatch;
+    }
+
+    @Test
     void cannotActOnAnotherRangersDispatch() {
         Dispatch dispatch = new Dispatch();
         dispatch.setId(99L);

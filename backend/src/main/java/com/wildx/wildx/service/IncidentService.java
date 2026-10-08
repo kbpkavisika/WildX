@@ -15,4 +15,6 @@ public interface IncidentService {
     IncidentResponse changeSeverity(Long parkId, Long id, Severity severity);
     IncidentResponse dismiss(Long parkId, Long id, String reason);
     Incident assign(Long parkId, Long id);
+    void resolve(Long id, String outcome);
+    void reopen(Long id);
 }

@@ -137,6 +137,25 @@ public class IncidentServiceImpl implements IncidentService {
         return incident;
     }
 
+    @Override
+    @Transactional
+    public void resolve(Long id, String outcome) {
+        incidents.findById(id).filter(incident -> incident.getStatus() == IncidentStatus.ASSIGNED).ifPresent(incident -> {
+            incident.setStatus(IncidentStatus.RESOLVED);
+            incident.setResolutionNote(outcome);
+            log.info("incident resolved incidentId={}", id);
+        });
+    }
+
+    @Override
+    @Transactional
+    public void reopen(Long id) {
+        incidents.findById(id).filter(incident -> incident.getStatus() == IncidentStatus.ASSIGNED).ifPresent(incident -> {
+            incident.setStatus(IncidentStatus.NEW);
+            log.info("incident reopened incidentId={}", id);
+        });
+    }
+
     private Incident requireNew(Long parkId, Long id, String action) {
         Incident incident = requireIncident(parkId, id);
         if (incident.getStatus() != IncidentStatus.NEW) {
