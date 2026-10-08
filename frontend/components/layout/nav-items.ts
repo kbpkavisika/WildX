@@ -1,4 +1,4 @@
-import { Bell, ChartColumn, House, MessageSquare, Radio, Route, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Bell, ChartColumn, House, MessageSquare, Radio, Route, Settings, TriangleAlert, type LucideIcon } from "lucide-react";
 
 export interface NavChild {
   label: string;
@@ -38,4 +38,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Alerts", href: "/dashboard/alerts", icon: Bell, badge: 3 },
   { label: "Community reports", href: "/dashboard/community", icon: MessageSquare },
   { label: "Analytics", href: "/dashboard/reports", icon: ChartColumn },
+  { label: "Incident types", href: "/dashboard/settings/incident-types", icon: Settings },
 ];

@@ -23,3 +23,11 @@ export const INCIDENT_STATUSES = {
   DISMISSED: "DISMISSED",
 } as const;
 export type IncidentStatus = (typeof INCIDENT_STATUSES)[keyof typeof INCIDENT_STATUSES];
+
+export const SEVERITIES = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+  CRITICAL: "CRITICAL",
+} as const;
+export type Severity = (typeof SEVERITIES)[keyof typeof SEVERITIES];

@@ -25,10 +25,18 @@ export function apiGet<T extends z.ZodType>(path: string, schema: T): Promise<z.
   return request(path, schema);
 }
 
+function jsonInit(method: string, body: unknown): RequestInit {
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+}
+
 export function apiPost<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {
-  return request(path, schema, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return request(path, schema, jsonInit("POST", body));
+}
+
+export function apiPut<T extends z.ZodType>(path: string, body: unknown, schema: T): Promise<z.infer<T>> {
+  return request(path, schema, jsonInit("PUT", body));
+}
+
+export async function apiDelete(path: string): Promise<void> {
+  await request(path, z.null(), { method: "DELETE" });
 }
