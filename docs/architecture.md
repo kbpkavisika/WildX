@@ -335,10 +335,12 @@ cd frontend && npm run dev
 ```
 
 **Seed data:** `config/DataSeeder` runs only when the DB is empty. It creates:
-- park **Yala**, with 4 sectors, 2 routes and 2 zones (Kumbukgaha farmland, and a road);
+- park **Yala**, with 2 zones (Kumbukgaha farmland, and a road);
 - alert rules, 5 incident types and 3 boundary segments (`KUMB`, `PAL`, `KAT`);
 - 1 collar on elephant "Gemunu" and 1 camera;
 - one user per role (`ranger@wildx.lk`, `supervisor@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `lel@wildx.lk`, `admin@wildx.lk`), with the test password `password`.
+
+`config/PatrolSeeder` runs after it, only when there are no patrols, so it also fills an existing DB. It adds 4 sectors, 3 routes, 3 more rangers (`kasun@`, `nimal@`, `saman@wildx.lk`, same password) and 8 patrols relative to today: 2 active with GPS tracks (one offline for 20 min), 2 planned, 3 completed with tracks and 1 cancelled.
 
 Simulation scripts live in `docs/sim/*.http` (IntelliJ/VS Code REST client) and send a fix inside the farmland zone, a camera image and an SMS.
 
