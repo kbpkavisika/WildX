@@ -33,6 +33,16 @@ class PatrolServiceImplTest {
     }
 
     @Test
+    void findsRangersLatestActivePatrolInPark() {
+        Patrol patrol = new Patrol();
+        patrol.setId(3L);
+        when(repository.findFirstByRangerIdAndRouteParkIdAndStatusOrderByStartedAtDescIdDesc(7L, 1L, PatrolStatus.ACTIVE))
+                .thenReturn(Optional.of(patrol));
+        assertThat(service.activePatrol(7L, 1L)).contains(patrol);
+        assertThat(service.activePatrol(8L, 1L)).isEmpty();
+    }
+
+    @Test
     void assignsPlannedPatrolToValidatedRanger() {
         when(routes.require(2L, 1L)).thenReturn(route);
         when(auth.requireRanger(7L, 1L)).thenReturn(ranger);

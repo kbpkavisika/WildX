@@ -9,6 +9,7 @@ import com.wildx.wildx.repository.IncidentTypeRepository;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.FileStorage;
 import com.wildx.wildx.service.ParkService;
+import com.wildx.wildx.service.PatrolService;
 import com.wildx.wildx.type.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +31,9 @@ class IncidentServiceImplTest {
     private final IncidentTypeRepository types = mock(IncidentTypeRepository.class);
     private final AuthService auth = mock(AuthService.class);
     private final ParkService parks = mock(ParkService.class);
+    private final PatrolService patrols = mock(PatrolService.class);
     private final FileStorage storage = mock(FileStorage.class);
-    private final IncidentServiceImpl service = new IncidentServiceImpl(incidents, types, auth, parks, storage,
+    private final IncidentServiceImpl service = new IncidentServiceImpl(incidents, types, auth, parks, patrols, storage,
             Clock.fixed(NOW, ZoneOffset.UTC));
     private final UserResponse ranger = new UserResponse(7L, "Ranger", "ranger@wildx.lk", Role.RANGER, 1L);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
@@ -62,6 +64,9 @@ class IncidentServiceImplTest {
         sector.setPolygonGeojson(SQUARE);
         when(parks.sectorShapes(1L)).thenReturn(List.of(sector));
         when(storage.save("incidents/1", "jpg", JPEG)).thenReturn("incidents/1/a.jpg");
+        Patrol patrol = new Patrol();
+        patrol.setId(3L);
+        when(patrols.activePatrol(7L, 1L)).thenReturn(Optional.of(patrol));
         Instant seen = NOW.minusSeconds(60);
 
         var result = service.report(ranger, new IncidentCreateRequest(4L, 6.5, 81.5, LocationSource.GPS,
@@ -70,6 +75,7 @@ class IncidentServiceImplTest {
         assertThat(result.id()).isEqualTo(10L);
         assertThat(result.typeName()).isEqualTo("Snare");
         assertThat(result.reporterId()).isEqualTo(7L);
+        assertThat(result.patrolId()).isEqualTo(3L);
         assertThat(result.severity()).isEqualTo(Severity.HIGH);
         assertThat(result.status()).isEqualTo(IncidentStatus.NEW);
         assertThat(result.sectorName()).isEqualTo("Sector 3");
@@ -80,8 +86,9 @@ class IncidentServiceImplTest {
     }
 
     @Test
-    void reportsManualLocationOutsideSectorsWithoutPhotoAtCurrentTime() {
+    void reportsManualLocationOutsideSectorsWithoutPhotoOrPatrolAtCurrentTime() {
         when(parks.sectorShapes(1L)).thenReturn(List.of());
+        when(patrols.activePatrol(7L, 1L)).thenReturn(Optional.empty());
 
         var result = service.report(ranger, new IncidentCreateRequest(4L, 6.5, 81.5, LocationSource.MANUAL, "  ", null), null);
 
@@ -90,6 +97,7 @@ class IncidentServiceImplTest {
         assertThat(saved.getValue().getPark()).isEqualTo(park);
         assertThat(result.locationSource()).isEqualTo(LocationSource.MANUAL);
         assertThat(result.sectorId()).isNull();
+        assertThat(result.patrolId()).isNull();
         assertThat(result.description()).isNull();
         assertThat(result.photoPath()).isNull();
         assertThat(result.occurredAt()).isEqualTo(NOW);
