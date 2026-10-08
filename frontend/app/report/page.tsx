@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Camera, Check, CheckCircle2, ChevronRight, Compass, MapPin, Phone, ShieldAlert, Sparkles, X } from "lucide-react";
+import { Camera, Check, CheckCircle2, ChevronRight, Clock, Compass, MapPin, Phone, ShieldAlert, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, fieldClass } from "@/components/ui/field";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -185,7 +185,16 @@ export default function VillagerReportPage() {
             </div>
             <span className="text-wordmark font-semibold tracking-tight text-ink">WildX</span>
           </div>
-          <LanguageSwitcher compact />
+          <div className="flex items-center gap-2">
+            <Link
+              href="/report/status"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-caption font-medium text-ink hover:bg-surface-muted transition-colors"
+            >
+              <Clock className="size-3.5 text-primary" />
+              <span>{t("trackExisting")}</span>
+            </Link>
+            <LanguageSwitcher compact />
+          </div>
         </div>
       </header>
 
@@ -194,6 +203,15 @@ export default function VillagerReportPage() {
           <div>
             <h1 className="text-page-title text-ink">{t("reportTitle")}</h1>
             <p className="mt-1 text-body text-ink-muted">{t("reportSubtitle")}</p>
+            <div className="mt-3 flex items-center justify-between rounded-lg border border-line bg-surface-sunken px-3.5 py-2.5 text-caption text-ink-muted">
+              <span>{t("haveReferenceCode")}</span>
+              <Link
+                href="/report/status"
+                className="font-medium text-primary hover:underline hover:text-primary-hover"
+              >
+                {t("trackExisting")} →
+              </Link>
+            </div>
           </div>
 
           <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">

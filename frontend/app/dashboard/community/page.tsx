@@ -23,6 +23,7 @@ const STATUS_FILTERS = [
   { value: "NEEDS_LOCATION", label: "Needs location" },
   { value: "VALIDATED", label: "Validated" },
   { value: "DISPATCHED", label: "Dispatched" },
+  { value: "DUPLICATE", label: "Duplicates" },
   { value: "CLOSED", label: "Closed" },
   { value: "INVALID", label: "Invalid" },
 ];
