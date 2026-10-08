@@ -342,7 +342,7 @@ Page subtitles are 15px `ink-body`, with the key figure in a 600-weight `ink` sp
 - **Page header.** Title and subtitle on the left, the primary action (48px button) on the right.
 - **Cards.** Padded 22px × 24px, with an 18px gap inside. Rows of cards use flex-wrap with weighted bases (e.g. `3 1 420px` beside `2 1 340px`) so they reflow to one column without breakpoints.
 - **Metric strip.** An auto-fit grid of 180px-minimum cells, split by 1px `line` dividers under a top rule.
-- **Tables.** CSS grid rows (`1.7fr 0.8fr 1fr 1.4fr 1.1fr 0.9fr 0.9fr 36px`) with 12px row padding and `#F0F1EC` row dividers. They scroll horizontally below 980px.
+- **Tables.** CSS grid rows (`1.7fr 1.4fr 1.1fr 0.9fr 0.9fr 36px` for patrols) with 12px row padding and `#F0F1EC` row dividers. They scroll horizontally below 760px.
 - **Forms.** An auto-fit grid of 200px-minimum fields with a 16px gap. Actions are right-aligned.
 - **Spacing scale.** 4 · 8 · 12 · 16 · 20 · 24 · 28px on a 4px base.
 
@@ -397,10 +397,10 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - A pulsing green **Live** chip sits next to the page title.
 - **Patrols table (All patrols).**
   - Filter pills (All / Active / Scheduled / Completed with counts; the active pill is ink-filled).
-  - Columns: Patrol (name + ID), Mode, Sector, Leader · team (28px initials avatar), Schedule (day + time), Distance (covered / planned), Status chip, and a more-options button.
+  - Columns: Patrol (route name + `PT-` ID), Leader (28px initials avatar + ranger name), Schedule (day, then the actual start – end time once started), Distance (covered km for completed patrols, otherwise —), Status chip (Active positive, Scheduled neutral, Completed done, Cancelled neutral), and a more-options button.
 - **New patrol form.**
   - An inline panel on `surface-form` with an lg radius, a "New patrol" title and a close button.
-  - Fields: patrol type, sector, mode, team leader, team size, date, start, end, planned distance (km), vehicle / call sign, check-in interval, and objective and route notes (textarea).
+  - Fields: route, ranger (both pick-lists) and date. Missing fields are outlined in negative red with a caption below.
   - Cancel and Create patrol buttons, right-aligned.
 
 ## Do's and Don'ts
