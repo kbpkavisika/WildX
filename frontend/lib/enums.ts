@@ -83,3 +83,27 @@ export const ZONE_TYPES = {
   RESTRICTED: "RESTRICTED",
 } as const;
 export type ZoneType = (typeof ZONE_TYPES)[keyof typeof ZONE_TYPES];
+
+export const COMMUNITY_REPORT_STATUSES = {
+  NEW: "NEW",
+  NEEDS_LOCATION: "NEEDS_LOCATION",
+  VALIDATED: "VALIDATED",
+  DISPATCHED: "DISPATCHED",
+  CLOSED: "CLOSED",
+  INVALID: "INVALID",
+  DUPLICATE: "DUPLICATE",
+} as const;
+export type CommunityReportStatus = (typeof COMMUNITY_REPORT_STATUSES)[keyof typeof COMMUNITY_REPORT_STATUSES];
+
+export const REPORT_TYPES = {
+  SIGHTING: "SIGHTING",
+  CROP_DAMAGE: "CROP_DAMAGE",
+  OTHER: "OTHER",
+} as const;
+export type ReportType = (typeof REPORT_TYPES)[keyof typeof REPORT_TYPES];
+
+export const REPORT_CHANNELS = {
+  WEB: "WEB",
+  SMS: "SMS",
+} as const;
+export type ReportChannel = (typeof REPORT_CHANNELS)[keyof typeof REPORT_CHANNELS];
