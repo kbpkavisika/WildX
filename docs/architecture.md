@@ -65,7 +65,7 @@ The backend keeps the existing layer packages under `com.wildx.wildx` and adds `
 
 ```
 com.wildx.wildx
-├─ config/      SecurityConfig, JwtConfig, WebConfig (CORS), DataSeeder
+├─ config/      SecurityConfig (JWT, CORS), DataSeeder
 ├─ constant/    Roles, AppConstants (night hours, thresholds)
 ├─ controller/  AuthController, AdminController, Park*Controller,
 │               Patrol*, Incident*, Dispatch*, Alert*, Device*, CameraImage*, Community*, Sms*, Report*
@@ -318,7 +318,7 @@ frontend/
 
 ## 9. Configuration and local setup
 
-Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`, `UPLOAD_DIR`). Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
+Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`, `UPLOAD_DIR`, `CORS_ORIGINS`). `CORS_ORIGINS` is a comma-separated list of allowed browser origins and defaults to `http://localhost:3000`. Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
 
 To run the system, start PostgreSQL (`docker-compose.yml` in the repo root, `postgres:17-alpine`), the backend and the frontend:
 
