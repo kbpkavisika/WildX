@@ -22,13 +22,14 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/incidents")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class IncidentController {
     private final IncidentService incidents;
     private final AuthService auth;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/incidents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('RANGER')")
     public ResponseEntity<IncidentResponse> report(@AuthenticationPrincipal Jwt jwt,
                                                    @Valid @RequestPart("data") IncidentCreateRequest request,
@@ -38,7 +39,7 @@ public class IncidentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(incidents.report(auth.current(jwt), request, content));
     }
 
-    @GetMapping
+    @GetMapping("/incidents")
     @PreAuthorize("hasAnyRole('SUPERVISOR','MANAGER')")
     public List<IncidentResponse> list(@AuthenticationPrincipal Jwt jwt,
                                        @RequestParam(required = false) IncidentStatus status,
@@ -47,20 +48,26 @@ public class IncidentController {
         return incidents.list(auth.current(jwt).parkId(), status, typeId, severity);
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERVISOR','MANAGER')")
+    @GetMapping("/incidents/{id}")
+    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER')")
     public IncidentResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
-        return incidents.get(auth.current(jwt).parkId(), id);
+        return incidents.get(auth.current(jwt), id);
     }
 
-    @PatchMapping("/{id}")
+    @GetMapping("/me/incidents")
+    @PreAuthorize("hasRole('RANGER')")
+    public List<IncidentResponse> mine(@AuthenticationPrincipal Jwt jwt) {
+        return incidents.mine(auth.current(jwt).id());
+    }
+
+    @PatchMapping("/incidents/{id}")
     @PreAuthorize("hasAnyRole('SUPERVISOR','MANAGER')")
     public IncidentResponse changeSeverity(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                                            @Valid @RequestBody IncidentSeverityRequest request) {
         return incidents.changeSeverity(auth.current(jwt).parkId(), id, request.severity());
     }
 
-    @PostMapping("/{id}/dismiss")
+    @PostMapping("/incidents/{id}/dismiss")
     @PreAuthorize("hasAnyRole('SUPERVISOR','MANAGER')")
     public IncidentResponse dismiss(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                                     @Valid @RequestBody IncidentDismissRequest request) {

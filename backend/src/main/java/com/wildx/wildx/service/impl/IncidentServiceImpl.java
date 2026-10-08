@@ -7,6 +7,7 @@ import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.Incident;
 import com.wildx.wildx.model.IncidentType;
 import com.wildx.wildx.model.Sector;
+import com.wildx.wildx.repository.DispatchRepository;
 import com.wildx.wildx.repository.IncidentRepository;
 import com.wildx.wildx.repository.IncidentTypeRepository;
 import com.wildx.wildx.service.AuthService;
@@ -18,6 +19,7 @@ import com.wildx.wildx.service.PatrolService;
 import com.wildx.wildx.type.IncidentStatus;
 import com.wildx.wildx.type.Role;
 import com.wildx.wildx.type.Severity;
+import com.wildx.wildx.type.SourceType;
 import com.wildx.wildx.util.GeoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,7 @@ public class IncidentServiceImpl implements IncidentService {
 
     private final IncidentRepository incidents;
     private final IncidentTypeRepository types;
+    private final DispatchRepository dispatches;
     private final AuthService auth;
     private final ParkService parks;
     private final PatrolService patrols;
@@ -98,10 +101,24 @@ public class IncidentServiceImpl implements IncidentService {
 
     @Override
     @Transactional(readOnly = true)
-    public IncidentResponse get(Long parkId, Long id) {
-        log.info("get incident started incidentId={}", id);
-        IncidentResponse response = IncidentResponse.from(requireIncident(parkId, id));
+    public IncidentResponse get(UserResponse caller, Long id) {
+        log.info("get incident started incidentId={} callerId={}", id, caller.id());
+        Incident incident = requireIncident(caller.parkId(), id);
+        if (caller.role() == Role.RANGER && !incident.getReporter().getId().equals(caller.id())
+                && !dispatches.existsBySourceTypeAndSourceIdAndResponderId(SourceType.INCIDENT, id, caller.id())) {
+            throw new NotFoundException("Incident not found");
+        }
         log.info("get incident completed incidentId={}", id);
+        return IncidentResponse.from(incident);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<IncidentResponse> mine(Long reporterId) {
+        log.info("my incidents started reporterId={}", reporterId);
+        var response = incidents.findByReporterIdOrderByOccurredAtDescIdDesc(reporterId).stream()
+                .map(IncidentResponse::from).toList();
+        log.info("my incidents completed reporterId={} count={}", reporterId, response.size());
         return response;
     }
 

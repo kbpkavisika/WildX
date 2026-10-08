@@ -11,7 +11,8 @@ import java.util.List;
 public interface IncidentService {
     IncidentResponse report(UserResponse caller, IncidentCreateRequest request, byte[] photo);
     List<IncidentResponse> list(Long parkId, IncidentStatus status, Long typeId, Severity severity);
-    IncidentResponse get(Long parkId, Long id);
+    IncidentResponse get(UserResponse caller, Long id);
+    List<IncidentResponse> mine(Long reporterId);
     IncidentResponse changeSeverity(Long parkId, Long id, Severity severity);
     IncidentResponse dismiss(Long parkId, Long id, String reason);
     Incident assign(Long parkId, Long id);
