@@ -52,3 +52,26 @@ export const DISPATCH_STATUSES = {
   DECLINED: "DECLINED",
 } as const;
 export type DispatchStatus = (typeof DISPATCH_STATUSES)[keyof typeof DISPATCH_STATUSES];
+
+export const ALERT_TYPES = {
+  ZONE_BREACH: "ZONE_BREACH",
+  MORTALITY: "MORTALITY",
+  DEVICE_HEALTH: "DEVICE_HEALTH",
+  HUMAN_DETECTED: "HUMAN_DETECTED",
+} as const;
+export type AlertType = (typeof ALERT_TYPES)[keyof typeof ALERT_TYPES];
+
+export const ALERT_STATUSES = {
+  OPEN: "OPEN",
+  ACKNOWLEDGED: "ACKNOWLEDGED",
+  RESOLVED: "RESOLVED",
+} as const;
+export type AlertStatus = (typeof ALERT_STATUSES)[keyof typeof ALERT_STATUSES];
+
+export const DISPOSITIONS = {
+  CONFLICT_AVERTED: "CONFLICT_AVERTED",
+  CONFLICT_OCCURRED: "CONFLICT_OCCURRED",
+  NO_ACTION: "NO_ACTION",
+  FALSE_ALARM: "FALSE_ALARM",
+} as const;
+export type Disposition = (typeof DISPOSITIONS)[keyof typeof DISPOSITIONS];
