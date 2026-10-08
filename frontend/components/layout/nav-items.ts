@@ -38,5 +38,13 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Alerts", href: "/dashboard/alerts", icon: Bell, badge: 3 },
   { label: "Community reports", href: "/dashboard/community", icon: MessageSquare },
   { label: "Analytics", href: "/dashboard/reports", icon: ChartColumn },
-  { label: "Incident types", href: "/dashboard/settings/incident-types", icon: Settings },
+  {
+    label: "Settings",
+    href: "/dashboard/settings/incident-types",
+    icon: Settings,
+    children: [
+      { label: "Incident types", href: "/dashboard/settings/incident-types", count: 5 },
+      { label: "Boundary segments", href: "/dashboard/settings/boundary-segments", count: 3 },
+    ],
+  },
 ];
