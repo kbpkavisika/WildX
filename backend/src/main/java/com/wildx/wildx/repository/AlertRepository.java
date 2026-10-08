@@ -24,4 +24,6 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     Optional<Alert> findLockedById(Long id);
     List<Alert> findByStatusAndSlaDueAtLessThanEqual(AlertStatus status, Instant time);
     boolean existsByDeviceIdAndTypeAndStatusNot(Long deviceId, AlertType type, AlertStatus status);
+    @EntityGraph(attributePaths = "zone")
+    List<Alert> findByParkIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(Long parkId, Instant from, Instant until);
 }
