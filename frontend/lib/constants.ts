@@ -12,3 +12,6 @@ export const INCIDENTS_REFETCH_MS = 15_000;
 export const TASKS_REFETCH_MS = 15_000;
 export const PHOTO_MAX_MB = 5;
 export const INCIDENT_DESCRIPTION_MAX = 500;
+export const ALERTS_REFETCH_MS = 15_000;
+export const NOTIFICATIONS_REFETCH_MS = 15_000;
+export const MAP_MAX_ZOOM = 17;
