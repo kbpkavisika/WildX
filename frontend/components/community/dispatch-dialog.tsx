@@ -17,8 +17,8 @@ export function CommunityDispatchDialog({ report, open, onClose, onDispatched }:
   if (!open || !report) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
-      <div className="relative w-full max-w-lg rounded-xl border border-line bg-surface p-6 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-lg rounded-xl border border-line bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between border-b border-line pb-3">
           <div>
             <h2 className="text-card-title font-semibold text-ink">Dispatch Ranger</h2>
