@@ -432,7 +432,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Resolve opens the same outcome form as the dashboard, with Resolve alert and Cancel stacked full width. A failed action shows the server's message in negative red.
   - The **Notifications** card follows, the same as on the dashboard.
 - **Devices.**
-  - The sidebar's Sensors → Collars item opens it. The subtitle counts collars and cameras and how many need attention: "**3 collars** and 2 cameras, 2 need attention."
+  - The sidebar's Sensors → Collars item opens it. The subtitle counts collars and cameras and how many need attention: "**3 collars** and 2 cameras, 2 need attention." (or "all healthy" when none do).
   - Managers get Simulator (secondary link), New animal (secondary) and New device (primary 48px with a plus icon) on the right. Other roles only read the page.
   - Filter pills: All, Collars, Cameras with counts.
   - The table uses grid rows (`1.2fr 1.6fr 0.9fr 0.7fr 1.1fr 1fr`) and scrolls horizontally below 760px. Columns: Device (code, then "Collar" or "Camera" as a muted caption), Animal or location (animal name over its species for a collar, "6.3100, 81.4100" over "Camera location" for a camera), Reports every ("60 min"), Battery ("82%" or —), Last seen ("Today · 22:05" or "Never") and a Health chip.

@@ -107,3 +107,9 @@ export const REPORT_CHANNELS = {
   SMS: "SMS",
 } as const;
 export type ReportChannel = (typeof REPORT_CHANNELS)[keyof typeof REPORT_CHANNELS];
+
+export const DEVICE_TYPES = {
+  COLLAR: "COLLAR",
+  CAMERA: "CAMERA",
+} as const;
+export type DeviceType = (typeof DEVICE_TYPES)[keyof typeof DEVICE_TYPES];
