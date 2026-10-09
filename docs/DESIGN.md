@@ -326,7 +326,7 @@ The palette is mostly white and ink, with green as the identity and very little 
   - In compact lists, status is a 7px dot plus a coloured word: positive "On route", responding `#C2410C` "Responding", negative "Overdue".
 - **Categories.** Butter `#FCE98C` for patrol items and orchid `#F8D6F3` for maintenance and vet work in the schedule. Both have a white icon tile and ink text.
 - **Presence.** `online #3DBE6B` is only for the avatar dot and the pulsing "Live" dot. Never use it as text.
-- **Map.** Ground `#F4F6EF`, park land `#E6EED9` inside a dashed pine boundary, water `#CFE2E6` with labels in `#3B6A74`, roads as 5px white strokes. Patrol tracks use `track-1…4` (pine, coral deep, violet `#6A4FB6`, ochre `#A87A00`). Each track is always paired with a numbered marker, so colour is never the only cue.
+- **Map.** An OpenStreetMap base layer on ground `#F4F6EF`. Sectors and zones are drawn over it at 35% fill so the base map shows through: park land `#E6EED9` inside a dashed pine boundary, high-risk zones in `negative-bg` with a dashed `negative` outline. Patrol tracks use `track-1…4` (pine, coral deep, violet `#6A4FB6`, ochre `#A87A00`). Each track is always paired with a numbered marker, so colour is never the only cue.
 
 ## Typography
 
@@ -365,7 +365,7 @@ Page subtitles are 15px `ink-body`, with the key figure in a 600-weight `ink` sp
 WildX is flat. Depth comes from 1px `line` borders and white space, not shadows or tinted page backgrounds.
 
 - Cards, inputs, controls and the sidebar all use a 1px border with no shadow.
-- The **only shadow** is on elements floating over the map: the "In the field" panel uses `0 8px 24px rgba(22, 32, 27, 0.08)`. Legend and zoom controls over the map use a border only.
+- The **only shadow** is on floating elements: the "In the field" panel over the map and the modal both use `0 8px 24px rgba(22, 32, 27, 0.08)`. Legend and zoom controls over the map use a border only.
 - The highlighted chart bar gets a solid `0 6px 0` coral-deep lip, which reads as a raised tab rather than a blur.
 - Map markers sit on a 3px white stroke. A selected track gets a 5px stroke, full opacity and an 18px halo at 20% of its colour; unselected tracks drop to 3px at 50%.
 
@@ -396,11 +396,13 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Nav items are 44px pills with a 20px icon and 12px gap. The active item gets the lime fill and 500 weight.
   - Expandable groups (Patrols → Active patrols, All patrols, Routes, Coverage; Sensors → Collars, Camera traps) are buttons that expand and collapse their children on click, with a chevron pointing up when open and down when closed. Groups start open. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
   - Alerts carries a coral count badge.
+  - Users (people icon) is the last item and only Admins see it.
 - **Buttons.**
   - Primary: pine, 48px tall in page headers, 40px in forms, with a leading plus icon for create actions.
   - Secondary: white with a `line` border.
   - Quiet: 32px `surface-muted` with a border, for Today, Filter, Full map and more-options.
   - Icon-only buttons always have an `aria-label`.
+- **Modal.** Create and edit forms that open from a page header button (New route, New user, Edit user) open in a modal, not inline. It is a native dialog centred over a backdrop of `ink` at 40%: white, lg radius, 24px padding, the floating shadow, full width up to 640px (560px for forms without a map) with a 16px gap to the screen edge, and scrolls inside when taller than the screen. A `form-title` heading sits top-left with a 32px quiet close (X) button top-right. Esc, the close button and Cancel close it; clicking the backdrop does not, so typed input is not lost. Focus moves into the modal and returns to the opening button.
 - **Status chip.** Caption text, 2px × 6px padding, xs radius, with the tinted fill, border and text trio. Variants: positive, negative, neutral (Scheduled), done (Completed).
 - **Metric cell.** A body-size label, then a `metric` value with an optional chip beside it.
 - **Bar chart.** Six rounded bars in `surface-sunken` with the value inside at the top. One coral highlighted bar. A dotted `ink-faint` average line with a pine "Avg 6" tag. Month labels underneath, with the highlighted month in ink 600.
@@ -425,7 +427,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
 - **Routes.**
   - The subtitle counts the routes: "**3 routes** in this park." Managers get New route (primary 48px with a plus icon).
   - A table with grid rows (`2fr 1fr 1fr`): Route (name), Length (km from the path) and Points (how many path points it has).
-  - **New route form**: an inline panel like New patrol, titled "New route". It has a Name field, then a 360px lg-radius map. Each click on the map adds a numbered path point, and the path is drawn in `track-1`. Undo and Clear quiet buttons sit above the map, with a muted "4 points · 2.1 km" caption. A Paste GeoJSON quiet button swaps the map for a textarea that takes a LineString. A missing name, or fewer than 2 points, is outlined in negative red with a caption. A server error shows in negative red above the buttons. Cancel and Create route are right-aligned.
+  - **New route form**: a modal titled "New route". It has a Name field, then a 360px lg-radius map. Each click on the map adds a numbered path point, and the path is drawn in `track-1`. Undo and Clear quiet buttons sit above the map, with a muted "4 points · 2.1 km" caption. A Paste GeoJSON quiet button swaps the map for a textarea that takes a LineString. A missing name, or fewer than 2 points, is outlined in negative red with a caption. A server error shows in negative red above the buttons. Cancel and Create route are right-aligned.
 - **Coverage.**
   - The subtitle counts neglected sectors: "**2 sectors** not patrolled for more than 7 days." (or "Every sector patrolled in the last 7 days.")
   - A full-bleed map like Active patrols. Sectors are filled with park land. A neglected sector is drawn like a high-risk zone (`negative-bg` fill with a 1.5px dashed `negative` outline), with its name as a label.
@@ -450,7 +452,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
 - **Sign in.**
   - A centred card (max 1120px, xl radius, 12px padding, `line` border) that wraps into two equal panels and stacks on phones.
   - Left: a lg-radius photo panel with a `page-title` tagline at the top and a white xs-radius "Udawalawe NP · 30,821 ha" location chip at the bottom.
-  - Right: a 380px form with the logo, a "Sign in" `page-title` and a 15px `ink-body` subtitle, a `line` divider, Work email and Password fields ("Forgot password?" link beside the password label), a "Keep me signed in on this device" checkbox in pine, a full-width 48px primary button and a centred "New to WildX? Create an account" line.
+  - Right: a 380px form with the logo, a "Sign in" `page-title` and a 15px `ink-body` subtitle, a `line` divider, Work email and Password fields ("Forgot password?" link beside the password label), a "Keep me signed in on this device" checkbox in pine, a full-width 48px primary button and a centred muted "Accounts are created by your park admin." line. There is no self sign-up.
   - A focused input gets a pine border and a 3px `lime-soft` ring. A failed sign-in shows a negative caption above the button.
 - **New patrol form.**
   - An inline panel on `surface-form` with an lg radius, a "New patrol" title and a close button.
@@ -514,6 +516,13 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - From and To date fields sit under the header, like the Incident report, covering the last six months by default. A reversed or empty range shows the error in negative red and loads nothing.
   - The Summary card has a muted caption "Times run from when each alert was raised, and count only alerts that got that far." and a metric strip: Alerts raised, Median time to acknowledge and Median time to resolve. Times show as "8.5 min" under an hour and "1.4 h" from an hour up, or "—" when no alert has the value yet.
   - The By type and zone card has a grid table (`1.2fr 1.6fr 0.7fr 1fr 1fr`) that scrolls horizontally below 640px: Alert type, Zone ("No zone" in muted text for device health, mortality and human detected alerts), Alerts, Median to acknowledge and Median to resolve, highest count first. Without alerts it says "No alerts raised in this range."
+
+- **Users.**
+  - The sidebar's Users item opens it, for Admins only; other roles see "Only admins can manage users."
+  - The subtitle counts the accounts: "**8 users**, 1 deactivated." New user (primary 48px with a plus icon) is on the right.
+  - One card holds a grid table (`1.4fr 1.6fr 1.2fr 1fr 0.8fr 180px`) that scrolls horizontally below 760px: Name (with the phone as a muted caption, or none), Email, Role ("Park manager"), Park ("Yala NP", or "All parks" in muted text for an Admin), a Status chip (Active positive, Deactivated neutral) and 32px quiet Edit and Deactivate buttons. A deactivated user gets Edit only. The signed-in admin's own row has no Deactivate. Active users come first, then by name.
+  - New user and Edit open a modal titled "New user" or "Edit K. Bandara": Name, Email, Phone (optional), Role (pick-list), Park (pick-list, hidden for Admin) and Password. On edit the password is optional, with the muted caption "Leave blank to keep the current password.", and an "Active · can sign in" checkbox in pine. Missing or invalid fields are outlined in negative red with a caption ("Enter a name", "Enter a valid email", "Choose a park", "Use at least 8 characters"); a server error (such as an email already in use) shows in negative red above the buttons. Cancel and Create user (or Save changes) are right-aligned.
+  - Deactivate asks first: "Deactivate K. Bandara? They will no longer be able to sign in." Their history stays, and Edit can make them active again.
 
 ## Do's and Don'ts
 
