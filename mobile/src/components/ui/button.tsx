@@ -1,4 +1,4 @@
-﻿import type { LucideIcon } from "lucide-react-native";
+import type { LucideIcon } from "lucide-react-native";
 import { Pressable, StyleSheet, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { colors, ICON_STROKE, radii, sizes, space } from "@/lib/theme";
 import { AppText } from "./text";

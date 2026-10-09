@@ -1,4 +1,4 @@
-﻿import * as Location from "expo-location";
+import * as Location from "expo-location";
 import Storage from "expo-sqlite/kv-store";
 import * as TaskManager from "expo-task-manager";
 import { z } from "zod";

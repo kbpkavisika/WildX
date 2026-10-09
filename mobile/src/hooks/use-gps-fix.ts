@@ -27,8 +27,7 @@ export function useGpsFix(onFix: (position: LatLng) => void) {
     onFixRef.current = onFix;
   });
 
-  const request = useCallback(() => {
-    setStatus("locating");
+  const locate = useCallback(() => {
     void currentPosition().then((position) => {
       if (!position) {
         setStatus("failed");
@@ -39,9 +38,14 @@ export function useGpsFix(onFix: (position: LatLng) => void) {
     });
   }, []);
 
+  const request = useCallback(() => {
+    setStatus("locating");
+    locate();
+  }, [locate]);
+
   useEffect(() => {
-    request();
-  }, [request]);
+    locate();
+  }, [locate]);
 
   return { status, retry: request };
 }

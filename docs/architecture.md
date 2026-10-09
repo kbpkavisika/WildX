@@ -45,7 +45,7 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
 | Mobile | Expo SDK 57 (React Native, TypeScript), `expo-router` | Ranger role only, in `mobile/`. Same React Query, Zustand, zod and react-hook-form as the web |
 | Mobile storage | `expo-sqlite` (outbox table and `kv-store` for the query cache), `expo-secure-store` (JWT) | Offline outbox (CMN-04) |
 | Mobile device | `expo-location` + `expo-task-manager` (background GPS), `expo-image-picker` (camera), `expo-network`, `expo-file-system`, `expo-crypto` | Background tracking needs a development build |
-| Mobile maps and look | `react-native-maps` with an OpenStreetMap `UrlTile`, `@expo-google-fonts/geist`, `lucide-react-native` | Styled with `StyleSheet` from DESIGN.md tokens in `lib/theme.ts` |
+| Mobile maps and look | `react-native-maps` with an OpenStreetMap `UrlTile`, `@expo-google-fonts/geist`, `lucide-react-native` | Styled with `StyleSheet` from DESIGN.md tokens in `mobile/src/lib/theme.ts` |
 
 The project adds **no other dependencies** without team agreement. Phone camera and GPS use native browser features: `<input type="file" accept="image/*" capture="environment">` and `navigator.geolocation.watchPosition`.
 
@@ -340,27 +340,29 @@ frontend/
 
 ```
 mobile/
-├─ app/                          # expo-router
-│  ├─ _layout.tsx                # fonts, React Query (persisted), DB init, sync engine
-│  ├─ login.tsx                  # Sign in; only RANGER may continue
-│  └─ (ranger)/
-│     ├─ _layout.tsx             # guard, header (logo + Log out), sync bar, stack
-│     ├─ (tabs)/_layout.tsx      # bottom nav: Patrols, Report, Tasks, Alerts
-│     ├─ (tabs)/index.tsx        # my patrols today
-│     ├─ (tabs)/report.tsx       # report incident
-│     ├─ (tabs)/tasks.tsx        # my dispatches + my incidents
-│     ├─ (tabs)/alerts.tsx       # open alerts + notifications
-│     ├─ patrol/[id].tsx         # map, Start/End, Waypoint, Report incident
-│     └─ dispatch/[id].tsx       # Acknowledge, Complete, Decline
-├─ components/                   # ui/ (DESIGN.md primitives), layout/, map/, sync/, one folder per feature
-├─ hooks/                        # one React Query hook per screen/resource
-└─ lib/
-   ├─ api/                       # client.ts + one module per resource with its zod schema (ported from frontend)
-   ├─ db/                        # opens wildx.db and creates the outbox table
-   ├─ outbox/                    # repository (SQL), sync engine, pending overlay mappers
-   ├─ tracking/                  # background location task and the 60 s / 50 m rule
-   ├─ <feature>/mappers.ts       # pure view mapping (ported from frontend)
-   └─ theme.ts                   # DESIGN.md tokens
+├─ app.config.ts                 # permissions, background location, maps key
+└─ src/                          # imported as @/*
+   ├─ app/                       # expo-router
+   │  ├─ _layout.tsx             # fonts, React Query (persisted), DB init, sync engine, login/ranger guard
+   │  ├─ login.tsx               # Sign in; only RANGER may continue
+   │  └─ (ranger)/
+   │     ├─ _layout.tsx          # header (logo + Log out), sync bar, stack, bottom nav: Patrols, Report, Tasks, Alerts
+   │     ├─ index.tsx            # my patrols today
+   │     ├─ report.tsx           # report incident
+   │     ├─ tasks.tsx            # my dispatches + my incidents
+   │     ├─ alerts.tsx           # open alerts + notifications
+   │     ├─ patrol/[id].tsx      # map, Start/End, Waypoint, Report incident
+   │     └─ dispatch/[id].tsx    # Acknowledge, Complete, Decline
+   ├─ components/                # ui/ (DESIGN.md primitives), layout/, map/, sync/, one folder per feature
+   ├─ hooks/                     # one React Query hook per screen/resource
+   └─ lib/
+      ├─ api/                    # client.ts + one module per resource with its zod schema (ported from frontend)
+      ├─ auth/                   # session store (expo-secure-store) and sign-in form schema
+      ├─ db/                     # opens wildx.db and creates the outbox table
+      ├─ outbox/                 # repository (SQL), sync engine, pending overlay mappers
+      ├─ tracking/               # background location task and the 60 s / 50 m rule
+      ├─ <feature>/mappers.ts    # pure view mapping (ported from frontend)
+      └─ theme.ts                # DESIGN.md tokens
 ```
 
 - **Outbox.** Table `outbox(id TEXT PK, user_id, kind, patrol_id, target_id, body, photo_uri, created_at, attempts, status, error)`. Kinds: `PATROL_START`, `PATROL_END`, `TRACK_POINT`, `INCIDENT`, `DISPATCH_ACK`, `DISPATCH_COMPLETE`, `DISPATCH_DECLINE`, `ALERT_ACK`, `ALERT_RESOLVE`. Each ranger write inserts a `PENDING` row first, and the screen confirms as soon as the row is saved. Incident photos are copied into the app's document folder and deleted once sent.
@@ -388,7 +390,7 @@ cd backend && ./mvnw spring-boot:run
 cd frontend && npm run dev
 ```
 
-The ranger mobile app reads `EXPO_PUBLIC_API_URL` from `mobile/.env` (for example `http://10.0.2.2:8080/api/v1` on the Android emulator, or the computer's LAN address on a phone). Background GPS needs a development build; an Android build also needs `GOOGLE_MAPS_API_KEY` for `react-native-maps`:
+The ranger mobile app reads `EXPO_PUBLIC_API_URL` from `mobile/.env.local` (`mobile/.env.example` lists the keys; for example `http://10.0.2.2:8080/api/v1` on the Android emulator, or the computer's LAN address on a phone). Background GPS needs a development build; an Android build also needs `GOOGLE_MAPS_API_KEY` for `react-native-maps`:
 
 ```bash
 cd mobile && npx expo run:android
