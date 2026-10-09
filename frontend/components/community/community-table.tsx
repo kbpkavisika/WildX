@@ -12,6 +12,7 @@ interface CommunityTableProps {
   onOpenInvalidate: (report: CommunityReport) => void;
   onOpenLocation: (report: CommunityReport) => void;
   onOpenDispatch: (report: CommunityReport) => void;
+  emptyMessage?: string;
 }
 
 function StatusChip({ status, severity }: { status: string; severity?: string | null }) {
@@ -73,11 +74,12 @@ export function CommunityTable({
   onOpenInvalidate,
   onOpenLocation,
   onOpenDispatch,
+  emptyMessage,
 }: CommunityTableProps) {
   if (reports.length === 0) {
     return (
       <div className="flex min-h-48 items-center justify-center p-8 text-center text-body text-ink-muted">
-        No community reports in this view.
+        {emptyMessage ?? "No community reports in this view."}
       </div>
     );
   }

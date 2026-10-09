@@ -15,10 +15,13 @@ export default function ReportStatusLookupPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = searchInput.trim().toUpperCase();
+    let clean = searchInput.trim().toUpperCase();
     if (!clean) {
       setError(t("searchPlaceholder"));
       return;
+    }
+    if (!clean.startsWith("R-") && /^\d+$/.test(clean)) {
+      clean = `R-${clean}`;
     }
     router.push(`/report/${encodeURIComponent(clean)}`);
   };
