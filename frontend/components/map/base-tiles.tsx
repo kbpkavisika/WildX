@@ -1,13 +1,10 @@
 "use client";
 
-import { AttributionControl, TileLayer } from "react-leaflet";
-import { MAP_MAX_ZOOM, MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from "@/lib/constants";
+import { TileLayer } from "react-leaflet";
+
+const OSM_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export function BaseTiles() {
-  return (
-    <>
-      <TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} maxZoom={MAP_MAX_ZOOM} />
-      <AttributionControl position="bottomright" prefix={false} />
-    </>
-  );
+  return <TileLayer url={OSM_URL} attribution={OSM_ATTRIBUTION} />;
 }

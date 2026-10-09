@@ -2,11 +2,12 @@
 
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap } from "leaflet";
-import { Minus, Plus } from "lucide-react";
 import { useRef } from "react";
 import { MapContainer, Marker, Polyline } from "react-leaflet";
+import { BaseTiles } from "@/components/map/base-tiles";
 import { FitToData } from "@/components/map/fit-to-data";
 import { SectorLayer } from "@/components/map/sector-layer";
+import { ZoomControls } from "@/components/map/zoom-controls";
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants";
 import { usePatrolSelection } from "@/lib/patrols/store";
 import type { ActivePatrolsView, LatLng } from "@/lib/patrols/types";
@@ -18,20 +19,6 @@ import { TRACK_STYLES } from "./track-styles";
 const TRACK_WEIGHT = { selected: 5, idle: 3 };
 const TRACK_OPACITY = { selected: 1, idle: 0.5 };
 const SELECTED_MARKER_Z = 1000;
-
-function ZoomControls({ mapRef }: { mapRef: React.RefObject<LeafletMap | null> }) {
-  const buttonClass = "flex size-[34px] cursor-pointer items-center justify-center bg-card text-ink";
-  return (
-    <div className="absolute right-4 bottom-4 z-[1000] flex flex-col overflow-hidden rounded-sm border border-line bg-card">
-      <button aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()} className={`${buttonClass} border-b border-line`}>
-        <Plus className="size-3.5" strokeWidth={2} />
-      </button>
-      <button aria-label="Zoom out" onClick={() => mapRef.current?.zoomOut()} className={buttonClass}>
-        <Minus className="size-3.5" strokeWidth={2} />
-      </button>
-    </div>
-  );
-}
 
 export default function LiveMap({ view }: { view: ActivePatrolsView }) {
   const mapRef = useRef<LeafletMap | null>(null);
@@ -52,6 +39,7 @@ export default function LiveMap({ view }: { view: ActivePatrolsView }) {
         attributionControl={false}
         className="absolute! inset-0 isolate bg-map-ground! font-sans"
       >
+        <BaseTiles />
         <FitToData points={points} />
         <SectorLayer sectors={view.sectors} />
         {view.patrols.map((patrol) => {

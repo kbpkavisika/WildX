@@ -1,18 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchMyPatrols } from "@/lib/api/patrols";
-import { TASKS_REFETCH_MS } from "@/lib/constants";
-import { toMyPatrolRows } from "@/lib/patrols/table-mappers";
+import { useAuthStore } from "@/lib/auth/store";
+import { LIVE_PATROLS_REFETCH_MS } from "@/lib/constants";
+
+export const MY_PATROLS_KEY = ["patrols", "me"];
 
 export function useMyPatrols() {
-  const patrols = useQuery({
-    queryKey: ["patrols", "mine"],
+  const signedIn = useAuthStore((state) => state.token !== null);
+  return useQuery({
+    queryKey: MY_PATROLS_KEY,
     queryFn: fetchMyPatrols,
-    refetchInterval: TASKS_REFETCH_MS,
+    refetchInterval: LIVE_PATROLS_REFETCH_MS,
+    enabled: signedIn,
   });
-
-  return {
-    isPending: patrols.isPending,
-    isError: patrols.isError,
-    rows: toMyPatrolRows(patrols.data ?? [], new Date()),
-  };
 }

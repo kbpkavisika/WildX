@@ -2,16 +2,17 @@
 
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, Polygon } from "react-leaflet";
+import { BaseTiles } from "@/components/map/base-tiles";
 import { FitToData } from "@/components/map/fit-to-data";
 import { useAlertsPage } from "@/lib/alerts/store";
 import type { AlertsView } from "@/lib/alerts/types";
-import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_MAX_ZOOM } from "@/lib/constants";
+import { MAP_AREA_FILL_OPACITY, MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_MAX_ZOOM } from "@/lib/constants";
 import type { LatLng } from "@/lib/patrols/types";
 import { alertIcon } from "./alert-icons";
 import { ALERT_TONE_STYLES } from "./alert-tones";
 
 const ZONE_CLASS = "fill-negative-bg stroke-negative";
-const ZONE_STYLE = { weight: 1.5, dashArray: "6 5", fillOpacity: 1 };
+const ZONE_STYLE = { weight: 1.5, dashArray: "6 5", fillOpacity: MAP_AREA_FILL_OPACITY };
 const SELECTED_MARKER_Z = 1000;
 
 function LegendDot({ className, label }: { className: string; label: string }) {
@@ -55,6 +56,7 @@ export default function AlertMap({ view }: { view: AlertsView }) {
         attributionControl={false}
         className="absolute! inset-0 isolate bg-map-ground! font-sans"
       >
+        <BaseTiles />
         <FitToData points={points} />
         {view.zones.map((zone) => (
           <Polygon key={zone.id} positions={zone.rings} className={ZONE_CLASS} pathOptions={ZONE_STYLE} />

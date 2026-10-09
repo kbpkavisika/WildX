@@ -15,5 +15,8 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     @EntityGraph(attributePaths = "park")
     Optional<AppUser> findWithParkById(Long id);
 
+    @EntityGraph(attributePaths = "park")
+    List<AppUser> findAllByOrderByActiveDescNameAsc();
+
     List<AppUser> findByParkIdAndRoleAndActiveTrueOrderByIdAsc(Long parkId, Role role);
 }

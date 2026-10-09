@@ -40,9 +40,17 @@ public class PatrolSeeder implements CommandLineRunner {
     private static final String TEST_PASSWORD = "password";
     private static final int TRACK_POINTS = 12;
     private static final Clock CLOCK = Clock.systemUTC();
-    private static final String KATAGAMUWA_LOOP = line("[81.48,6.38],[81.51,6.375],[81.52,6.355],[81.49,6.345],[81.47,6.36]");
-    private static final String PALATUPANA_COAST = line("[81.42,6.27],[81.44,6.275],[81.46,6.285],[81.48,6.29]");
-    private static final String KUMBUKGAHA_RIVER = line("[81.40,6.31],[81.41,6.325],[81.43,6.34],[81.45,6.35]");
+    private static final String KATAGAMUWA_LOOP = line("[81.48,6.40],[81.51,6.395],[81.525,6.38],[81.50,6.365],[81.475,6.375]");
+    private static final String PALATUPANA_COAST = line("[81.405,6.285],[81.415,6.29],[81.425,6.298],[81.435,6.305]");
+    private static final String KUMBUKGAHA_RIVER = line("[81.40,6.36],[81.41,6.375],[81.425,6.39],[81.44,6.40]");
+    private static final String KUMBUKGAHA_AREA = "[81.39,6.415],[81.43,6.425],[81.47,6.42],[81.462,6.39],[81.455,6.355],"
+            + "[81.42,6.345],[81.38,6.33],[81.383,6.37],[81.39,6.415]";
+    private static final String KATAGAMUWA_AREA = "[81.47,6.42],[81.51,6.415],[81.54,6.40],[81.555,6.38],[81.535,6.373],"
+            + "[81.518,6.366],[81.508,6.355],[81.497,6.348],[81.485,6.336],[81.455,6.355],[81.462,6.39],[81.47,6.42]";
+    private static final String PALATUPANA_AREA = "[81.38,6.33],[81.42,6.345],[81.455,6.355],[81.448,6.325],[81.444,6.298],"
+            + "[81.426,6.288],[81.41,6.278],[81.398,6.268],[81.385,6.29],[81.38,6.33]";
+    private static final String MENIK_RIVER_AREA = "[81.455,6.355],[81.485,6.336],[81.474,6.325],[81.461,6.312],[81.444,6.298],"
+            + "[81.448,6.325],[81.455,6.355]";
 
     private final ParkRepository parkRepository;
     private final AppUserRepository userRepository;
@@ -63,10 +71,10 @@ public class PatrolSeeder implements CommandLineRunner {
             return;
         }
         List<Sector> sectors = sectorRepository.saveAll(List.of(
-                sector(park, "Kumbukgaha", 81.38, 6.33, 81.47, 6.40),
-                sector(park, "Katagamuwa", 81.47, 6.33, 81.56, 6.40),
-                sector(park, "Palatupana", 81.38, 6.26, 81.47, 6.33),
-                sector(park, "Menik river", 81.47, 6.26, 81.56, 6.33)));
+                sector(park, "Kumbukgaha", KUMBUKGAHA_AREA),
+                sector(park, "Katagamuwa", KATAGAMUWA_AREA),
+                sector(park, "Palatupana", PALATUPANA_AREA),
+                sector(park, "Menik river", MENIK_RIVER_AREA)));
         PatrolRoute katagamuwa = route(park, "Katagamuwa loop", KATAGAMUWA_LOOP);
         PatrolRoute palatupana = route(park, "Palatupana coast", PALATUPANA_COAST);
         PatrolRoute kumbukgaha = route(park, "Kumbukgaha river trail", KUMBUKGAHA_RIVER);
@@ -114,12 +122,11 @@ public class PatrolSeeder implements CommandLineRunner {
                 .build()));
     }
 
-    private Sector sector(Park park, String name, double west, double south, double east, double north) {
+    private Sector sector(Park park, String name, String ring) {
         Sector sector = new Sector();
         sector.setPark(park);
         sector.setName(name);
-        sector.setPolygonGeojson("{\"type\":\"Polygon\",\"coordinates\":[[[%s,%s],[%s,%s],[%s,%s],[%s,%s],[%s,%s]]]}"
-                .formatted(west, south, east, south, east, north, west, north, west, south));
+        sector.setPolygonGeojson("{\"type\":\"Polygon\",\"coordinates\":[[" + ring + "]]}");
         return sector;
     }
 

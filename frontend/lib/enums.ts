@@ -131,3 +131,11 @@ export const CAMERA_IMAGE_STATUSES = {
   RESTRICTED: "RESTRICTED",
 } as const;
 export type CameraImageStatus = (typeof CAMERA_IMAGE_STATUSES)[keyof typeof CAMERA_IMAGE_STATUSES];
+
+export const WAYPOINT_TYPES = {
+  CHECKPOINT: "CHECKPOINT",
+  OBSERVATION: "OBSERVATION",
+  REST: "REST",
+  OTHER: "OTHER",
+} as const;
+export type WaypointType = (typeof WAYPOINT_TYPES)[keyof typeof WAYPOINT_TYPES];

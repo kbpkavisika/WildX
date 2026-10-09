@@ -1,29 +1,18 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useEffect } from "react";
-import { MapContainer, Polygon, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, Polygon, Tooltip } from "react-leaflet";
+import { BaseTiles } from "@/components/map/base-tiles";
 import { FitToData } from "@/components/map/fit-to-data";
-import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_FIT_PADDING_PX, MAP_MAX_ZOOM } from "@/lib/constants";
-import type { LatLng } from "@/lib/patrols/types";
+import { FitToHighlight } from "@/components/map/fit-to-highlight";
+import { MAP_AREA_FILL_OPACITY, MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_MAX_ZOOM } from "@/lib/constants";
 import { useZonesPage } from "@/lib/zones/store";
 import type { ZoneRow } from "@/lib/zones/types";
 
 const ZONE_CLASS = "fill-negative-bg stroke-negative";
-const ZONE_STYLE = { weight: 1.5, dashArray: "6 5", fillOpacity: 1 };
+const ZONE_STYLE = { weight: 1.5, dashArray: "6 5", fillOpacity: MAP_AREA_FILL_OPACITY };
 const HIGHLIGHT_CLASS = "fill-primary stroke-primary";
 const HIGHLIGHT_STYLE = { weight: 2, dashArray: "6 5", fillOpacity: 0.12 };
-
-function FitToHighlight({ rings }: { rings: LatLng[][] | null }) {
-  const map = useMap();
-  const key = rings ? JSON.stringify(rings.flat()) : null;
-  useEffect(() => {
-    if (key === null) return;
-    const points: LatLng[] = JSON.parse(key);
-    map.fitBounds(points, { padding: [MAP_FIT_PADDING_PX, MAP_FIT_PADDING_PX] });
-  }, [map, key]);
-  return null;
-}
 
 function ZoneMapLegend() {
   return (
@@ -56,6 +45,7 @@ export default function ZoneMap({ rows }: { rows: ZoneRow[] }) {
         attributionControl={false}
         className="absolute! inset-0 isolate bg-map-ground! font-sans"
       >
+        <BaseTiles />
         <FitToData points={rows.flatMap((row) => row.rings.flat())} />
         <FitToHighlight rings={draft ?? selected?.rings ?? null} />
         {rows.map((row) => {

@@ -72,3 +72,13 @@ export function initialsOf(name: string): string {
   const last = words.length > 1 ? words[words.length - 1][0] : "";
   return `${first}${last}`.toUpperCase();
 }
+
+const MINUTES_PER_HOUR = 60;
+
+export function formatDuration(seconds: number): string {
+  const totalMinutes = Math.round(seconds / SECONDS_PER_MINUTE);
+  const hours = Math.floor(totalMinutes / MINUTES_PER_HOUR);
+  const minutes = totalMinutes % MINUTES_PER_HOUR;
+  if (hours === 0) return `${minutes} min`;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+}

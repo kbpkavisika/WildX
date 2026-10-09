@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useAuthStore } from "@/lib/auth/store";
 import { useNavStore } from "@/lib/layout/store";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, type NavChild, type NavItem } from "./nav-items";
@@ -74,9 +75,11 @@ function NavEntry({ item, pathname }: { item: NavItem; pathname: string }) {
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const role = useAuthStore((state) => state.user?.role);
+  const items = NAV_ITEMS.filter((item) => !item.roles || (role !== undefined && item.roles.includes(role)));
   return (
     <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1">
-      {NAV_ITEMS.map((item) => (
+      {items.map((item) => (
         <NavEntry key={item.label} item={item} pathname={pathname} />
       ))}
     </div>
