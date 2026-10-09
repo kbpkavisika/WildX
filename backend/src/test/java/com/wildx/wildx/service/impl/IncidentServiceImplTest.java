@@ -139,8 +139,18 @@ class IncidentServiceImplTest {
     }
 
     @Test
+    void savesDeviceTimeSlightlyAheadOfServerAsServerTime() {
+        when(parks.sectorShapes(1L)).thenReturn(List.of());
+        when(patrols.activePatrol(7L, 1L)).thenReturn(Optional.empty());
+
+        var result = service.report(ranger, request(4L, NOW.plusSeconds(30)), null);
+
+        assertThat(result.occurredAt()).isEqualTo(NOW);
+    }
+
+    @Test
     void rejectsFutureTimeBadPhotoAndUnknownOrInactiveTypeBeforeSaving() {
-        assertThatThrownBy(() -> service.report(ranger, request(4L, NOW.plusSeconds(1)), null))
+        assertThatThrownBy(() -> service.report(ranger, request(4L, NOW.plusSeconds(121)), null))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Incident time must not be in the future");
         assertThatThrownBy(() -> service.report(ranger, request(4L, null), new byte[] {1, 2, 3}))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Only JPEG and PNG images are accepted");

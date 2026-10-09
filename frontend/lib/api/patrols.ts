@@ -64,6 +64,10 @@ export function fetchPatrols(): Promise<PatrolResponse[]> {
   return apiGet("/patrols", z.array(patrolSchema));
 }
 
+export function fetchMyPatrols(): Promise<PatrolResponse[]> {
+  return apiGet("/me/patrols", z.array(patrolSchema));
+}
+
 export function fetchPatrolHistory(): Promise<PatrolHistoryResponse[]> {
   return apiGet("/patrols/history", z.array(patrolHistorySchema));
 }

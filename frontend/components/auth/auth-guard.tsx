@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuthStore } from "@/lib/auth/store";
-import { canUseDashboard, canUseRangerApp, LOGIN_PATH } from "@/lib/auth/routes";
+import { canUseDashboard, canUseRangerApp, homePath, LOGIN_PATH } from "@/lib/auth/routes";
 import type { Role } from "@/lib/enums";
 
 interface RoleGuardProps {
@@ -17,7 +17,8 @@ function RoleGuard({ allows, children }: RoleGuardProps) {
 
   useEffect(() => {
     const current = useAuthStore.getState().user;
-    if (current === null || !allows(current.role)) router.replace(LOGIN_PATH);
+    if (current === null) router.replace(LOGIN_PATH);
+    else if (!allows(current.role)) router.replace(homePath(current.role));
   }, [user, router, allows]);
 
   return children;

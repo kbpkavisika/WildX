@@ -9,7 +9,7 @@ import { useIncidentQueueView } from "@/hooks/use-incident-queue";
 import { useIncidentQueue } from "@/lib/incidents/store";
 
 export default function IncidentsPage() {
-  const { isPending, isError, types, view } = useIncidentQueueView();
+  const { allowed, isPending, isError, types, view } = useIncidentQueueView();
   const { filters, setFilter } = useIncidentQueue();
 
   return (
@@ -24,7 +24,8 @@ export default function IncidentsPage() {
           )
         }
       />
-      {isPending && <p className="text-body text-ink-muted">Loading incidents…</p>}
+      {!allowed && <p className="text-body text-ink-muted">The incident queue is available to supervisors and managers.</p>}
+      {isPending &&<p className="text-body text-ink-muted">Loading incidents…</p>}
       {isError && <p className="text-body text-negative">Could not load incidents. Retrying.</p>}
       {view && (
         <Card label="Incident queue">

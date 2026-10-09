@@ -1,4 +1,5 @@
 import type { PatrolHistoryResponse, PatrolResponse } from "@/lib/api/patrols";
+import type { TaskRow } from "@/lib/dispatch/types";
 import { PATROL_STATUSES, type PatrolStatus } from "@/lib/enums";
 import { formatDayLabel, formatKm, formatTime, fromIsoDate, initialsOf, isSameDay } from "@/lib/format";
 import { PATROL_FILTERS, type PatrolFilter, type PatrolFilterOption, type PatrolRow, type PatrolTableView } from "./types";
@@ -38,6 +39,13 @@ export function toPatrolRow(patrol: PatrolResponse, distanceM: number | undefine
     distance: distanceM === undefined ? NO_VALUE : formatKm(distanceM),
     ...STATUS_DISPLAY[patrol.status],
   };
+}
+
+export function toMyPatrolRows(patrols: PatrolResponse[], now: Date): TaskRow[] {
+  return patrols.map((patrol) => {
+    const row = toPatrolRow(patrol, undefined, now);
+    return { id: row.id, href: null, title: `${row.title} · ${row.code}`, caption: row.time ?? row.day, status: row.status };
+  });
 }
 
 function filterOptions(rows: PatrolRow[]): PatrolFilterOption[] {

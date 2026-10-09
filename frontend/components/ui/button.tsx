@@ -1,13 +1,14 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+const PRIMARY = "inline-flex h-12 cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 text-label text-primary-foreground hover:bg-primary-hover";
+
 export function Button({ className, ...props }: React.ComponentProps<"button">) {
-  return (
-    <button
-      type="button"
-      className={cn("inline-flex h-12 cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 text-label text-primary-foreground hover:bg-primary-hover", className)}
-      {...props}
-    />
-  );
+  return <button type="button" className={cn(PRIMARY, className)} {...props} />;
+}
+
+export function ButtonLink({ className, ...props }: React.ComponentProps<typeof Link>) {
+  return <Link className={cn(PRIMARY, className)} {...props} />;
 }
 
 export function SecondaryButton({ className, ...props }: React.ComponentProps<"button">) {

@@ -515,6 +515,11 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - The Summary card has a muted caption "Times run from when each alert was raised, and count only alerts that got that far." and a metric strip: Alerts raised, Median time to acknowledge and Median time to resolve. Times show as "8.5 min" under an hour and "1.4 h" from an hour up, or "—" when no alert has the value yet.
   - The By type and zone card has a grid table (`1.2fr 1.6fr 0.7fr 1fr 1fr`) that scrolls horizontally below 640px: Alert type, Zone ("No zone" in muted text for device health, mortality and human detected alerts), Alerts, Median to acknowledge and Median to resolve, highest count first. Without alerts it says "No alerts raised in this range."
 
+- **Ranger app (phone).**
+  - A single 640px-max column with the logo header and a sticky four-tab bottom nav (Patrols, Report, Tasks, Alerts). Tabs are 48px tall with a 20px icon over a caption label; the active tab gets the lime pill.
+  - **Patrols** (`/ranger`): a "Patrols" page title with the subtitle "Today's assigned patrols.", a full-width 48px primary "Report incident" button, then a "Today's patrols" card. A patrol still active from an earlier day is listed first. Each row shows "Route name · PT-12", a muted caption with the start – end time once started (otherwise "Today"), and a status chip (Active positive, Scheduled neutral, Completed done, Cancelled neutral). Empty state: "No patrols assigned for today."
+  - **Alerts** (`/ranger/alerts`): an "Alerts" page title with the subtitle "Dispatches and alerts sent to you.", then the shared notifications card. Selecting a row marks it read and opens its link.
+
 ## Do's and Don'ts
 
 - **Do** keep everything on white and separate with 1px `line` borders. **Don't** add drop shadows to cards or tint the page background.

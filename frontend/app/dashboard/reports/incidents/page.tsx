@@ -14,7 +14,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 const IncidentPointsMap = dynamic(() => import("@/components/incidents/incident-points-map"), { ssr: false });
 
 export default function IncidentReportPage() {
-  const { from, to, setRange, rangeError, isPending, isError, view, csv } = useIncidentReport();
+  const { allowed, from, to, setRange, rangeError, isPending, isError, view, csv } = useIncidentReport();
   const sectors = useParkSectors();
 
   return (
@@ -23,7 +23,7 @@ export default function IncidentReportPage() {
         title="Incident report"
         subtitle={view && <><strong className="font-semibold text-ink">{view.total} incidents</strong> in this range.</>}
         action={
-          <Button onClick={() => csv.mutate()} disabled={rangeError !== null || csv.isPending} className="disabled:opacity-60">
+          <Button onClick={() => csv.mutate()} disabled={!allowed || rangeError !== null || csv.isPending} className="disabled:opacity-60">
             <Download className="size-[18px]" strokeWidth={2} />
             {csv.isPending ? "Preparing…" : "Download CSV"}
           </Button>
@@ -39,6 +39,7 @@ export default function IncidentReportPage() {
       </div>
       {rangeError && <p role="alert" className="m-0 text-caption text-negative">{rangeError}</p>}
       {csv.isError && <p role="alert" className="m-0 text-body text-negative">{apiErrorMessage(csv.error)}</p>}
+      {!allowed && <p className="m-0 text-body text-ink-muted">The incident report is available to supervisors and managers.</p>}
       {isPending && <p className="m-0 text-body text-ink-muted">Loading report…</p>}
       {isError && <p className="m-0 text-body text-negative">Could not load the report.</p>}
       {view && (

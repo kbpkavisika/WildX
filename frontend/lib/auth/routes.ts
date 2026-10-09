@@ -13,3 +13,7 @@ export function canUseDashboard(role: Role): boolean {
 export function canUseRangerApp(role: Role): boolean {
   return role === ROLES.RANGER;
 }
+
+export function canViewIncidents(role: Role | undefined): boolean {
+  return role === ROLES.SUPERVISOR || role === ROLES.MANAGER;
+}
