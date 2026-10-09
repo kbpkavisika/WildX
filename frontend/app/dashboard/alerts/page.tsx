@@ -11,10 +11,9 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { LiveChip } from "@/components/ui/live-chip";
 import { useAlerts } from "@/hooks/use-alerts";
 import { EMPTY_ALERTS } from "@/lib/alerts/mappers";
-import { canViewAlertReport } from "@/lib/alerts/roles";
 import { useAlertsPage } from "@/lib/alerts/store";
 import { ALERT_FILTERS, type AlertFilter, type AlertsView } from "@/lib/alerts/types";
-import { useAuthStore } from "@/lib/auth/store";
+import { useCan } from "@/hooks/use-can";
 
 const AlertMap = dynamic(() => import("@/components/alerts/alert-map"), { ssr: false });
 
@@ -36,7 +35,7 @@ function emptyLabel(view: AlertsView, filter: AlertFilter): string {
 export default function AlertsPage() {
   const { signedIn, hasPark, isPending, isError, view } = useAlerts();
   const { filter, setFilter } = useAlertsPage();
-  const canReport = useAuthStore((state) => canViewAlertReport(state.user?.role ?? null));
+  const canReport = useCan("report.alerts");
 
   function subtitle() {
     if (!signedIn) return "Sign in to see alerts.";

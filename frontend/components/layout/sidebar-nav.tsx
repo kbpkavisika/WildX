@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { can, type Permission } from "@/lib/auth/permissions";
 import { useAuthStore } from "@/lib/auth/store";
 import { useNavStore } from "@/lib/layout/store";
 import { cn } from "@/lib/utils";
@@ -76,7 +77,10 @@ function NavEntry({ item, pathname }: { item: NavItem; pathname: string }) {
 export function SidebarNav() {
   const pathname = usePathname();
   const role = useAuthStore((state) => state.user?.role);
-  const items = NAV_ITEMS.filter((item) => !item.roles || (role !== undefined && item.roles.includes(role)));
+  const allowed = (entry: { permission?: Permission }) => !entry.permission || can(role, entry.permission);
+  const items = NAV_ITEMS.filter(allowed)
+    .map((item) => (item.children ? { ...item, children: item.children.filter(allowed) } : item))
+    .filter((item) => !item.children || item.children.length > 0);
   return (
     <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1">
       {items.map((item) => (

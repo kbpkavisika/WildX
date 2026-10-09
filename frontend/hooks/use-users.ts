@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createUser, deactivateUser, fetchParks, fetchUsers, updateUser } from "@/lib/api/users";
+import { useCan } from "@/hooks/use-can";
 import { useAuthStore } from "@/lib/auth/store";
-import { ROLES } from "@/lib/enums";
 import { toUsersView } from "@/lib/users/mappers";
 import { toUserRequest, type UserValues } from "@/lib/users/user-form";
 
@@ -16,7 +16,7 @@ interface SaveInput {
 export function useUsers() {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const isAdmin = user?.role === ROLES.ADMIN;
+  const isAdmin = useCan("user.manage");
   const users = useQuery({ queryKey: USERS_KEY, queryFn: fetchUsers, enabled: isAdmin });
   const parks = useQuery({ queryKey: PARKS_KEY, queryFn: fetchParks, enabled: isAdmin });
 

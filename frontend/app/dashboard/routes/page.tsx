@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { NewRouteForm } from "@/components/patrols/new-route-form";
 import { RoutesTable } from "@/components/patrols/routes-table";
+import { Can } from "@/components/auth/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useRoutes } from "@/hooks/use-routes";
@@ -25,10 +26,12 @@ export default function RoutesPage() {
         title="Routes"
         subtitle={rows && <><strong className="font-semibold text-ink">{counted(rows.length, "route", "routes")}</strong> in this park.</>}
         action={
-          <Button onClick={openForm} disabled={!signedIn} aria-haspopup="dialog" className="disabled:opacity-60">
-            <Plus className="size-[18px]" strokeWidth={2} />
-            New route
-          </Button>
+          <Can permission="route.create">
+            <Button onClick={openForm} disabled={!signedIn} aria-haspopup="dialog" className="disabled:opacity-60">
+              <Plus className="size-[18px]" strokeWidth={2} />
+              New route
+            </Button>
+          </Can>
         }
       />
       {formOpen && <NewRouteForm create={create} onClose={() => setFormOpen(false)} />}

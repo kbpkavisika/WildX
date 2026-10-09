@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAlertRules } from "@/lib/api/alert-rules";
 import { createZone, deleteZone, fetchZones, updateZone } from "@/lib/api/zones";
+import { useCan } from "@/hooks/use-can";
 import { useAuthStore } from "@/lib/auth/store";
-import { ROLES } from "@/lib/enums";
 import { toZonesView } from "@/lib/zones/mappers";
 import { useZonesPage } from "@/lib/zones/store";
 import { toZoneRequest, type ZoneFormValues } from "@/lib/zones/zone-form";
@@ -15,7 +15,7 @@ interface SaveZone {
 export function useZones() {
   const queryClient = useQueryClient();
   const parkId = useAuthStore((state) => state.user?.parkId ?? null);
-  const canManage = useAuthStore((state) => state.user?.role === ROLES.MANAGER);
+  const canManage = useCan("settings.manage");
   const zonesKey = ["parks", parkId, "zones"];
 
   const zones = useQuery({

@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { canVisit } from "@/lib/auth/permissions";
 import { useAuthStore } from "@/lib/auth/store";
-import { canUseDashboard, canUseRangerApp, LOGIN_PATH } from "@/lib/auth/routes";
+import { canUseDashboard, canUseRangerApp, homePath, LOGIN_PATH } from "@/lib/auth/routes";
 import type { Role } from "@/lib/enums";
 
 interface RoleGuardProps {
@@ -24,6 +25,14 @@ function RoleGuard({ allows, children }: RoleGuardProps) {
 }
 
 export function DashboardGuard({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const role = useAuthStore((state) => state.user?.role);
+
+  useEffect(() => {
+    if (role !== undefined && canUseDashboard(role) && !canVisit(role, pathname)) router.replace(homePath(role));
+  }, [role, pathname, router]);
+
   return <RoleGuard allows={canUseDashboard}>{children}</RoleGuard>;
 }
 
