@@ -22,7 +22,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 export default function BoundarySegmentsPage() {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const parkId = user?.parkId ?? 1;
+  const parkId = user?.parkId ?? null;
   const canManage = can(user?.role, "boundary.manage");
 
   const [formOpen, setFormOpen] = useState<boolean>(false);
@@ -35,15 +35,16 @@ export default function BoundarySegmentsPage() {
 
   const query = useQuery({
     queryKey: ["boundary-segments", parkId],
-    queryFn: () => fetchSegments(parkId),
+    queryFn: () => fetchSegments(parkId as number),
+    enabled: parkId !== null,
   });
 
   const saveMutation = useMutation({
     mutationFn: (input: BoundarySegmentInput) => {
       if (editing) {
-        return updateSegment(parkId, editing.id, input);
+        return updateSegment(parkId as number, editing.id, input);
       }
-      return createSegment(parkId, input);
+      return createSegment(parkId as number, input);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["boundary-segments", parkId] });
@@ -52,7 +53,7 @@ export default function BoundarySegmentsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteSegment(parkId, id),
+    mutationFn: (id: number) => deleteSegment(parkId as number, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["boundary-segments", parkId] });
     },

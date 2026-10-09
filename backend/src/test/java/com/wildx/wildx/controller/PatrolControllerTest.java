@@ -43,6 +43,21 @@ class PatrolControllerTest {
     }
 
     @Test
+    void onlyManagerCanEditAndDeletePatrols() throws Exception {
+        when(auth.current(any())).thenReturn(new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 1L));
+        String body = "{\"routeId\":2,\"rangerId\":7,\"scheduledDate\":\"2026-10-07\"}";
+        mvc.perform(put("/api/v1/patrols/3").header("Authorization", token("RANGER"))
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/patrols/3").header("Authorization", token("MANAGER"))
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isOk());
+        mvc.perform(put("/api/v1/patrols/3").header("Authorization", token("MANAGER"))
+                .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
+        mvc.perform(delete("/api/v1/patrols/3").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
+        mvc.perform(delete("/api/v1/patrols/3").header("Authorization", token("MANAGER"))).andExpect(status().isNoContent());
+        verify(patrols).delete(1L, 3L);
+    }
+
+    @Test
     void staffListRangersOfTheirPark() throws Exception {
         when(auth.current(any())).thenReturn(new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 1L));
         when(auth.activeUsers(1L, Role.RANGER)).thenReturn(List.of(new UserResponse(9L, "K. Bandara", "r@wildx.lk", Role.RANGER, 1L)));

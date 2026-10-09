@@ -4,9 +4,11 @@ import com.wildx.wildx.dto.*;
 import com.wildx.wildx.exception.NotFoundException;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.AppUserRepository;
+import com.wildx.wildx.service.AlertEscalationService;
 import com.wildx.wildx.service.ParkService;
 import com.wildx.wildx.type.Role;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.*;
 import static org.assertj.core.api.Assertions.*;
@@ -17,7 +19,8 @@ class UserServiceImplTest {
     private final AppUserRepository users = mock(AppUserRepository.class);
     private final ParkService parks = mock(ParkService.class);
     private final PasswordEncoder encoder = mock(PasswordEncoder.class);
-    private final UserServiceImpl service = new UserServiceImpl(users, parks, encoder);
+    private final AlertEscalationService escalation = mock(AlertEscalationService.class);
+    private final UserServiceImpl service = new UserServiceImpl(users, parks, encoder, escalation);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
     private final UserResponse caller = new UserResponse(1L, "Manager", "m@wildx.lk", Role.MANAGER, 1L);
 
@@ -71,7 +74,7 @@ class UserServiceImplTest {
     @Test
     void listsAndDeactivatesParkUsers() {
         AppUser existing = user(4L, Role.RANGER, park);
-        when(users.findByParkIdOrderByActiveDescNameAsc(1L)).thenReturn(List.of(existing));
+        when(users.findInPark(1L)).thenReturn(List.of(existing));
         assertThat(service.users(1L)).extracting(UserAccountResponse::parkName).containsExactly("Yala");
         when(users.findWithParkById(4L)).thenReturn(Optional.of(existing));
         service.deactivateUser(caller, 4L);
@@ -90,5 +93,37 @@ class UserServiceImplTest {
         Park other = Park.builder().id(2L).name("Wilpattu").code("WIL").build();
         when(users.findWithParkById(8L)).thenReturn(Optional.of(user(8L, Role.RANGER, other)));
         assertThatThrownBy(() -> service.deactivateUser(caller, 8L)).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void managerCreatesSwitchesAndListsOwnParks() {
+        AppUser manager = user(1L, Role.MANAGER, park);
+        when(users.findWithParkById(1L)).thenReturn(Optional.of(manager));
+        Park wilpattu = Park.builder().id(2L).name("Wilpattu").code("WIL").build();
+        when(parks.create(any())).thenReturn(wilpattu);
+
+        assertThat(service.createPark(1L, new ParkRequest("Wilpattu", "wil")).code()).isEqualTo("WIL");
+        verify(escalation).addDefaultSteps(wilpattu);
+        assertThat(manager.getPark()).isSameAs(wilpattu);
+        assertThat(service.parks(1L)).extracting(ParkResponse::name).containsExactly("Wilpattu", "Yala");
+
+        when(parks.require(1L)).thenReturn(park);
+        assertThat(service.switchPark(1L, 1L).parkId()).isEqualTo(1L);
+        assertThatThrownBy(() -> service.switchPark(1L, 9L)).isInstanceOf(AccessDeniedException.class);
+
+        AppUser other = user(5L, Role.MANAGER, wilpattu);
+        other.getManagedParks().add(park);
+        when(users.findWithParkById(5L)).thenReturn(Optional.of(other));
+        service.deactivateUser(caller, 5L);
+        assertThat(other.isActive()).isFalse();
+    }
+
+    @Test
+    void nonManagersSeeOnlyTheirParkAndCannotSwitch() {
+        AppUser ranger = user(4L, Role.RANGER, park);
+        ranger.getManagedParks().add(Park.builder().id(2L).name("Wilpattu").code("WIL").build());
+        when(users.findWithParkById(4L)).thenReturn(Optional.of(ranger));
+        assertThat(service.parks(4L)).extracting(ParkResponse::id).containsExactly(1L);
+        assertThatThrownBy(() -> service.switchPark(4L, 2L)).isInstanceOf(AccessDeniedException.class);
     }
 }

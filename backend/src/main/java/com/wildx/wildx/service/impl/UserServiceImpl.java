@@ -2,16 +2,22 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.*;
 import com.wildx.wildx.exception.NotFoundException;
+import com.wildx.wildx.mapper.UserMapper;
+import com.wildx.wildx.model.Park;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.repository.AppUserRepository;
+import com.wildx.wildx.service.AlertEscalationService;
 import com.wildx.wildx.service.ParkService;
 import com.wildx.wildx.service.UserService;
 import com.wildx.wildx.type.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -24,12 +30,13 @@ public class UserServiceImpl implements UserService {
     private final AppUserRepository users;
     private final ParkService parks;
     private final PasswordEncoder passwordEncoder;
+    private final AlertEscalationService escalation;
 
     @Override
     @Transactional(readOnly = true)
     public List<UserAccountResponse> users(Long parkId) {
         log.info("list users started parkId={}", parkId);
-        var response = users.findByParkIdOrderByActiveDescNameAsc(parkId).stream().map(UserAccountResponse::from).toList();
+        var response = users.findInPark(parkId).stream().map(UserAccountResponse::from).toList();
         log.info("list users completed count={}", response.size());
         return response;
     }
@@ -74,9 +81,53 @@ public class UserServiceImpl implements UserService {
         log.info("deactivate user completed userId={}", userId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParkResponse> parks(Long userId) {
+        AppUser user = requireCaller(userId);
+        var all = new HashSet<Park>(user.getRole() == Role.MANAGER ? user.getManagedParks() : List.of());
+        all.add(user.getPark());
+        return all.stream().map(ParkResponse::from).sorted(Comparator.comparing(ParkResponse::name)).toList();
+    }
+
+    @Override
+    @Transactional
+    public ParkResponse createPark(Long userId, ParkRequest request) {
+        log.info("create park for user started userId={}", userId);
+        AppUser user = requireCaller(userId);
+        Park park = parks.create(request);
+        escalation.addDefaultSteps(park);
+        moveTo(user, park);
+        log.info("create park for user completed parkId={}", park.getId());
+        return ParkResponse.from(park);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse switchPark(Long userId, Long parkId) {
+        log.info("switch park started userId={} parkId={}", userId, parkId);
+        AppUser user = requireCaller(userId);
+        if (!user.manages(parkId)) {
+            throw new AccessDeniedException("Access denied");
+        }
+        moveTo(user, parks.require(parkId));
+        log.info("switch park completed userId={} parkId={}", userId, parkId);
+        return UserMapper.toResponse(user);
+    }
+
+    private void moveTo(AppUser user, Park park) {
+        user.getManagedParks().add(user.getPark());
+        user.getManagedParks().add(park);
+        user.setPark(park);
+    }
+
+    private AppUser requireCaller(Long userId) {
+        return users.findWithParkById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
     private AppUser requireUser(Long parkId, Long userId) {
         return users.findWithParkById(userId)
-                .filter(user -> user.getPark() != null && user.getPark().getId().equals(parkId))
+                .filter(user -> (user.getPark() != null && user.getPark().getId().equals(parkId)) || user.manages(parkId))
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 

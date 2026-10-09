@@ -43,24 +43,25 @@ class PatrolSeederTest {
     @Test
     @SuppressWarnings("unchecked")
     void seedsRangersPatrolsAndTracksWhenNoPatrols() {
-        when(parkRepository.findAll()).thenReturn(List.of(Park.builder().name("Yala").code("YALA").build()));
+        when(parkRepository.findAll()).thenReturn(List.of(Park.builder().name("Yala").code("YALA").build(),
+                Park.builder().name("Udawalawe").code("UDAWALAWE").build()));
         when(sectorRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
         when(userRepository.findByEmailIgnoreCase(anyString())).thenReturn(Optional.empty());
         when(userRepository.save(any(AppUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         seeder.run();
 
-        verify(userRepository, times(4)).save(any(AppUser.class));
+        verify(userRepository, times(8)).save(any(AppUser.class));
         ArgumentCaptor<List<Patrol>> patrols = ArgumentCaptor.forClass(List.class);
-        verify(patrolRepository).saveAll(patrols.capture());
-        assertThat(patrols.getValue()).extracting(Patrol::getStatus).containsExactly(
-                PatrolStatus.ACTIVE, PatrolStatus.ACTIVE, PatrolStatus.PLANNED, PatrolStatus.PLANNED,
-                PatrolStatus.CANCELLED, PatrolStatus.COMPLETED, PatrolStatus.COMPLETED, PatrolStatus.COMPLETED);
+        verify(patrolRepository, times(2)).saveAll(patrols.capture());
+        patrols.getAllValues().forEach(parkPatrols -> assertThat(parkPatrols).hasSize(20)
+                .extracting(Patrol::getStatus).contains(PatrolStatus.values()));
         ArgumentCaptor<List<TrackPoint>> track = ArgumentCaptor.forClass(List.class);
-        verify(trackPointRepository).saveAll(track.capture());
-        assertThat(track.getValue()).hasSize(60).allMatch(point -> point.getSector() != null);
+        verify(trackPointRepository, times(2)).saveAll(track.capture());
+        track.getAllValues().forEach(parkTrack -> assertThat(parkTrack).hasSize(204)
+                .anyMatch(TrackPoint::isWaypoint).allMatch(point -> point.getSector() != null));
         ArgumentCaptor<List<Sector>> sectors = ArgumentCaptor.forClass(List.class);
-        verify(sectorRepository).saveAll(sectors.capture());
+        verify(sectorRepository, times(2)).saveAll(sectors.capture());
         assertThat(sectors.getValue()).hasSize(4);
     }
 

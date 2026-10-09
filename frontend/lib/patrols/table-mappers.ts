@@ -39,6 +39,7 @@ export function toPatrolRow(patrol: PatrolResponse, history: PatrolHistoryRespon
     distance: completed && history ? formatKm(history.distanceM) : NO_VALUE,
     duration: completed && history ? formatDuration(history.durationSeconds) : null,
     canReplay: completed,
+    canEdit: patrol.status === PATROL_STATUSES.PLANNED,
     ...STATUS_DISPLAY[patrol.status],
   };
 }

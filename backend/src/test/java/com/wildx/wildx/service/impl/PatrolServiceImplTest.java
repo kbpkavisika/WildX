@@ -65,6 +65,33 @@ class PatrolServiceImplTest {
         verifyNoInteractions(repository, routes, auth);
     }
 
+    @Test
+    void updatesAndDeletesOnlyPlannedPatrols() {
+        Patrol planned = patrol(PatrolStatus.PLANNED);
+        PatrolRoute other = new PatrolRoute();
+        other.setId(4L);
+        other.setPark(park);
+        other.setName("South");
+        AppUser second = AppUser.builder().id(8L).name("Second").park(park).role(Role.RANGER).active(true).build();
+        when(repository.findLockedByIdAndRouteParkId(3L, 1L)).thenReturn(Optional.of(planned));
+        when(routes.require(4L, 1L)).thenReturn(other);
+        when(auth.requireRanger(8L, 1L)).thenReturn(second);
+        var response = service.update(1L, 3L, new PatrolUpdateRequest(4L, 8L, LocalDate.of(2026, 10, 9)));
+        assertThat(response.route().name()).isEqualTo("South");
+        assertThat(response.rangerId()).isEqualTo(8L);
+        assertThat(response.scheduledDate()).isEqualTo(LocalDate.of(2026, 10, 9));
+        service.delete(1L, 3L);
+        verify(repository).delete(planned);
+
+        when(repository.findLockedByIdAndRouteParkId(5L, 1L)).thenReturn(Optional.of(patrol(PatrolStatus.ACTIVE)));
+        assertThatThrownBy(() -> service.delete(1L, 5L)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.update(1L, 5L, new PatrolUpdateRequest(4L, 8L, LocalDate.of(2026, 10, 9))))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.update(1L, 3L, new PatrolUpdateRequest(4L, 8L, LocalDate.of(2026, 10, 6))))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.delete(1L, 9L)).isInstanceOf(com.wildx.wildx.exception.NotFoundException.class);
+    }
+
     private Patrol patrol(PatrolStatus status) {
         Patrol patrol = new Patrol();
         patrol.setId(3L);

@@ -9,7 +9,6 @@ function atHour(dayOffset: number, hour: number): string {
 
 export async function fetchDashboard(): Promise<DashboardResponse> {
   return {
-    parkName: "Udawalawe",
     metrics: {
       activeAlerts: 3,
       alertsToday: 1,

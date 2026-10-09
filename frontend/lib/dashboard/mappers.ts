@@ -102,7 +102,6 @@ export function weekOf(date: Date, today: Date): WeekDay[] {
 export function toDashboardView(data: DashboardResponse, now: Date): DashboardView {
   return {
     greeting: greetingFor(now),
-    parkName: data.parkName,
     today: formatDate(now),
     metrics: toMetrics(data.metrics),
     conflict: toConflictChart(data.conflict),

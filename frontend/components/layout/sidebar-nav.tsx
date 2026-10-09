@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { can, type Permission } from "@/lib/auth/permissions";
+import { useOpenAlertCount } from "@/hooks/use-open-alert-count";
 import { useAuthStore } from "@/lib/auth/store";
 import { useNavStore } from "@/lib/layout/store";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,6 @@ function SubNav({ items, pathname }: { items: NavChild[]; pathname: string }) {
             className={cn("flex h-[38px] items-center rounded-md px-3 text-body text-ink-body hover:bg-surface-muted", active && ACTIVE)}
           >
             <span className="grow">{child.label}</span>
-            <span className="text-caption text-ink-muted">{child.count}</span>
           </Link>
         );
       })}
@@ -57,7 +57,7 @@ function NavGroup({ item, items, pathname }: { item: NavItem; items: NavChild[];
   );
 }
 
-function NavEntry({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavEntry({ item, pathname, alertCount }: { item: NavItem; pathname: string; alertCount: number }) {
   if (item.children) return <NavGroup item={item} items={item.children} pathname={pathname} />;
   const Icon = item.icon;
   const active = pathname === item.href;
@@ -65,9 +65,9 @@ function NavEntry({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link href={item.href} aria-current={active ? "page" : undefined} className={cn(ENTRY, active && ACTIVE)}>
       <Icon className="size-5 shrink-0" strokeWidth={1.8} />
       <span className="grow">{item.label}</span>
-      {item.badge !== undefined && (
+      {item.alertBadge && alertCount > 0 && (
         <span className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-coral px-1.5 text-caption font-semibold text-primary-foreground">
-          {item.badge}
+          {alertCount}
         </span>
       )}
     </Link>
@@ -77,6 +77,7 @@ function NavEntry({ item, pathname }: { item: NavItem; pathname: string }) {
 export function SidebarNav() {
   const pathname = usePathname();
   const role = useAuthStore((state) => state.user?.role);
+  const alertCount = useOpenAlertCount(can(role, "nav.alerts"));
   const allowed = (entry: { permission?: Permission }) => !entry.permission || can(role, entry.permission);
   const items = NAV_ITEMS.filter(allowed)
     .map((item) => (item.children ? { ...item, children: item.children.filter(allowed) } : item))
@@ -84,7 +85,7 @@ export function SidebarNav() {
   return (
     <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1">
       {items.map((item) => (
-        <NavEntry key={item.label} item={item} pathname={pathname} />
+        <NavEntry key={item.label} item={item} pathname={pathname} alertCount={alertCount} />
       ))}
     </div>
   );

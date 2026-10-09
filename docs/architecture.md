@@ -34,9 +34,9 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
 | Layer | Choice | Notes |
 |---|---|---|
 | Backend | Spring Boot 4.1, Java 25, Maven | Already scaffolded in `backend/` |
-| Persistence | Spring Data JPA + PostgreSQL | `ddl-auto=update` during development, with no migrations tool. Custom queries use the Criteria API only (no raw SQL/JPQL) |
+| Persistence | Spring Data JPA + PostgreSQL | `ddl-auto=create` resets the application's tables on every backend startup, followed by demo seeding. No migrations tool. Custom queries use the Criteria API only (no raw SQL/JPQL) |
 | Validation | `spring-boot-starter-validation`, `zod` (frontend) | `@Valid` on request DTOs. The frontend parses every API response with a zod schema |
-| Auth | `spring-boot-starter-security` + `spring-boot-starter-security-oauth2-resource-server` | Stateless HS256 JWT access token issued by our own `/api/v1/auth/login`, valid 12 h. Claims: `sub` (user id), `role`, `parkId`. No refresh tokens, cookies or sessions, and no external IdP |
+| Auth | `spring-boot-starter-security` + `spring-boot-starter-security-oauth2-resource-server` | Stateless HS256 JWT access token issued by our own `/api/v1/auth/login`, valid 12 h. Claims: `sub` (user id), `role`. The current park is read from `app_user.park_id` on every request, so switching park needs no new token. No refresh tokens, cookies or sessions, and no external IdP |
 | Boilerplate | Lombok | `@Getter @Setter` on entities, and Java `record` for DTOs |
 | Frontend | Next.js 16 (App Router), React 19, TypeScript | ⚠ Read `frontend/AGENTS.md`, because Next 16 APIs differ from older versions |
 | Styling | Tailwind CSS 4 | Mobile-first: write the base styles for phones and add `lg:` styles for the desktop dashboard |
@@ -98,7 +98,7 @@ Rules:
 - Controllers stay thin and call services. A service may call another module's service, but **never another module's repository**.
 - Every endpoint returns DTOs and never entities.
 - Errors are returned as `{ "error": "message" }` with the right HTTP status from `GlobalExceptionHandler`.
-- Every list is scoped to the caller's park. The server reads `parkId` from the JWT.
+- Every list is scoped to the caller's current park (`app_user.park_id`), loaded through `AuthService.current`.
 
 ## 5. Database design (PostgreSQL)
 
@@ -112,7 +112,8 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 |---|---|
 | `park` | name, code UNIQUE, boundary_geojson, neglect_days (7), duplicate_window_min (120), hotspot_threshold (5) |
 | `sector` | park_id FK, name, polygon_geojson |
-| `app_user` | park_id FK, name, email UNIQUE, phone, password_hash, role, language (`en`/`si`/`ta`), active, on_duty, last_lat, last_lng, last_seen_at |
+| `app_user` | park_id FK (current park), name, email UNIQUE, phone, password_hash, role, language (`en`/`si`/`ta`), active, on_duty, last_lat, last_lng, last_seen_at |
+| `user_park` | user_id FK, park_id FK — PK(user_id, park_id): the extra parks a Manager manages (CMN-12) |
 | `patrol_route` | park_id FK, name, path_geojson (LineString), archived |
 | `patrol` | route_id FK, ranger_id FK, scheduled_date, status (`PLANNED/ACTIVE/COMPLETED/CANCELLED`), started_at, ended_at, gps_available, last_contact_at |
 | `track_point` | patrol_id FK, lat, lng, accuracy_m, recorded_at, sector_id FK NULL, is_waypoint, note, waypoint_type — UNIQUE(patrol_id, recorded_at) |
@@ -229,9 +230,13 @@ For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}`
 
 `GET /reports/alerts?from=YYYY-MM-DD&to=YYYY-MM-DD` covers the alerts of the caller's park raised (`created_at`) on those Asia/Colombo days, inclusive; missing or reversed dates and formats other than `json`/`csv` return 400. The JSON response is `{from, to, total, medianAcknowledgeMinutes, medianResolveMinutes, rows}` with one row per alert type and zone (`{type, zoneId, zoneName, count, medianAcknowledgeMinutes, medianResolveMinutes}`; alerts without a zone share one row per type with no zone), highest count first. Time to acknowledge is `acknowledged_at` minus the raise time and time to resolve is `resolved_at` minus the raise time; medians are in minutes with one decimal, use only alerts that have the value, and are `null` when none do. `format=csv` downloads `type,zone,count,median_acknowledge_minutes,median_resolve_minutes` with an `ALL` totals row first, using the same escaping and spreadsheet-formula protection as the coverage report.
 
+### Parks (CMN-12)
+
+A Manager manages every park in `user_park` plus their current park; every other role has only `app_user.park_id`. `GET /parks` returns the caller's parks by name as `{id, name, code, neglectDays}`. `POST /parks` `{name, code}` (Manager) creates a park with escalation step 1 = `MANAGER`, adds it to the caller's parks and makes it current; a duplicate code returns 409. `POST /parks/{id}/switch` (Manager) makes a park the caller manages current and returns the user, or 403. Manager notifications and escalation go to every active Manager of the park, current or not.
+
 ### User management (CMN-02)
 
-There is no self sign-up: the Park Manager creates the accounts of their own park, and every new user joins the Manager's park. `POST /users` needs a password of 8–100 characters; on `PUT` a blank password keeps the current one. A duplicate email returns 409. A user in another park returns 404. `DELETE /users/{id}` does not remove the row, because patrols, dispatches and audit logs reference users: it sets `active = false`, so the user can no longer log in, and `PUT` with `active: true` restores them. A Manager cannot deactivate or demote themselves. The list returns the park's users (active first, then by name) with `{id, name, email, phone, role, parkId, parkName, active}`. The former `ADMIN` role was removed; on startup any leftover `ADMIN` rows become deactivated Managers.
+There is no self sign-up: the Park Manager creates the accounts of their current park, and every new user joins that park (a new Manager also manages it). `POST /users` needs a password of 8–100 characters; on `PUT` a blank password keeps the current one. A duplicate email returns 409. A user in another park returns 404. `DELETE /users/{id}` does not remove the row, because patrols, dispatches and audit logs reference users: it sets `active = false`, so the user can no longer log in, and `PUT` with `active: true` restores them. A Manager cannot deactivate or demote themselves. The list returns the park's users, including Managers who manage it while another park is current, (active first, then by name) with `{id, name, email, phone, role, parkId, parkName, active}`. The former `ADMIN` role was removed; on startup any leftover `ADMIN` rows become deactivated Managers.
 
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
@@ -239,10 +244,11 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 |---|---|---|
 | Auth | `POST /auth/login` → `{token, user}` | public |
 | Users | `GET/POST /users`, `PUT/DELETE /users/{id}` `{name, email, phone, password, role, active}` | MANAGER (own park) |
+| Parks | `GET /parks`, `POST /parks` `{name, code}`, `POST /parks/{id}/switch` | staff (list), MANAGER (create, switch) |
 | Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|incident-types\|segments` | MANAGER (writes), staff (reads) |
 | UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | MANAGER (writes), staff (reads) |
 | UC3 | `GET /parks/{id}/alert-rules`, `PUT/DELETE /parks/{id}/alert-rules/{zoneType}` `{severity, cooldownMin, ackSlaMin}` | MANAGER (writes), staff (reads) |
-| UC1 | `GET/POST /routes`, `PUT /routes/{id}` `{name, pathGeojson}`, `DELETE /routes/{id}` (archives: hidden from the list and from assigning, past patrols keep it), `POST /patrols` `{routeId, rangerIds, scheduledDate}` (one Planned patrol per ranger, returns the list), `GET /patrols?status=&date=` | MANAGER |
+| UC1 | `GET/POST /routes`, `PUT /routes/{id}` `{name, pathGeojson}`, `DELETE /routes/{id}` (archives: hidden from the list and from assigning, past patrols keep it), `POST /patrols` `{routeId, rangerIds, scheduledDate}` (one Planned patrol per ranger, returns the list), `PUT /patrols/{id}` `{routeId, rangerId, scheduledDate}` and `DELETE /patrols/{id}` (Planned patrols only, otherwise 400; the date cannot be in the past), `GET /patrols?status=&date=` | MANAGER |
 | UC1 | `GET /me/patrols` (today's patrols, plus the ranger's active patrol if it started on an earlier day, listed first) | RANGER |
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
 | UC1 | `POST /patrols/{id}/points` `[{lat, lng, accuracyM, recordedAt, isWaypoint, note}]` | RANGER, batch upsert |
@@ -396,20 +402,18 @@ The ranger mobile app reads `EXPO_PUBLIC_API_URL` from `mobile/.env.local` (`mob
 cd mobile && npx expo run:android
 ```
 
-**Seed data:** `config/DataSeeder` runs only when the DB is empty. It creates:
-- park **Yala**, with 2 zones (Kumbukgaha farmland, and a road);
-- alert rules, 5 incident types and 3 boundary segments (`KUMB`, `PAL`, `KAT`);
-- 1 collar on elephant "Gemunu" and 1 camera;
-- one user per role (`ranger@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `researcher@wildx.lk`), with the test password `password`.
+**Database reset and seed data:** Every backend startup recreates the application's tables through Hibernate (`ddl-auto=create`), deleting existing application data before the ordered seeders run. Restarting only the frontend does not reset the database.
 
-`config/PatrolSeeder` runs after it, only when there are no patrols, so it also fills an existing DB. It adds 4 sectors, 3 routes, 3 more rangers (`kasun@`, `nimal@`, `saman@wildx.lk`, same password) and 8 patrols relative to today: 2 active with GPS tracks (one offline for 20 min), 2 planned, 3 completed with tracks and 1 cancelled.
+`config/DataSeeder` creates Yala and Udawalawe, with staff for every role, named animals, collars and cameras, every zone type, alert rules, incident types and boundary segments. The Yala Manager manages both parks. Existing Yala logins (`ranger@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `researcher@wildx.lk`, `kasun@wildx.lk`, `nimal@wildx.lk`, `saman@wildx.lk`) remain available. Udawalawe accounts use a `udawalawe.` email prefix. Every seeded account uses the demo password `password`.
+
+`config/PatrolSeeder` adds sectors, routes, active online/offline patrols, planned and cancelled assignments, completed patrols over the previous weeks, GPS tracks and observation waypoints for both parks. `config/CommunityDataSeeder` adds web and SMS reports covering every report status, duplicates linked to their originals, closed outcomes and enough validated conflicts to demonstrate hotspots. `config/OperationalDataSeeder` runs last and adds linked incidents, collar fixes, alerts, dispatches and read/unread notifications. Operational timestamps are relative to startup so the dashboard and date-range reports have useful data. `repository/SeedHistoryRepository` uses Criteria updates to preserve historical audit dates for seed records, keeping report dates and response durations consistent with their lifecycle timestamps. Historical health alerts are resolved, with at most one unresolved alert per device and type. Notification links respect the recipient's role.
 
 Simulation scripts live in `docs/sim/*.http` (IntelliJ/VS Code REST client) and send a fix inside the farmland zone, a camera image and an SMS.
 
 ## 10. Testing
 
 - Backend: unit tests with ≥80% coverage on new code; focus on `GeoUtil`, `SmsParser`, alert rules, escalation and the duplicate check.
-- Frontend: manually run each flow in requirements.md at 360 px.
+- Frontend: Vitest with React Testing Library and jsdom provides unit tests for application logic, API contracts, hooks, components and pages. `npm run test:coverage` enforces at least 80% statements, branches, functions and lines across `app/`, `components/`, `hooks/` and `lib/`, excluding only `.d.ts` declarations. These tools and the V8 coverage provider are development dependencies. Also manually run each flow in requirements.md at 360 px.
 - Mobile: `npx tsc --noEmit` and `npx expo lint` pass; run F1.2, F2.1 and F2.3 with airplane mode on, then off, and check that each write syncs once.
 
 ## 11. Conventions

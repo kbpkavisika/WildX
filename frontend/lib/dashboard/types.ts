@@ -4,7 +4,6 @@ export type ScheduleKind = (typeof SCHEDULE_KINDS)[keyof typeof SCHEDULE_KINDS];
 export type ChipTone = "positive" | "negative" | "neutral" | "done";
 
 export interface DashboardResponse {
-  parkName: string;
   metrics: {
     activeAlerts: number;
     alertsToday: number;
@@ -75,7 +74,6 @@ export interface WeekDay {
 
 export interface DashboardView {
   greeting: string;
-  parkName: string;
   today: string;
   metrics: Metric[];
   conflict: ConflictChart;
