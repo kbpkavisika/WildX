@@ -291,6 +291,7 @@ Screens designed so far (`docs/prototypes/`):
 - **Patrols · All** (`all-patrols.html`): a filterable table of every patrol, with a New patrol action. The add form opens inline above the table.
 - **Sign in** (`sign-in.html`): a bordered xl split card with a park photo panel and the email and password form.
 - **Alerts** (`alerts.html`): an alert map, the alert queue with status filters, the selected alert's detail with Acknowledge, Resolve and Dispatch, and the user's notifications.
+- **Ranger alerts** (`ranger-alerts.html`): the phone screen behind the ranger's Alerts tab, with the park's open alerts, large Acknowledge and Resolve buttons, and the ranger's notifications.
 
 ### Voice
 
@@ -419,6 +420,13 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Rangers, supervisors and managers get Acknowledge (primary, 40px) while the alert is open and Resolve (secondary) until it is resolved. Managers and supervisors also get Dispatch ranger (secondary), which opens the shared dispatch form inline; after dispatching, a positive "Dispatched to K. Bandara." line replaces the form. A failed action shows the server's message in negative red under the buttons or in the form. A resolved alert has no actions.
   - The resolve form is an inline panel on `surface-form` with an lg radius and a "Resolve alert" `form-title`. The four outcomes (Conflict averted, Conflict occurred, No action required, False alarm) are 48px radio rows; the checked row gets a pine border and the lime-soft ring. A missing choice is outlined in negative red with a caption. Cancel and Resolve alert are right-aligned.
   - The notifications card has a "Notifications" `card-title` with a coral count badge for unread ones (hidden at 0). Each row shows the title (600 and ink when unread, with a pine dot and the word "New"), the body in `ink-body` and the time as a muted caption. Selecting a row marks it read and opens its link.
+- **Ranger alerts (phone).**
+  - It sits in the ranger layout (logo header, Alerts tab active in the bottom nav) and follows the mobile rules: 48px tap targets, 16px card padding, pick-lists and full-width 48px action buttons.
+  - The subtitle counts open and acknowledged alerts: "**1 open**, 1 acknowledged."
+  - The **Open alerts** card comes first and lists every open or acknowledged alert of the park, newest first; resolved alerts are left out. Each row shows the same title, caption, severity chip and status dot + word as the dashboard queue, without the number. Without alerts it says "No open alerts. You will be notified when one is raised."
+  - Tapping a row opens it in place on the `surface-sunken` fill: a fact list (Occurred, Acknowledge by, Acknowledged) and stacked full-width buttons: Acknowledge (primary) while open, Resolve (secondary) until resolved, and Open in maps (secondary with a map icon), which opens the alert position in Google Maps in a new tab. Tapping the row again closes it.
+  - Resolve opens the same outcome form as the dashboard, with Resolve alert and Cancel stacked full width. A failed action shows the server's message in negative red.
+  - The **Notifications** card follows, the same as on the dashboard.
 
 ## Do's and Don'ts
 
