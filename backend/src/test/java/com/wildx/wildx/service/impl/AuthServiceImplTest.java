@@ -145,13 +145,13 @@ class AuthServiceImplTest {
     @Test
     void listsIdsOfActiveUsersWithRoleInPark() {
         Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
-        AppUser first = user(Role.SUPERVISOR, park, true);
-        AppUser second = user(Role.SUPERVISOR, park, true);
+        AppUser first = user(Role.MANAGER, park, true);
+        AppUser second = user(Role.MANAGER, park, true);
         second.setId(8L);
-        when(userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(3L, Role.SUPERVISOR))
+        when(userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(3L, Role.MANAGER))
                 .thenReturn(List.of(first, second));
-        assertThat(authService.activeUserIds(3L, Role.SUPERVISOR)).containsExactly(7L, 8L);
-        assertThat(authService.activeUserIds(3L, Role.MANAGER)).isEmpty();
+        assertThat(authService.activeUserIds(3L, Role.MANAGER)).containsExactly(7L, 8L);
+        assertThat(authService.activeUserIds(3L, Role.CLO)).isEmpty();
     }
 
     @Test

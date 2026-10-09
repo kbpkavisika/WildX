@@ -60,10 +60,10 @@ class DeviceControllerTest {
         when(devices.animals(1L)).thenReturn(List.of());
         when(devices.devices(1L)).thenReturn(List.of());
         mvc.perform(get("/api/v1/parks/1/animals").header("Authorization", token("RANGER"))).andExpect(status().isOk());
-        mvc.perform(get("/api/v1/parks/1/devices").header("Authorization", token("SUPERVISOR"))).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/parks/1/devices").header("Authorization", token("CLO"))).andExpect(status().isOk());
         mvc.perform(post("/api/v1/parks/1/devices").header("Authorization", token("RANGER"))
                 .contentType(MediaType.APPLICATION_JSON).content(COLLAR)).andExpect(status().isForbidden());
-        mvc.perform(post("/api/v1/parks/1/animals").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(post("/api/v1/parks/1/animals").header("Authorization", token("RESEARCHER"))
                 .contentType(MediaType.APPLICATION_JSON).content(ANIMAL)).andExpect(status().isForbidden());
         verify(devices, never()).createDevice(any(), any());
         verify(devices, never()).createAnimal(any(), any());

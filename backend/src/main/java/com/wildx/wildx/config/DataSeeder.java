@@ -83,7 +83,7 @@ public class DataSeeder implements CommandLineRunner {
                 seedSegment(yala, "Kumbukgaha", "KUMB", 6.3150, 81.4100),
                 seedSegment(yala, "Palatupana", "PAL", 6.2700, 81.4400),
                 seedSegment(yala, "Katagamuwa", "KAT", 6.3800, 81.4800)));
-        escalationStepRepository.saveAll(List.of(seedStep(yala, 1, Role.SUPERVISOR), seedStep(yala, 2, Role.MANAGER)));
+        escalationStepRepository.saveAll(List.of(seedStep(yala, 1, Role.MANAGER)));
         incidentTypeRepository.saveAll(List.of(
                 seedIncidentType(yala, "Snare", Severity.HIGH),
                 seedIncidentType(yala, "Carcass", Severity.MEDIUM),

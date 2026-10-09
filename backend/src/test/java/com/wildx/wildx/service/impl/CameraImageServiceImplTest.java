@@ -190,11 +190,11 @@ class CameraImageServiceImplTest {
         when(images.findByIdAndDeviceParkId(41L, 1L)).thenReturn(Optional.of(png));
         when(storage.read("camera/4/40.jpg")).thenReturn(JPEG);
         when(storage.read("camera/4/41.png")).thenReturn(PNG);
-        var file = service.file(1L, 40L, 6L, false, null);
+        var file = service.file(1L, 40L, 6L, null);
         assertThat(file.content()).isEqualTo(JPEG);
         assertThat(file.contentType()).isEqualTo("image/jpeg");
         assertThat(file.restricted()).isFalse();
-        assertThat(service.file(1L, 41L, 6L, false, null).contentType()).isEqualTo("image/png");
+        assertThat(service.file(1L, 41L, 6L, null).contentType()).isEqualTo("image/png");
         verifyNoInteractions(auditLogs);
     }
 
@@ -202,26 +202,26 @@ class CameraImageServiceImplTest {
     void restrictedFilesNeedAReasonAndEveryViewIsAudited() {
         CameraImage restricted = image(40L, camera, NOW);
         restricted.setStatus(CameraImageStatus.RESTRICTED);
-        AppUser lel = AppUser.builder().name("Lel").build();
+        AppUser manager = AppUser.builder().name("Manager").build();
         when(images.findByIdAndDeviceParkId(40L, 1L)).thenReturn(Optional.of(restricted));
         when(storage.read("camera/4/40.jpg")).thenReturn(JPEG);
-        when(entityManager.getReference(AppUser.class, 9L)).thenReturn(lel);
-        assertThatThrownBy(() -> service.file(1L, 40L, 9L, true, null))
+        when(entityManager.getReference(AppUser.class, 9L)).thenReturn(manager);
+        assertThatThrownBy(() -> service.file(1L, 40L, 9L, null))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("A reason is required to view a restricted image");
-        assertThatThrownBy(() -> service.file(1L, 40L, 9L, true, "   ")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> service.file(1L, 40L, 9L, true, "x".repeat(501)))
+        assertThatThrownBy(() -> service.file(1L, 40L, 9L, "   ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.file(1L, 40L, 9L, "x".repeat(501)))
                 .hasMessage("Reason must be at most 500 characters");
         verifyNoInteractions(auditLogs);
         verify(storage, never()).read(any());
 
-        var file = service.file(1L, 40L, 9L, true, " Case 2026/114 evidence ");
+        var file = service.file(1L, 40L, 9L, " Case 2026/114 evidence ");
         assertThat(file.restricted()).isTrue();
         assertThat(file.content()).isEqualTo(JPEG);
-        service.file(1L, 40L, 9L, true, "Second look");
+        service.file(1L, 40L, 9L, "Second look");
         ArgumentCaptor<AuditLog> entries = ArgumentCaptor.forClass(AuditLog.class);
         verify(auditLogs, times(2)).save(entries.capture());
         AuditLog first = entries.getAllValues().getFirst();
-        assertThat(first.getUser()).isSameAs(lel);
+        assertThat(first.getUser()).isSameAs(manager);
         assertThat(first.getAction()).isEqualTo("VIEW_RESTRICTED_IMAGE");
         assertThat(first.getEntity()).isEqualTo("camera_image");
         assertThat(first.getEntityId()).isEqualTo(40L);
@@ -229,12 +229,9 @@ class CameraImageServiceImplTest {
     }
 
     @Test
-    void lelNeverSeesUnrestrictedFilesAndOtherParksAreHidden() {
-        when(images.findByIdAndDeviceParkId(40L, 1L)).thenReturn(Optional.of(image(40L, camera, NOW)));
+    void otherParksAreHidden() {
         when(images.findByIdAndDeviceParkId(40L, 2L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.file(1L, 40L, 9L, true, "looking"))
-                .isInstanceOf(NotFoundException.class).hasMessage("Camera image not found");
-        assertThatThrownBy(() -> service.file(2L, 40L, 6L, false, null)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.file(2L, 40L, 6L, null)).isInstanceOf(NotFoundException.class);
         verifyNoInteractions(storage, auditLogs);
     }
 

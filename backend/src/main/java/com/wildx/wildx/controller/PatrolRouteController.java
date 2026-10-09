@@ -19,7 +19,7 @@ public class PatrolRouteController {
     private final AuthService auth;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasRole('MANAGER')")
     public List<PatrolRouteResponse> list(@AuthenticationPrincipal Jwt jwt) {
         return routes.list(auth.current(jwt).parkId());
     }

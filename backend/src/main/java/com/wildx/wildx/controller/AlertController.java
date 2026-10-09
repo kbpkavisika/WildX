@@ -18,13 +18,13 @@ import java.util.List;
 @RequestMapping("/api/v1/alerts")
 @RequiredArgsConstructor
 public class AlertController {
-    private static final String HANDLERS = "hasAnyRole('RANGER','SUPERVISOR','MANAGER')";
+    private static final String HANDLERS = "hasAnyRole('RANGER','MANAGER')";
 
     private final AlertService alerts;
     private final AuthService auth;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR','RANGER','CLO','LEL')")
+    @PreAuthorize("hasAnyRole('MANAGER','RANGER','CLO')")
     public List<AlertResponse> alerts(@AuthenticationPrincipal Jwt jwt,
                                       @RequestParam(required = false) AlertStatus status) {
         return alerts.alerts(auth.current(jwt).parkId(), status);

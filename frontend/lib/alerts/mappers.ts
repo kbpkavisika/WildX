@@ -22,8 +22,7 @@ import {
 
 const UNKNOWN_DEVICE = "Unknown device";
 const NO_VALUE = "—";
-const HANDLER_ROLES = new Set<Role>([ROLES.RANGER, ROLES.SUPERVISOR, ROLES.MANAGER]);
-const DISPATCHER_ROLES = new Set<Role>([ROLES.SUPERVISOR, ROLES.MANAGER]);
+const HANDLER_ROLES = new Set<Role>([ROLES.RANGER, ROLES.MANAGER]);
 const ACTIVE_STATUSES = new Set<string>([ALERT_STATUSES.OPEN, ALERT_STATUSES.ACKNOWLEDGED]);
 
 const TYPE_LABELS: Record<AlertType, string> = {
@@ -122,7 +121,7 @@ function toAlertDetail(alert: AlertResponse, role: Role | null, now: Date): Aler
     position: positionOf(alert),
     canAcknowledge: handler && alert.status === ALERT_STATUSES.OPEN,
     canResolve: handler && unresolved,
-    canDispatch: role !== null && DISPATCHER_ROLES.has(role) && unresolved,
+    canDispatch: role === ROLES.MANAGER && unresolved,
     cameraImageId: canViewCameraImages(role) ? alert.cameraImageId : null,
   };
 }

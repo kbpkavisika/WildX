@@ -289,6 +289,12 @@ Screens designed so far (`docs/prototypes/`):
 - **Dashboard** (`dashboard.html`): park activity metrics, a human–elephant conflict bar chart and the patrol schedule.
 - **Patrols · Active** (`active-patrols.html`): a full-bleed live map of teams in the field, with a floating "In the field" list.
 - **Patrols · All** (`all-patrols.html`): a filterable table of every patrol, with a New patrol action. The add form opens inline above the table.
+- **Patrols · Routes**: the park's patrol routes, with a New route form that draws the path on a map.
+- **Patrols · Coverage**: a full-bleed map of sectors, with neglected sectors highlighted and a floating "Sectors" list.
+- **Patrol replay**: one completed patrol's track on a map, with a slider that scrubs through it.
+- **Analytics · Coverage**: patrol coverage per sector for a date range, as a table with a CSV download.
+- **Ranger patrols**: the phone screen behind the ranger's Patrols tab, listing today's patrols.
+- **Ranger patrol**: the phone screen for one patrol, with its route map, Start and End, waypoints and the No GPS banner.
 - **Sign in** (`sign-in.html`): a bordered xl split card with a park photo panel and the email and password form.
 - **Alerts** (`alerts.html`): an alert map, the alert queue with status filters, the selected alert's detail with Acknowledge, Resolve and Dispatch, and the user's notifications.
 - **Ranger alerts** (`ranger-alerts.html`): the phone screen behind the ranger's Alerts tab, with the park's open alerts, large Acknowledge and Resolve buttons, and the ranger's notifications.
@@ -386,7 +392,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Clicking the user card toggles a "Log out" row directly above it: a 44px pill with a 20px log-out icon in `ink-body`, `surface-muted` on hover. Logging out returns to Sign in.
 - **Ranger header.** The logo on the left and a 40px circular "Log out" icon button on the right.
   - Nav items are 44px pills with a 20px icon and 12px gap. The active item gets the lime fill and 500 weight.
-  - Expandable groups (Patrols → Active patrols, All patrols; Sensors → Collars, Camera traps) are buttons that expand and collapse their children on click, with a chevron pointing up when open and down when closed. Groups start open. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
+  - Expandable groups (Patrols → Active patrols, All patrols, Routes, Coverage; Sensors → Collars, Camera traps) are buttons that expand and collapse their children on click, with a chevron pointing up when open and down when closed. Groups start open. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
   - Alerts carries a coral count badge.
 - **Buttons.**
   - Primary: pine, 48px tall in page headers, 40px in forms, with a leading plus icon for create actions.
@@ -405,7 +411,40 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - A pulsing green **Live** chip sits next to the page title.
 - **Patrols table (All patrols).**
   - Filter pills (All / Active / Scheduled / Completed with counts; the active pill is ink-filled).
-  - Columns: Patrol (route name + `PT-` ID), Leader (28px initials avatar + ranger name), Schedule (day, then the actual start – end time once started), Distance (covered km for completed patrols, otherwise —), Status chip (Active positive, Scheduled neutral, Completed done, Cancelled neutral), and a more-options button.
+  - Columns: Patrol (route name + `PT-` ID), Leader (28px initials avatar + ranger name), Schedule (day, then the actual start – end time once started), Distance (covered km for completed patrols, with the duration as a muted caption below, e.g. "6.4 km" over "2 h 15 min"; otherwise —), Status chip (Active positive, Scheduled neutral, Completed done, Cancelled neutral), and a more-options button.
+  - On a completed patrol the more-options button opens its replay. On other rows it is disabled.
+- **Patrol replay.**
+  - The title is the route name, with "PT-12 · K. Bandara · 8 Oct, 2026" as the subtitle and All patrols as a secondary link on the right.
+  - A fact row in a card: Distance, Duration and Time ("06:10 – 08:25"), using the metric cell.
+  - The map card (minimum 480px) shows the full track in `track-1` at 3px and 50%, plus the walked part up to the scrub point at 5px and full opacity. A numbered team marker sits at the scrub point. Waypoints are 18px white circles with a pine flag icon, and their note or type shows as a tooltip.
+  - Under the map: a full-width range slider (pine thumb, `line-strong` track) with the scrub time at the left ("07:42") and the end time at the right.
+  - A **Waypoints** list follows: "07:15 · Checkpoint · Waterhole clear" rows (time, type or "Waypoint", note), or "No waypoints on this patrol."
+  - A patrol without track points shows "No track recorded for this patrol." in place of the map.
+- **Routes.**
+  - The subtitle counts the routes: "**3 routes** in this park." Managers get New route (primary 48px with a plus icon).
+  - A table with grid rows (`2fr 1fr 1fr`): Route (name), Length (km from the path) and Points (how many path points it has).
+  - **New route form**: an inline panel like New patrol, titled "New route". It has a Name field, then a 360px lg-radius map. Each click on the map adds a numbered path point, and the path is drawn in `track-1`. Undo and Clear quiet buttons sit above the map, with a muted "4 points · 2.1 km" caption. A Paste GeoJSON quiet button swaps the map for a textarea that takes a LineString. A missing name, or fewer than 2 points, is outlined in negative red with a caption. A server error shows in negative red above the buttons. Cancel and Create route are right-aligned.
+- **Coverage.**
+  - The subtitle counts neglected sectors: "**2 sectors** not patrolled for more than 7 days." (or "Every sector patrolled in the last 7 days.")
+  - A full-bleed map like Active patrols. Sectors are filled with park land. A neglected sector is drawn like a high-risk zone (`negative-bg` fill with a 1.5px dashed `negative` outline), with its name as a label.
+  - Floating top-right: a **Sectors** panel built like In the field. It lists neglected sectors first. Each row shows the sector name (label), "Last patrolled 30 Sep, 2026" or "Never patrolled" (caption, muted) and a status dot + word: negative "9 days", or positive "Today" or "2 days". Selecting a row zooms to the sector and uses the `surface-sunken` fill.
+  - The legend sits bottom-left (Patrolled, Neglected, park boundary), with zoom +/− bottom-right.
+- **Coverage report (Analytics).**
+  - A third tab, Coverage, sits after Incidents and Conflicts. Its layout matches the Conflicts report: the title "Patrol coverage report", a subtitle with "**12 patrols** visited 4 of 6 sectors in this range.", Download CSV (primary) on the right, then From and To date fields.
+  - One card holds a table: Sector, Track points, Patrols and Last visit ("Today · 07:42" or —). Sectors with 0 patrols show the count in negative red. An empty range says "No patrols recorded in this range."
+- **Ranger patrols (phone).**
+  - It sits in the ranger layout (Patrols tab active) and follows the mobile rules of Ranger alerts.
+  - The subtitle reads "**2 patrols** today." (or "No patrols assigned for today.")
+  - Each patrol is a card that works as a button: the route name (label), "Today · 06:00 start" or "06:10 – 08:25" once started (caption, muted) and a status chip (Scheduled neutral, Active positive, Completed done). An active patrol comes first. Tapping a card opens Ranger patrol.
+- **Ranger patrol (phone).**
+  - The title is the route name, with the status chip as a badge and "Today · K. Bandara" as the subtitle.
+  - When GPS is lost during an active patrol, a **No GPS** banner sits under the header: a full-width lg-radius block in the negative trio with a satellite-off icon, "No GPS. Your patrol is still running." and a muted "Tracking resumes when the signal returns." line.
+  - A 360px xl-radius map shows sectors, the planned route as a dashed `track-1` line, the walked track in solid `track-1`, waypoints as flag circles and the ranger's own position as the numbered team marker.
+  - Under the map is a fact list: Started, Last point ("07:42 · 12 points sent") and Distance.
+  - Stacked full-width 48px buttons. A scheduled patrol has Start patrol (primary). An active patrol has Add waypoint (primary), Report incident (secondary, opens the incident form) and End patrol (secondary). A completed patrol has no actions, only a positive "Patrol completed at 08:25." line.
+  - Add waypoint opens an inline panel on `surface-form`, titled "Add waypoint" and saying it uses your current position. It has an optional Type pick-list (Checkpoint, Observation, Rest, Other) and an optional Note textarea. Save waypoint and Cancel are stacked full width. After saving, a positive "Waypoint saved at 07:15." line shows.
+  - End patrol asks for confirmation in place: "End this patrol now?" with End patrol (primary) and Keep going (secondary).
+  - A failed action shows the server's message in negative red under the buttons.
 - **Sign in.**
   - A centred card (max 1120px, xl radius, 12px padding, `line` border) that wraps into two equal panels and stacks on phones.
   - Left: a lg-radius photo panel with a `page-title` tagline at the top and a white xs-radius "Udawalawe NP · 30,821 ha" location chip at the bottom.
@@ -422,8 +461,8 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - The queue has filter pills (Open, Acknowledged, Resolved, All with counts; Open by default) and lists alerts newest first. Each row is a button: the numbered marker, a "Type · zone" title (or "Type · device code" without a zone), a "Gemunu (COL-001) · Today · 22:05" caption, a severity chip (High and Critical negative, Low and Medium neutral) and a status dot + word. The selected row uses the `surface-sunken` fill.
   - Status words and colours: Open and Escalated (open and escalated at least once) in negative, Acknowledged in responding, Resolved in positive.
   - The alert detail card shows the title as `card-title`, the severity chip and status, then a fact list: Device, Occurred, Acknowledge by (with "overdue" once passed), Escalation ("Escalated 1 time"), Acknowledged (name · time) and Resolved (time · outcome). Without a selection it says "Select an alert to see its detail."
-  - Rangers, supervisors and managers get Acknowledge (primary, 40px) while the alert is open and Resolve (secondary) until it is resolved. Managers and supervisors also get Dispatch ranger (secondary), which opens the shared dispatch form inline; after dispatching, a positive "Dispatched to K. Bandara." line replaces the form. A failed action shows the server's message in negative red under the buttons or in the form. A resolved alert has no actions.
-  - A Human detected alert also shows View image (secondary, with a camera icon) under its facts for managers and the LEL, even once resolved. It opens Camera traps on the All filter with that image selected, where a restricted image still asks for a reason.
+  - Rangers and managers get Acknowledge (primary, 40px) while the alert is open and Resolve (secondary) until it is resolved. Managers also get Dispatch ranger (secondary), which opens the shared dispatch form inline; after dispatching, a positive "Dispatched to K. Bandara." line replaces the form. A failed action shows the server's message in negative red under the buttons or in the form. A resolved alert has no actions.
+  - A Human detected alert also shows View image (secondary, with a camera icon) under its facts for managers, even once resolved. It opens Camera traps on the All filter with that image selected, where a restricted image still asks for a reason.
   - The resolve form is an inline panel on `surface-form` with an lg radius and a "Resolve alert" `form-title`. The four outcomes (Conflict averted, Conflict occurred, No action required, False alarm) are 48px radio rows; the checked row gets a pine border and the lime-soft ring. A missing choice is outlined in negative red with a caption. Cancel and Resolve alert are right-aligned.
   - The notifications card has a "Notifications" `card-title` with a coral count badge for unread ones (hidden at 0). Each row shows the title (600 and ink when unread, with a pine dot and the word "New"), the body in `ink-body` and the time as a muted caption. Selecting a row marks it read and opens its link.
 - **Ranger alerts (phone).**
@@ -448,9 +487,9 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Without collars or cameras, a muted caption says "No collars yet. Register one on the Devices page." (or cameras). Other roles see "Only park managers can use the simulator."
   - After sending, a positive line beside the button reports the result: "Sent 6 fixes · 6 stored · 0 duplicates." or "Sent 3 images · 3 stored." Errors show in negative red in the same place.
 - **Camera traps.**
-  - The sidebar's Sensors → Camera traps item opens it. Managers, Admins and the LEL can use it; other roles see "Only park managers and the LEL can review camera images." The LEL only ever sees restricted images.
-  - The subtitle counts the work: "**4 images** to review in 2 bursts." (for the LEL: "**1 restricted image.**") Managers get Simulator as a secondary link on the right.
-  - The image queue (`3 1 420px`) sits beside the review card (`2 1 340px`). Filter pills: To review (the default), Tagged, Empty, Unidentifiable, Restricted and All, with counts. The LEL gets only the Restricted list, without pills.
+  - The sidebar's Sensors → Camera traps item opens it. Managers and Admins can use it; other roles see "Only park managers and admins can review camera images."
+  - The subtitle counts the work: "**4 images** to review in 2 bursts." Managers get Simulator as a secondary link on the right.
+  - The image queue (`3 1 420px`) sits beside the review card (`2 1 340px`). Filter pills: To review (the default), Tagged, Empty, Unidentifiable, Restricted and All, with counts.
   - Each burst has a "CAM-001 · Today · 21:40 – 21:42" label (one time for a single image) and a muted "3 images in 1 min" or "1 image" caption, then a grid of 4:3 image tiles (140px minimum) with the capture time and a status chip. The selected tile gets a 2px pine border and the lime-soft ring. A restricted tile never loads its picture: it shows a lock icon and "Restricted" in negative red on `surface-sunken`.
   - Status chips: To review (neutral), Tagged with the species and count, e.g. "Asian elephant · 2" (positive), Empty (neutral), Unidentifiable (neutral), Restricted (negative).
   - Without a selection the review card says "Select an image to review it." With one, it shows "CAM-001 · Today · 21:41" as `card-title`, the status chip, the image at 4:3 in an lg-radius frame, and a fact list: Camera, Captured (with seconds) and Reviewed (name · time, or —).

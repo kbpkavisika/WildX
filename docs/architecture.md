@@ -8,7 +8,7 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
 ## 1. Overview
 
 ```
- Phone browser (ranger / villager)          Desktop browser (manager / CLO / LEL)
+ Phone browser (ranger / villager)          Desktop browser (manager / CLO / researcher)
             │                                           │
             └──────────────┬────────────────────────────┘
                            │ HTTPS JSON (JWT)
@@ -142,7 +142,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `community_report` | reference_code UNIQUE (`R-1042`), park_id FK, segment_id FK NULL, channel (`SMS/WEB`), reporter_phone, type (`SIGHTING/CROP_DAMAGE/OTHER`), animal_count, description, photo_path, lat, lng, raw_text, status (`NEW/NEEDS_LOCATION/DUPLICATE/VALIDATED/DISPATCHED/CLOSED/INVALID`), duplicate_of_id FK NULL, severity, invalid_reason, outcome, closed_at |
 
 The enums live in `type/`:
-- `Role`: RANGER, SUPERVISOR, MANAGER, CLO, LEL, ADMIN
+- `Role`: RANGER, MANAGER, CLO, RESEARCHER, ADMIN ("staff" below means every role except RESEARCHER, who only reads reports)
 - `Severity`: LOW, MEDIUM, HIGH, CRITICAL
 - Disposition: CONFLICT_AVERTED, CONFLICT_OCCURRED, NO_ACTION, FALSE_ALARM
 
@@ -160,7 +160,7 @@ Patrol transitions and point writes lock the patrol row. Repeated start/end requ
 
 Today and date-range boundaries use Asia/Colombo. Coverage includes never-visited sectors, derives neglect from the park setting and orders neglected sectors first. GET `/patrols/history` returns completed patrols with distance in metres and duration in seconds, newest scheduled date first; GET `/patrols/{id}/track` provides replay points in timestamp order. Live responses expose the last recorded location/time and consider it offline after five minutes without an accepted patrol request. GPS-status requests can serve as heartbeats during GPS loss.
 
-GET `/rangers` (Manager, Supervisor) lists the active rangers of the caller's park for the assign pick-list. Sector configuration is exposed at `/parks/{id}/sectors`; updates do not retroactively remap historical points. Sector deletion is rejected when track points reference it. `PUT /parks/{id}/coverage-settings` accepts `{neglectDays}` for a manager's own park. GET `/reports/coverage?from=YYYY-MM-DD&to=YYYY-MM-DD` uses inclusive park-local dates and returns every sector with its recorded point count, distinct patrol count and latest visit within the range. Missing or reversed dates are rejected. `format=csv` downloads UTF-8 CSV with escaped fields and spreadsheet-formula protection; the default is JSON.
+GET `/rangers` (Manager) lists the active rangers of the caller's park for the assign pick-list. Sector configuration is exposed at `/parks/{id}/sectors`; updates do not retroactively remap historical points. Sector deletion is rejected when track points reference it. `PUT /parks/{id}/coverage-settings` accepts `{neglectDays}` for a manager's own park. GET `/reports/coverage?from=YYYY-MM-DD&to=YYYY-MM-DD` uses inclusive park-local dates and returns every sector with its recorded point count, distinct patrol count and latest visit within the range. Missing or reversed dates are rejected. `format=csv` downloads UTF-8 CSV with escaped fields and spreadsheet-formula protection; the default is JSON.
 
 ### Device registry contract (SEN-01)
 
@@ -190,11 +190,11 @@ For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, t
 
 ### Alert acknowledge and resolve (SEN-08, SEN-10)
 
-Rangers, supervisors and managers can act on alerts of their own park; an alert from another park returns 404. `POST /alerts/{id}/acknowledge` moves an `OPEN` alert to `ACKNOWLEDGED` and records `acknowledged_by_id` and `acknowledged_at`; repeating it on an `ACKNOWLEDGED` alert keeps the first values. `POST /alerts/{id}/resolve` with `{disposition}` (`CONFLICT_AVERTED`, `CONFLICT_OCCURRED`, `NO_ACTION`, `FALSE_ALARM`) moves an `OPEN` or `ACKNOWLEDGED` alert to `RESOLVED` and records `resolved_at` and the disposition; resolving an `OPEN` alert also records the resolver and time as the acknowledgement. Acting on a `RESOLVED` alert returns 400. Both return the alert, and alert responses include `acknowledgedByName`, `acknowledgedAt`, `resolvedAt` and `disposition`. Dispatching a responder (CMN-06) arrives with UC2's `DispatchService`, which resolves the alert through the same resolve logic when a dispatch completes.
+Rangers and managers can act on alerts of their own park; an alert from another park returns 404. `POST /alerts/{id}/acknowledge` moves an `OPEN` alert to `ACKNOWLEDGED` and records `acknowledged_by_id` and `acknowledged_at`; repeating it on an `ACKNOWLEDGED` alert keeps the first values. `POST /alerts/{id}/resolve` with `{disposition}` (`CONFLICT_AVERTED`, `CONFLICT_OCCURRED`, `NO_ACTION`, `FALSE_ALARM`) moves an `OPEN` or `ACKNOWLEDGED` alert to `RESOLVED` and records `resolved_at` and the disposition; resolving an `OPEN` alert also records the resolver and time as the acknowledgement. Acting on a `RESOLVED` alert returns 400. Both return the alert, and alert responses include `acknowledgedByName`, `acknowledgedAt`, `resolvedAt` and `disposition`. Dispatching a responder (CMN-06) arrives with UC2's `DispatchService`, which resolves the alert through the same resolve logic when a dispatch completes.
 
 ### Alert escalation (SEN-09)
 
-Each park lists its escalation steps in `escalation_step`, ordered by `step_no`; the seed gives Yala 1 = `SUPERVISOR` and 2 = `MANAGER`, and a park without steps never escalates. `AlertEscalationJob` runs every 60 s and escalates each `OPEN` alert whose `sla_due_at` has passed. Each alert is escalated in its own transaction under the alert row lock and is skipped when it is no longer `OPEN`, so an acknowledge or resolve always wins. Escalating notifies every active user of the park with the role of step `escalation_level + 1` (e.g. title "Escalated HIGH zone breach alert", body "Gemunu (COL-001) in Kumbukgaha farmland is not acknowledged since 22:05", link `/dashboard/alerts`), then adds 1 to `escalation_level` and moves `sla_due_at` on by `ack_sla_min`. After the last step the alert is not escalated again. Alert responses include `escalationLevel`. Users are listed through `AuthService.activeUserIds(parkId, role)`. Alerts without a zone are described by animal and collar code, or by device code, e.g. "Gemunu (COL-001) is not acknowledged since 22:05".
+Each park lists its escalation steps in `escalation_step`, ordered by `step_no`; the seed gives Yala 1 = `MANAGER`, and a park without steps never escalates. `AlertEscalationJob` runs every 60 s and escalates each `OPEN` alert whose `sla_due_at` has passed. Each alert is escalated in its own transaction under the alert row lock and is skipped when it is no longer `OPEN`, so an acknowledge or resolve always wins. Escalating notifies every active user of the park with the role of step `escalation_level + 1` (e.g. title "Escalated HIGH zone breach alert", body "Gemunu (COL-001) in Kumbukgaha farmland is not acknowledged since 22:05", link `/dashboard/alerts`), then adds 1 to `escalation_level` and moves `sla_due_at` on by `ack_sla_min`. After the last step the alert is not escalated again. Alert responses include `escalationLevel`. Users are listed through `AuthService.activeUserIds(parkId, role)`. Alerts without a zone are described by animal and collar code, or by device code, e.g. "Gemunu (COL-001) is not acknowledged since 22:05".
 
 ### Device health and mortality alerts (SEN-11, SEN-12)
 
@@ -204,9 +204,9 @@ Each park lists its escalation steps in `escalation_step`, ordered by `step_no`;
 
 `POST /ingest/camera-images` is multipart with `cameraCode`, `capturedAt` and `image`, protected by the same `X-Api-Key` as collar ingest through the shared `ApiKeyGuard`. Only JPEG and PNG are accepted, checked by the file's first bytes, up to 5 MB (`spring.servlet.multipart.max-file-size`; larger returns 413). The file is stored under `wildx.upload-dir` (`UPLOAD_DIR`, default `./uploads`) with a generated name, and `file_path` holds the path relative to that folder; stored paths can never point outside it. A new image returns 201, starts `PENDING` and updates the camera's `last_seen_at`; the same camera and `capturedAt` returns 200 with `stored: false`; a future `capturedAt` returns 400 and an unknown or non-camera code returns 404.
 
-`GET /parks/{id}/camera-images?status=` returns the park's images newest first, grouped into bursts: images of the same camera where each is at most 1 minute after the previous one. Managers and Admins see every status; an LEL only ever sees `RESTRICTED` images. `POST /parks/{id}/camera-images/{imageId}/tag` (Manager only) takes `{status, species, animalCount}` with status `TAGGED` (species and animalCount ≥ 1 required), `EMPTY`, `UNIDENTIFIABLE` or `RESTRICTED`, and records `reviewed_by_id` and `reviewed_at`; re-tagging is allowed. Changing an image to `RESTRICTED` raises one `HUMAN_DETECTED` alert (`CRITICAL`, ack SLA 15 min) at the camera's location with the capture time as `occurred_at`, linked through `camera_image_id`, which escalates like other alerts and notifies on-duty rangers with e.g. "Suspected poacher on CAM-001 at 22:05" and never the image.
+`GET /parks/{id}/camera-images?status=` returns the park's images newest first, grouped into bursts: images of the same camera where each is at most 1 minute after the previous one. Managers and Admins see every status. `POST /parks/{id}/camera-images/{imageId}/tag` (Manager only) takes `{status, species, animalCount}` with status `TAGGED` (species and animalCount ≥ 1 required), `EMPTY`, `UNIDENTIFIABLE` or `RESTRICTED`, and records `reviewed_by_id` and `reviewed_at`; re-tagging is allowed. Changing an image to `RESTRICTED` raises one `HUMAN_DETECTED` alert (`CRITICAL`, ack SLA 15 min) at the camera's location with the capture time as `occurred_at`, linked through `camera_image_id`, which escalates like other alerts and notifies on-duty rangers with e.g. "Suspected poacher on CAM-001 at 22:05" and never the image.
 
-`GET /parks/{id}/camera-images/{imageId}/file?reason=` returns the image to Managers and Admins, and to an LEL only when it is `RESTRICTED` (otherwise 404). Viewing a `RESTRICTED` image requires a non-blank `reason` (otherwise 400), writes an `audit_log` row (user, action `VIEW_RESTRICTED_IMAGE`, entity `camera_image`, id, reason) and is sent with `Cache-Control: no-store`. No other role can open camera images, so restricted images never reach unauthorised users (NFR-06). Alert responses include `cameraImageId`.
+`GET /parks/{id}/camera-images/{imageId}/file?reason=` returns the image to Managers and Admins. Viewing a `RESTRICTED` image requires a non-blank `reason` (otherwise 400), writes an `audit_log` row (user, action `VIEW_RESTRICTED_IMAGE`, entity `camera_image`, id, reason) and is sent with `Cache-Control: no-store`. No other role can open camera images, so restricted images never reach unauthorised users (NFR-06). Alert responses include `cameraImageId`.
 
 For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}` (1–10, Manager or Admin) generates placeholder JPEGs 20 s apart, ending now, and sends them through the same upload logic.
 
@@ -223,25 +223,25 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|incident-types\|segments` | MANAGER (writes), staff (reads) |
 | UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | ADMIN, MANAGER (writes), staff (reads) |
 | UC3 | `GET /parks/{id}/alert-rules`, `PUT/DELETE /parks/{id}/alert-rules/{zoneType}` `{severity, cooldownMin, ackSlaMin}` | MANAGER (writes), staff (reads) |
-| UC1 | `GET/POST /routes`, `POST /patrols` (assign), `GET /patrols?status=&date=` | MANAGER, SUPERVISOR |
+| UC1 | `GET/POST /routes`, `POST /patrols` (assign), `GET /patrols?status=&date=` | MANAGER |
 | UC1 | `GET /me/patrols` | RANGER |
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
 | UC1 | `POST /patrols/{id}/points` `[{lat, lng, accuracyM, recordedAt, isWaypoint, note}]` | RANGER, batch upsert |
-| UC1 | `GET /patrols/{id}/track`, `GET /monitor/live`, `GET /monitor/coverage` | SUPERVISOR, MANAGER |
-| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}`, `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, SUPERVISOR/MANAGER triage |
+| UC1 | `GET /patrols/{id}/track`, `GET /monitor/live`, `GET /monitor/coverage` | MANAGER |
+| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}`, `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
 | Shared | `GET /responders?lat=&lng=`, which returns on-duty rangers sorted by distance | — |
-| Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | any except ADMIN |
+| Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | staff except ADMIN |
 | UC3 | `GET /alerts?status=` | staff |
-| UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, SUPERVISOR, MANAGER |
-| UC3 | `GET /parks/{id}/camera-images?status=`, `GET /parks/{id}/camera-images/{imageId}/file?reason=` (audited if restricted) | MANAGER, ADMIN, LEL (restricted only) |
+| UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, MANAGER |
+| UC3 | `GET /parks/{id}/camera-images?status=`, `GET /parks/{id}/camera-images/{imageId}/file?reason=` (audited if restricted) | MANAGER, ADMIN |
 | UC3 | `POST /parks/{id}/camera-images/{imageId}/tag` `{status, species, animalCount}` | MANAGER |
 | UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart `cameraCode`, `capturedAt`, `image`) | **api-key** |
 | UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}`, `POST /parks/{id}/simulator/camera-images` `{cameraCode, count}` | ADMIN, MANAGER |
 | UC4 | `POST /public/reports` (multipart), `GET /public/reports/{ref}`, `GET /public/parks/{id}/segments` | **public** |
 | UC4 sim | `POST /ingest/sms` `{from, body}` → `{reply}` | **api-key** |
 | UC4 | `GET /community-reports?status=`, `POST /community-reports/{id}/validate` `{severity}`, `POST /community-reports/{id}/invalidate` `{reason}`, `GET /community/hotspots` | CLO, MANAGER |
-| Reports | `GET /reports/coverage\|incidents\|alerts\|conflicts?from=&to=` (`&format=csv`) | MANAGER, SUPERVISOR |
+| Reports | `GET /reports/coverage\|incidents\|alerts\|conflicts?from=&to=` (`&format=csv`) | MANAGER, RESEARCHER |
 | Files | `GET /files/{path}` for incident and report photos | staff |
 
 **Dispatch side-effects:** completing a dispatch updates its source.
@@ -256,7 +256,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 ### 7.1 Collar fix → alert (SEN-04 to SEN-09)
 - Store the fix (duplicates ignored) and update the device's last seen and battery.
 - If the fix is inside a zone, create an alert from the rule for that zone's type unless one was raised for the same animal and zone within the cool-down of the fix time. A zone type without a rule raises no alert. A fix time at night raises severity one level.
-- A scheduled job escalates unacknowledged alerts after each SLA period through the park's escalation steps (Supervisor, then Manager for Yala).
+- A scheduled job escalates unacknowledged alerts after each SLA period through the park's escalation steps (Manager for Yala).
 - A second scheduled job (`DeviceHealthJob`) raises device-health and mortality alerts, never while an earlier alert of the same type for the device is still open or acknowledged.
 
 ### 7.2 Inbound SMS (COM-03 to COM-05)
@@ -339,7 +339,7 @@ cd frontend && npm run dev
 - park **Yala**, with 2 zones (Kumbukgaha farmland, and a road);
 - alert rules, 5 incident types and 3 boundary segments (`KUMB`, `PAL`, `KAT`);
 - 1 collar on elephant "Gemunu" and 1 camera;
-- one user per role (`ranger@wildx.lk`, `supervisor@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `lel@wildx.lk`, `admin@wildx.lk`), with the test password `password`.
+- one user per role (`ranger@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `researcher@wildx.lk`, `admin@wildx.lk`), with the test password `password`.
 
 `config/PatrolSeeder` runs after it, only when there are no patrols, so it also fills an existing DB. It adds 4 sectors, 3 routes, 3 more rangers (`kasun@`, `nimal@`, `saman@wildx.lk`, same password) and 8 patrols relative to today: 2 active with GPS tracks (one offline for 20 min), 2 planned, 3 completed with tracks and 1 cancelled.
 

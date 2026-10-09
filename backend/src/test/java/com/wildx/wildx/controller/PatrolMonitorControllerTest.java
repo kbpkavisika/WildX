@@ -32,21 +32,21 @@ class PatrolMonitorControllerTest {
 
     @Test
     void restrictsCompletedHistoryToStaff() throws Exception {
-        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.SUPERVISOR, 1L));
+        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.MANAGER, 1L));
         when(history.history(1L)).thenReturn(List.of());
         mvc.perform(get("/api/v1/patrols/history").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/patrols/history").header("Authorization", token("MANAGER"))).andExpect(status().isOk());
-        mvc.perform(get("/api/v1/patrols/history").header("Authorization", token("SUPERVISOR"))).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/patrols/history").header("Authorization", token("MANAGER"))).andExpect(status().isOk());
         verify(history, times(2)).history(1L);
     }
 
     @Test
     void restrictsLiveMonitoringToStaffAndAllowsRangerTrackRead() throws Exception {
-        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.SUPERVISOR, 1L));
+        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.MANAGER, 1L));
         when(monitor.live(1L)).thenReturn(List.of());
         when(monitor.track(any(), eq(3L))).thenReturn(List.of());
         mvc.perform(get("/api/v1/monitor/live").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
-        mvc.perform(get("/api/v1/monitor/live").header("Authorization", token("SUPERVISOR"))).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/monitor/live").header("Authorization", token("MANAGER"))).andExpect(status().isOk());
         mvc.perform(get("/api/v1/patrols/3/track").header("Authorization", token("RANGER"))).andExpect(status().isOk());
         mvc.perform(get("/api/v1/patrols/3/track").header("Authorization", token("CLO"))).andExpect(status().isForbidden());
     }

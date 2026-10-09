@@ -45,7 +45,7 @@ class AlertControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].severity").value("HIGH"))
                 .andExpect(jsonPath("$[0].zoneName").value("Kumbukgaha farmland"))
                 .andExpect(jsonPath("$[0].animalName").value("Gemunu"));
-        mvc.perform(get("/api/v1/alerts?status=OPEN").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(get("/api/v1/alerts?status=OPEN").header("Authorization", token("CLO")))
                 .andExpect(status().isOk());
         verify(alerts).alerts(1L, null);
         verify(alerts).alerts(1L, AlertStatus.OPEN);
@@ -61,22 +61,22 @@ class AlertControllerTest {
     }
 
     @Test
-    void rangersSupervisorsAndManagersAcknowledgeOwnParkAlerts() throws Exception {
+    void rangersAndManagersAcknowledgeOwnParkAlerts() throws Exception {
         var acknowledged = new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH, AlertStatus.ACKNOWLEDGED, 3L,
                 "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41, AT, AT, "Ranger", AT, null, null, 0, null);
-        for (Role role : new Role[] {Role.RANGER, Role.SUPERVISOR, Role.MANAGER}) {
+        for (Role role : new Role[] {Role.RANGER, Role.MANAGER}) {
             when(auth.current(any())).thenReturn(new UserResponse(4L, "User", "u@wildx.lk", role, 1L));
             when(alerts.acknowledge(1L, 20L, 4L)).thenReturn(acknowledged);
             mvc.perform(post("/api/v1/alerts/20/acknowledge").header("Authorization", token(role.name())))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACKNOWLEDGED"))
                     .andExpect(jsonPath("$.acknowledgedByName").value("Ranger"));
         }
-        verify(alerts, times(3)).acknowledge(1L, 20L, 4L);
+        verify(alerts, times(2)).acknowledge(1L, 20L, 4L);
     }
 
     @Test
     void acknowledgeRejectsViewersAndMapsServiceErrors() throws Exception {
-        for (String role : new String[] {"CLO", "LEL", "ADMIN"}) {
+        for (String role : new String[] {"CLO", "RESEARCHER", "ADMIN"}) {
             mvc.perform(post("/api/v1/alerts/20/acknowledge").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }
@@ -91,11 +91,11 @@ class AlertControllerTest {
     }
 
     @Test
-    void rangersSupervisorsAndManagersResolveWithDisposition() throws Exception {
+    void rangersAndManagersResolveWithDisposition() throws Exception {
         var resolved = new AlertResponse(20L, AlertType.ZONE_BREACH, Severity.HIGH, AlertStatus.RESOLVED, 3L,
                 "COL-001", "Gemunu", 10L, "Kumbukgaha farmland", 6.31, 81.41, AT, AT, "Ranger", AT, AT,
                 Disposition.CONFLICT_AVERTED, 0, null);
-        for (Role role : new Role[] {Role.RANGER, Role.SUPERVISOR, Role.MANAGER}) {
+        for (Role role : new Role[] {Role.RANGER, Role.MANAGER}) {
             when(auth.current(any())).thenReturn(new UserResponse(4L, "User", "u@wildx.lk", role, 1L));
             when(alerts.resolve(1L, 20L, 4L, Disposition.CONFLICT_AVERTED)).thenReturn(resolved);
             mvc.perform(post("/api/v1/alerts/20/resolve").header("Authorization", token(role.name()))
@@ -103,12 +103,12 @@ class AlertControllerTest {
                     .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("RESOLVED"))
                     .andExpect(jsonPath("$.disposition").value("CONFLICT_AVERTED"));
         }
-        verify(alerts, times(3)).resolve(1L, 20L, 4L, Disposition.CONFLICT_AVERTED);
+        verify(alerts, times(2)).resolve(1L, 20L, 4L, Disposition.CONFLICT_AVERTED);
     }
 
     @Test
     void resolveRejectsViewersAndMissingOrUnknownDisposition() throws Exception {
-        for (String role : new String[] {"CLO", "LEL", "ADMIN"}) {
+        for (String role : new String[] {"CLO", "RESEARCHER", "ADMIN"}) {
             mvc.perform(post("/api/v1/alerts/20/resolve").header("Authorization", token(role))
                             .contentType(MediaType.APPLICATION_JSON).content("{\"disposition\":\"FALSE_ALARM\"}"))
                     .andExpect(status().isForbidden());

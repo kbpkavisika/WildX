@@ -57,7 +57,7 @@ class AlertRuleControllerTest {
                 .andExpect(status().isOk());
         mvc.perform(put("/api/v1/parks/1/alert-rules/ROAD").header("Authorization", token("ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isForbidden());
-        mvc.perform(delete("/api/v1/parks/1/alert-rules/ROAD").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(delete("/api/v1/parks/1/alert-rules/ROAD").header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isForbidden());
         verify(rules, never()).saveRule(any(), any(), any());
         verify(rules, never()).deleteRule(any(), any());

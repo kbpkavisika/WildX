@@ -72,7 +72,7 @@ class SimulatorControllerTest {
             mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("ADMIN"))
                     .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
         }
-        mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("LEL"))
+        mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("RESEARCHER"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cameraCode\":\"CAM-001\",\"count\":3}"))
                 .andExpect(status().isForbidden());
         verify(simulator, times(1)).simulateCamera(any(), any());

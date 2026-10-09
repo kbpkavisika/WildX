@@ -42,7 +42,7 @@ public class IncidentController {
     }
 
     @GetMapping("/incidents")
-    @PreAuthorize("hasAnyRole('SUPERVISOR','MANAGER')")
+    @PreAuthorize("hasRole('MANAGER')")
     public List<IncidentResponse> list(@AuthenticationPrincipal Jwt jwt,
                                        @RequestParam(required = false) IncidentStatus status,
                                        @RequestParam(name = "type", required = false) Long typeId,
@@ -51,13 +51,13 @@ public class IncidentController {
     }
 
     @GetMapping("/incidents/{id}")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER')")
     public IncidentResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return incidents.get(auth.current(jwt), id);
     }
 
     @GetMapping("/incidents/{id}/photo")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER')")
     public ResponseEntity<byte[]> photo(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         IncidentPhoto photo = incidents.photo(auth.current(jwt), id);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(photo.contentType()))
@@ -71,14 +71,14 @@ public class IncidentController {
     }
 
     @PatchMapping("/incidents/{id}")
-    @PreAuthorize("hasAnyRole('SUPERVISOR','MANAGER')")
+    @PreAuthorize("hasRole('MANAGER')")
     public IncidentResponse changeSeverity(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                                            @Valid @RequestBody IncidentSeverityRequest request) {
         return incidents.changeSeverity(auth.current(jwt).parkId(), id, request.severity());
     }
 
     @PostMapping("/incidents/{id}/dismiss")
-    @PreAuthorize("hasAnyRole('SUPERVISOR','MANAGER')")
+    @PreAuthorize("hasRole('MANAGER')")
     public IncidentResponse dismiss(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                                     @Valid @RequestBody IncidentDismissRequest request) {
         return incidents.dismiss(auth.current(jwt).parkId(), id, request.reason());

@@ -1,6 +1,5 @@
 package com.wildx.wildx.controller;
 
-import com.wildx.wildx.constant.AuthConstants;
 import com.wildx.wildx.dto.CameraBurstResponse;
 import com.wildx.wildx.dto.CameraImageFile;
 import com.wildx.wildx.dto.CameraImageResponse;
@@ -8,7 +7,6 @@ import com.wildx.wildx.dto.CameraImageTagRequest;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.CameraImageService;
 import com.wildx.wildx.type.CameraImageStatus;
-import com.wildx.wildx.type.Role;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
@@ -24,7 +22,7 @@ import java.util.List;
 @RequestMapping("/api/v1/parks/{parkId}/camera-images")
 @RequiredArgsConstructor
 public class CameraImageController {
-    private static final String VIEWERS = "hasAnyRole('MANAGER','ADMIN','LEL')";
+    private static final String VIEWERS = "hasAnyRole('MANAGER','ADMIN')";
 
     private final CameraImageService images;
     private final AuthService auth;
@@ -34,7 +32,7 @@ public class CameraImageController {
     public List<CameraBurstResponse> bursts(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt,
                                             @RequestParam(required = false) CameraImageStatus status) {
         auth.requireParkAccess(jwt, parkId);
-        return images.bursts(parkId, restrictedOnly(jwt) ? CameraImageStatus.RESTRICTED : status);
+        return images.bursts(parkId, status);
     }
 
     @GetMapping("/{imageId}/file")
@@ -42,7 +40,7 @@ public class CameraImageController {
     public ResponseEntity<byte[]> file(@PathVariable Long parkId, @PathVariable Long imageId,
                                        @AuthenticationPrincipal Jwt jwt, @RequestParam(required = false) String reason) {
         auth.requireParkAccess(jwt, parkId);
-        CameraImageFile file = images.file(parkId, imageId, Long.valueOf(jwt.getSubject()), restrictedOnly(jwt), reason);
+        CameraImageFile file = images.file(parkId, imageId, Long.valueOf(jwt.getSubject()), reason);
         CacheControl cache = file.restricted() ? CacheControl.noStore() : CacheControl.noCache().cachePrivate();
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.contentType())).cacheControl(cache)
                 .body(file.content());
@@ -54,9 +52,5 @@ public class CameraImageController {
                                    @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CameraImageTagRequest request) {
         auth.requireParkAccess(jwt, parkId);
         return images.tag(parkId, imageId, auth.current(jwt).id(), request);
-    }
-
-    private boolean restrictedOnly(Jwt jwt) {
-        return Role.LEL.name().equals(jwt.getClaimAsString(AuthConstants.ROLE_CLAIM));
     }
 }

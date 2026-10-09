@@ -20,7 +20,7 @@ public class ParkController {
     private final AuthService auth;
 
     @GetMapping("/sectors")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR','RANGER','CLO','LEL')")
+    @PreAuthorize("hasAnyRole('MANAGER','RANGER','CLO')")
     public List<SectorResponse> sectors(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt) {
         checkPark(parkId, jwt);
         return parks.sectors(parkId);

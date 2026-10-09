@@ -22,10 +22,9 @@ Technical design is in [architecture.md](architecture.md).
 | Actor | Role | Main device |
 |---|---|---|
 | Ranger | Patrols, reports incidents, responds to dispatches and alerts | Phone |
-| Patrol Supervisor | Monitors patrols, triages incidents, and is the second step of escalation | Desktop / phone |
-| Park Manager | Plans routes, configures the park, is the final step of escalation, and views reports | Desktop |
+| Park Manager | Plans routes, monitors patrols, triages incidents, configures the park, receives alert escalations, and views reports | Desktop / phone |
 | Community Liaison Officer (CLO) | Validates community reports and dispatches responders to conflicts | Desktop / phone |
-| Law Enforcement Liaison (LEL) | Views restricted (suspected poacher) images | Desktop |
+| Researcher | Views analytics and reports (read only) | Desktop |
 | Admin | Manages parks and users | Desktop |
 | Villager | Reports sightings or crop damage through the web form or SMS. Does not log in | Phone / feature phone |
 | *Collar Service, Camera Trap Network, SMS Gateway* | External systems (simulated) | – |
@@ -54,7 +53,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | CMN-01 | Users log in with email and password. The system restricts each route and screen by role (§2). *(UC1)* | M |
 | CMN-02 | An Admin can create, edit and deactivate parks and users, and assign each user a role and a park. *(UC1)* | M |
 | CMN-03 | A Park Manager can define sectors as polygons for their park by pasting GeoJSON. *(UC1)* | M |
-| CMN-06 | **Dispatch Responder** (shared): a supervisor, manager or CLO assigns a responder to an incident, alert or conflict report. The responder is notified and can then Acknowledge it, Complete it with an outcome, or Decline it. *(UC2)* | M |
+| CMN-06 | **Dispatch Responder** (shared): a manager or CLO assigns a responder to an incident, alert or conflict report. The responder is notified and can then Acknowledge it, Complete it with an outcome, or Decline it. *(UC2)* | M |
 | CMN-07 | In-app notifications: each user has a notification list. The app polls it while online and shows an unread badge. *(UC3)* | M |
 | CMN-08 | SMS fallback: a High or Critical dispatch or alert sent to a ranger who has been offline for more than 5 minutes is also sent by SMS (simulated). *(UC4)* | S |
 | CMN-09 | Mobile UI rules: text contrast of at least 4.5:1, tap targets of at least 48 px, pick-lists instead of free typing, and a large primary action button on each screen. *(all)* | M |
@@ -66,7 +65,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | ID | Requirement | Pri |
 |---|---|---|
 | PAT-01 | A Park Manager creates a patrol route for a park by giving it a name and a path (GeoJSON LineString or points clicked on the map). | M |
-| PAT-02 | A Park Manager or Supervisor assigns a route to a ranger for a date, which creates a patrol with status *Planned* (fixes W2). | M |
+| PAT-02 | A Park Manager assigns a route to a ranger for a date, which creates a patrol with status *Planned* (fixes W2). | M |
 | PAT-03 | A ranger sees today's assigned patrols and their route on a map. | M |
 | PAT-04 | A ranger starts a patrol, which sets it to *Active* and records the start time. | M |
 | PAT-05 | During an active patrol, the app records a GPS point every 60 s or every 50 m, whichever comes first. | M |
@@ -74,7 +73,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | PAT-07 | When GPS is unavailable, the app shows a "No GPS" banner and keeps the patrol running. Tracking resumes when the signal returns. | M |
 | PAT-08 | A ranger ends a patrol, which sets it to *Completed* and records the end time. | M |
 | PAT-09 | The server maps every track point to the sector it falls in. | M |
-| PAT-10 | A Supervisor or Manager sees active patrols on a map with each ranger's last known position and time. Rangers who are offline show as *last seen hh:mm*. | M |
+| PAT-10 | A Park Manager sees active patrols on a map with each ranger's last known position and time. Rangers who are offline show as *last seen hh:mm*. | M |
 | PAT-11 | Coverage view: every sector shows when it was last patrolled. Sectors not patrolled for more than the park's `neglectDays` setting are highlighted, e.g. "Sector 4B – 9 days". | M |
 | PAT-12 | Patrol history: list completed patrols with their distance and duration, and replay a patrol's track on the map. | S |
 | PAT-13 | Report: patrol coverage per sector for a chosen date range, as a table plus a CSV download. | S |
@@ -85,7 +84,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 **F1.2 Run a patrol (Ranger, phone):** Home → My patrols → choose a patrol → **Start** → the map shows the route and the ranger's live position → the ranger taps **Waypoint** when needed → the ranger taps **Report incident** when needed (UC2) → **End patrol**.
 
-**F1.3 Monitor (Supervisor, desktop):** Dashboard → Live patrols map, which refreshes automatically → click a ranger to see their track → Coverage tab → neglected sectors are listed first → assign a new patrol to a neglected sector (F1.1).
+**F1.3 Monitor (Manager, desktop):** Dashboard → Live patrols map, which refreshes automatically → click a ranger to see their track → Coverage tab → neglected sectors are listed first → assign a new patrol to a neglected sector (F1.1).
 
 ---
 
@@ -98,8 +97,8 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | INC-03 | When GPS fails, the ranger taps the incident location on the map instead. | M |
 | INC-05 | The form highlights missing required fields: type and location. | M |
 | INC-06 | An incident is linked to the ranger's active patrol, if there is one. | S |
-| INC-07 | When a High or Critical incident is submitted, the system notifies the park's Supervisors and Managers automatically, with no manual refresh needed (fixes W16). | M |
-| INC-08 | Triage: Supervisors and Managers see an incident queue they can filter by status, type and severity. They can change the severity and either dispatch a responder (CMN-06) or dismiss the incident with a reason (fixes W3). | M |
+| INC-07 | When a High or Critical incident is submitted, the system notifies the park's Managers automatically, with no manual refresh needed (fixes W16). | M |
+| INC-08 | Triage: Managers see an incident queue they can filter by status, type and severity. They can change the severity and either dispatch a responder (CMN-06) or dismiss the incident with a reason (fixes W3). | M |
 | INC-09 | An incident moves through these statuses: `NEW → ASSIGNED → RESOLVED`, or `NEW → DISMISSED`. Completing the dispatch resolves the incident with an outcome note. | M |
 | INC-10 | A ranger sees the incidents they have reported and the dispatches assigned to them. | M |
 | INC-11 | Report: incidents by type, by sector and by month for a date range, with a map of incident points and a CSV download. | S |
@@ -108,7 +107,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 **F2.1 Report (Ranger, phone):** Patrol screen → **Report incident** → choose the type → take a photo or skip → the location fills in automatically, or the ranger taps the map → add a description → **Submit** → the app shows "Saved".
 
-**F2.2 Triage and dispatch (Supervisor, desktop):** A notification arrives saying "New High incident: Snare, Sector 3" → open the incident queue → open the incident and view its photo and map → adjust the severity → **Dispatch** → choose a ranger from the list, sorted by distance → the ranger is notified.
+**F2.2 Triage and dispatch (Manager, desktop):** A notification arrives saying "New High incident: Snare, Sector 3" → open the incident queue → open the incident and view its photo and map → adjust the severity → **Dispatch** → choose a ranger from the list, sorted by distance → the ranger is notified.
 
 **F2.3 Respond (Ranger, phone):** Notifications → open the dispatch → **Acknowledge** → go to the location shown on the map → **Complete** with an outcome from a pick-list plus a note → the incident becomes *Resolved*.
 
@@ -125,14 +124,14 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | SEN-05 | When a stored fix falls inside a zone, the system creates a **Zone breach** alert with the rule's severity, unless an alert for the same animal and zone was raised within the cool-down period. | M |
 | SEN-06 | A breach between 18:00 and 06:00 raises the severity by one level. | S |
 | SEN-07 | A new alert appears in the dashboard alert queue and on the map. All on-duty rangers of the park are notified (CMN-07), with SMS fallback (CMN-08). | M |
-| SEN-08 | A ranger, supervisor or manager **acknowledges** an alert, and the system records who acknowledged it and when. A manager can dispatch a specific responder (CMN-06). | M |
-| SEN-09 | Escalation: an alert not acknowledged before its SLA deadline is escalated to the Patrol Supervisor(s), and then to the Park Manager after another SLA period. The number of steps comes from data, so the loop count is not hard-coded (fixes W18). | M |
-| SEN-10 | A ranger, supervisor or manager resolves an alert with a disposition: *Conflict averted*, *Conflict occurred*, *No action required* or *False alarm*. | M |
+| SEN-08 | A ranger or manager **acknowledges** an alert, and the system records who acknowledged it and when. A manager can dispatch a specific responder (CMN-06). | M |
+| SEN-09 | Escalation: an alert not acknowledged before its SLA deadline is escalated through the park's escalation steps (the Park Manager for Yala), one step per SLA period. The number of steps comes from data, so the loop count is not hard-coded (fixes W18). | M |
+| SEN-10 | A ranger or manager resolves an alert with a disposition: *Conflict averted*, *Conflict occurred*, *No action required* or *False alarm*. | M |
 | SEN-11 | Device health: the system raises an alert when a device has not reported within 3× its expected interval, or reports battery below 15%. | S |
 | SEN-12 | Mortality/immobility: when a collar moves less than 50 m in 6 h, the system raises a **Critical** alert. | S |
 | SEN-13 | Camera upload endpoint: the system accepts an image with a camera code and capture time, and drops duplicates (same camera and capture time). | M |
 | SEN-14 | The image review queue lets reviewers tag each image with a species and count, or mark it *Empty* or *Unidentifiable*. Images from the same camera within 1 min are shown as one burst. | M |
-| SEN-15 | A reviewer marks an image as **Restricted** when it shows a suspected poacher. Only the Manager, LEL and Admin can see restricted images. The system raises an alert, and every view of the image is written to the audit log with the user, the time and a reason. | M |
+| SEN-15 | A reviewer marks an image as **Restricted** when it shows a suspected poacher. Only the Manager and Admin can see restricted images. The system raises an alert, and every view of the image is written to the audit log with the user, the time and a reason. | M |
 | SEN-16 | Report: alert counts by type and zone, plus the median time to acknowledge and median time to resolve. | S |
 | SEN-17 | A Park Manager can send an advisory SMS broadcast for an alert to the registered villager numbers near the affected boundary segment. | C |
 
@@ -140,9 +139,9 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 **F3.1 Zone breach (system → Ranger):** The simulator POSTs a collar fix → the fix is stored → the system finds that it falls inside the "Kumbukgaha farmland" zone → there is no recent alert, so it creates an alert with severity High (raised because it is night-time) → the alert appears on the dashboard and on-duty rangers are notified → a ranger taps **Acknowledge**, then travels to the site → **Resolve** with the disposition "Conflict averted".
 
-**F3.2 Escalation:** No one acknowledges the alert within the SLA → the escalation job notifies the Supervisor → still no acknowledgement → the Manager is notified → the Manager dispatches a specific ranger.
+**F3.2 Escalation:** No one acknowledges the alert within the SLA → the escalation job notifies the Manager → the Manager dispatches a specific ranger.
 
-**F3.3 Camera review (Manager, desktop):** Image review → the queue shows bursts → the Manager tags each one with a species and count, or marks it Empty → for a suspected poacher, marks it **Restricted** → the system raises an alert, and the image is now visible only to the Manager, LEL and Admin, with each view audited.
+**F3.3 Camera review (Manager, desktop):** Image review → the queue shows bursts → the Manager tags each one with a species and count, or marks it Empty → for a suspected poacher, marks it **Restricted** → the system raises an alert, and the image is now visible only to the Manager and Admin, with each view audited.
 
 ---
 

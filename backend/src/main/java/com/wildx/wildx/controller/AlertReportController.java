@@ -22,7 +22,7 @@ public class AlertReportController {
     private final AuthService auth;
 
     @GetMapping("/alerts")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('MANAGER','RESEARCHER')")
     public ResponseEntity<?> report(@AuthenticationPrincipal Jwt jwt, @RequestParam LocalDate from,
                                     @RequestParam LocalDate to, @RequestParam(defaultValue = "json") String format) {
         if (!format.equals("json") && !format.equals("csv")) {

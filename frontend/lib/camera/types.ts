@@ -40,6 +40,5 @@ export interface CameraView {
   filters: CameraFilterOption[];
   pendingCount: number;
   pendingBurstCount: number;
-  restrictedCount: number;
   selected: SelectedImageView | null;
 }

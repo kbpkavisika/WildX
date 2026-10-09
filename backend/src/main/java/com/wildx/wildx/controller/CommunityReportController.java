@@ -33,7 +33,7 @@ public class CommunityReportController {
     private final AuthService auth;
 
     @GetMapping("/community-reports")
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
     public List<CommunityReportResponse> list(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) CommunityReportStatus status,
@@ -44,7 +44,7 @@ public class CommunityReportController {
     }
 
     @GetMapping("/community-reports/{id}")
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
     public CommunityReportResponse get(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
@@ -91,7 +91,7 @@ public class CommunityReportController {
     }
 
     @GetMapping({"/community/hotspots", "/community-reports/hotspots"})
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
     public List<HotspotResponse> hotspots(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) Long parkId
@@ -101,7 +101,7 @@ public class CommunityReportController {
     }
 
     @GetMapping("/reports/conflicts")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR','CLO','ADMIN')")
+    @PreAuthorize("hasAnyRole('MANAGER','CLO','ADMIN','RESEARCHER')")
     public ResponseEntity<?> conflictTrends(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam LocalDate from,
@@ -125,7 +125,7 @@ public class CommunityReportController {
     }
 
     @GetMapping({"/community/sms-help-card", "/community-reports/sms-help-card"})
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
     public SmsHelpCardResponse helpCard(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) Long parkId

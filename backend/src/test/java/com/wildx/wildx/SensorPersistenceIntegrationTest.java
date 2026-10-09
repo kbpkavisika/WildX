@@ -45,8 +45,8 @@ class SensorPersistenceIntegrationTest {
     void collarFixesRaiseRuleBasedAlertsThatAreHandledEscalatedAndReported() {
         Park park = park();
         AppUser ranger = user(park, Role.RANGER);
-        AppUser supervisor = user(park, Role.SUPERVISOR);
-        step(park, 1, Role.SUPERVISOR);
+        AppUser manager = user(park, Role.MANAGER);
+        step(park, 1, Role.MANAGER);
         String collar = collar(park);
         Long zoneId = zones.createZone(park.getId(), new ZoneRequest("Farmland", ZoneType.FARMLAND, FARMLAND)).id();
         rules.saveRule(park.getId(), ZoneType.FARMLAND, new AlertRuleRequest(Severity.LOW, 30, 15));
@@ -83,7 +83,7 @@ class SensorPersistenceIntegrationTest {
         escalation.escalate(nightAlert.id());
         entities.flush();
         entities.clear();
-        assertThat(notifications.myNotifications(supervisor.getId()).notifications()).singleElement()
+        assertThat(notifications.myNotifications(manager.getId()).notifications()).singleElement()
                 .extracting(NotificationResponse::title).isEqualTo("Escalated HIGH zone breach alert");
         assertThat(alerts.alerts(park.getId(), AlertStatus.OPEN)).singleElement()
                 .extracting(AlertResponse::escalationLevel).isEqualTo(1);
@@ -128,7 +128,6 @@ class SensorPersistenceIntegrationTest {
     void cameraImagesAreStoredOnceAndRestrictedViewsAreAudited() {
         Park park = park();
         AppUser manager = user(park, Role.MANAGER);
-        AppUser lel = user(park, Role.LEL);
         String camera = "CAM-" + UUID.randomUUID().toString().substring(0, 8);
         devices.createDevice(park.getId(), new DeviceRequest(DeviceType.CAMERA, camera, 60, null, 6.37, 81.51));
         Instant shot = now().minus(Duration.ofMinutes(5));
@@ -153,11 +152,9 @@ class SensorPersistenceIntegrationTest {
         assertThat(cameraImages.bursts(park.getId(), CameraImageStatus.RESTRICTED)).singleElement()
                 .satisfies(burst -> assertThat(burst.images()).extracting(CameraImageResponse::id).containsExactly(first.imageId()));
 
-        assertThat(cameraImages.file(park.getId(), first.imageId(), lel.getId(), true, "Case 114").content()).isEqualTo(JPEG);
-        assertThatThrownBy(() -> cameraImages.file(park.getId(), open, lel.getId(), true, "Curious"))
-                .isInstanceOf(NotFoundException.class);
+        assertThat(cameraImages.file(park.getId(), first.imageId(), manager.getId(), "Case 114").content()).isEqualTo(JPEG);
         entities.flush();
-        assertThat(auditLogs.findAll()).filteredOn(entry -> entry.getUser().getId().equals(lel.getId()))
+        assertThat(auditLogs.findAll()).filteredOn(entry -> entry.getUser().getId().equals(manager.getId()))
                 .singleElement().satisfies(entry -> {
                     assertThat(entry.getEntityId()).isEqualTo(first.imageId());
                     assertThat(entry.getAction()).isEqualTo("VIEW_RESTRICTED_IMAGE");

@@ -22,14 +22,14 @@ public class PatrolController {
     private final AuthService auth;
 
     @PostMapping("/patrols")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<PatrolResponse> assign(@AuthenticationPrincipal Jwt jwt,
                                                 @Valid @RequestBody PatrolAssignRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(patrols.assign(auth.current(jwt).parkId(), request));
     }
 
     @GetMapping("/rangers")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasRole('MANAGER')")
     public List<UserResponse> rangers(@AuthenticationPrincipal Jwt jwt) {
         return auth.activeUsers(auth.current(jwt).parkId(), Role.RANGER);
     }
@@ -41,7 +41,7 @@ public class PatrolController {
     }
 
     @GetMapping("/patrols")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasRole('MANAGER')")
     public List<PatrolResponse> list(@AuthenticationPrincipal Jwt jwt,
                                     @RequestParam(required = false) PatrolStatus status,
                                     @RequestParam(required = false) LocalDate date) {

@@ -19,7 +19,7 @@ public class ZoneController {
     private final AuthService auth;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','SUPERVISOR','RANGER','CLO','LEL')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','RANGER','CLO')")
     public List<ZoneResponse> zones(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt) {
         auth.requireParkAccess(jwt, parkId);
         return zones.zones(parkId);
