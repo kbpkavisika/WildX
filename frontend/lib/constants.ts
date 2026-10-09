@@ -15,3 +15,4 @@ export const INCIDENT_DESCRIPTION_MAX = 500;
 export const ALERTS_REFETCH_MS = 15_000;
 export const NOTIFICATIONS_REFETCH_MS = 15_000;
 export const MAP_MAX_ZOOM = 17;
+export const GOOGLE_MAPS_URL = "https://www.google.com/maps?q=";

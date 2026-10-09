@@ -7,7 +7,7 @@ import type { NotificationRow } from "@/lib/notifications/types";
 import { NotificationList } from "./notification-list";
 import { UnreadBadge } from "./unread-badge";
 
-export function NotificationsCard() {
+export function NotificationsCard({ className }: { className?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const { isPending, isError, view, markRead } = useNotifications();
@@ -18,7 +18,7 @@ export function NotificationsCard() {
   };
 
   return (
-    <Card label="Notifications">
+    <Card label="Notifications" className={className}>
       <div className="flex items-center gap-2.5">
         <span className="grow">
           <CardTitle>Notifications</CardTitle>
