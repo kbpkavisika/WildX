@@ -9,15 +9,22 @@ import type { Disposition } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
 const OUTCOME_ERROR_ID = "resolve-outcome-error";
+const FULL_WIDTH = "h-12 w-full justify-center";
 
 interface ResolveFormProps {
   saving: boolean;
+  stacked?: boolean;
   onSubmit: (disposition: Disposition) => void;
   onCancel: () => void;
 }
 
-export function ResolveForm({ saving, onSubmit, onCancel }: ResolveFormProps) {
+export function ResolveForm({ saving, stacked = false, onSubmit, onCancel }: ResolveFormProps) {
   const { register, handleSubmit, formState: { errors } } = useForm<ResolveValues>({ resolver: zodResolver(resolveSchema) });
+  const submit = (
+    <Button type="submit" disabled={saving} className={cn("h-10 px-[18px] disabled:opacity-60", stacked && FULL_WIDTH)}>
+      {saving ? "Resolving…" : "Resolve alert"}
+    </Button>
+  );
 
   return (
     <form
@@ -42,12 +49,17 @@ export function ResolveForm({ saving, onSubmit, onCancel }: ResolveFormProps) {
         </div>
         {errors.disposition && <span id={OUTCOME_ERROR_ID} className="text-caption text-negative">{errors.disposition.message}</span>}
       </fieldset>
-      <div className="flex flex-wrap justify-end gap-3">
-        <SecondaryButton onClick={onCancel}>Cancel</SecondaryButton>
-        <Button type="submit" disabled={saving} className="h-10 px-[18px] disabled:opacity-60">
-          {saving ? "Resolving…" : "Resolve alert"}
-        </Button>
-      </div>
+      {stacked ? (
+        <div className="flex flex-col gap-3">
+          {submit}
+          <SecondaryButton onClick={onCancel} className={FULL_WIDTH}>Cancel</SecondaryButton>
+        </div>
+      ) : (
+        <div className="flex flex-wrap justify-end gap-3">
+          <SecondaryButton onClick={onCancel}>Cancel</SecondaryButton>
+          {submit}
+        </div>
+      )}
     </form>
   );
 }

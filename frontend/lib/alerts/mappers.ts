@@ -1,6 +1,7 @@
 import type { AlertResponse } from "@/lib/api/alerts";
 import type { ZoneResponse } from "@/lib/api/zones";
 import { ALERT_STATUSES, ALERT_TYPES, DISPOSITIONS, ROLES, type AlertType, type Disposition, type Role } from "@/lib/enums";
+import { GOOGLE_MAPS_URL } from "@/lib/constants";
 import { formatDayTime } from "@/lib/format";
 import { SEVERITY_DISPLAY } from "@/lib/incidents/mappers";
 import { toSectorShape } from "@/lib/patrols/mappers";
@@ -14,12 +15,15 @@ import {
   type AlertRow,
   type AlertStatusView,
   type AlertsView,
+  type RangerAlertDetail,
+  type RangerAlertsView,
 } from "./types";
 
 const UNKNOWN_DEVICE = "Unknown device";
 const NO_VALUE = "—";
 const HANDLER_ROLES = new Set<Role>([ROLES.RANGER, ROLES.SUPERVISOR, ROLES.MANAGER]);
 const DISPATCHER_ROLES = new Set<Role>([ROLES.SUPERVISOR, ROLES.MANAGER]);
+const ACTIVE_STATUSES = new Set<string>([ALERT_STATUSES.OPEN, ALERT_STATUSES.ACKNOWLEDGED]);
 
 const TYPE_LABELS: Record<AlertType, string> = {
   [ALERT_TYPES.ZONE_BREACH]: "Zone breach",
@@ -101,8 +105,12 @@ function alertFacts(alert: AlertResponse, now: Date): DetailFact[] {
   ];
 }
 
+function isHandler(role: Role | null): boolean {
+  return role !== null && HANDLER_ROLES.has(role);
+}
+
 function toAlertDetail(alert: AlertResponse, role: Role | null, now: Date): AlertDetailView {
-  const handler = role !== null && HANDLER_ROLES.has(role);
+  const handler = isHandler(role);
   const unresolved = alert.status !== ALERT_STATUSES.RESOLVED;
   return {
     id: alert.id,
@@ -157,5 +165,31 @@ export function toAlertsView(
     selected: selected ? toAlertDetail(selected, role, now) : null,
     openCount: alerts.filter((alert) => alert.status === ALERT_STATUSES.OPEN).length,
     escalatedCount: alerts.filter(isEscalated).length,
+  };
+}
+
+function toRangerDetail(alert: AlertResponse, role: Role | null, now: Date): RangerAlertDetail {
+  const position = positionOf(alert);
+  return {
+    id: alert.id,
+    facts: [
+      { label: "Occurred", value: formatDayTime(new Date(alert.occurredAt), now) },
+      { label: "Acknowledge by", value: acknowledgeByText(alert, now) },
+      { label: "Acknowledged", value: acknowledgedText(alert, now) },
+    ],
+    canAcknowledge: isHandler(role) && alert.status === ALERT_STATUSES.OPEN,
+    canResolve: isHandler(role),
+    mapsUrl: position ? `${GOOGLE_MAPS_URL}${position[0]},${position[1]}` : null,
+  };
+}
+
+export function toRangerAlertsView(alerts: AlertResponse[], selectedId: number | null, role: Role | null, now: Date): RangerAlertsView {
+  const active = alerts.filter((alert) => ACTIVE_STATUSES.has(alert.status));
+  const selected = active.find((alert) => alert.id === selectedId);
+  return {
+    rows: active.map((alert, index) => toAlertRow(alert, index, now)),
+    selected: selected ? toRangerDetail(selected, role, now) : null,
+    openCount: active.filter((alert) => alert.status === ALERT_STATUSES.OPEN).length,
+    acknowledgedCount: active.filter((alert) => alert.status === ALERT_STATUSES.ACKNOWLEDGED).length,
   };
 }

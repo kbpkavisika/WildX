@@ -49,3 +49,18 @@ export interface AlertsView {
 }
 
 export type AlertAction = "resolve" | "dispatch";
+
+export interface RangerAlertDetail {
+  id: number;
+  facts: DetailFact[];
+  canAcknowledge: boolean;
+  canResolve: boolean;
+  mapsUrl: string | null;
+}
+
+export interface RangerAlertsView {
+  rows: AlertRow[];
+  selected: RangerAlertDetail | null;
+  openCount: number;
+  acknowledgedCount: number;
+}
