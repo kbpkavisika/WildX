@@ -76,7 +76,7 @@ class IncidentServiceImplTest {
         Instant seen = NOW.minusSeconds(60);
 
         var result = service.report(ranger, new IncidentCreateRequest(4L, 6.5, 81.5, LocationSource.GPS,
-                " Wire snare near waterhole ", seen), JPEG);
+                " Wire snare near waterhole ", seen, null), JPEG);
 
         assertThat(result.id()).isEqualTo(10L);
         assertThat(result.typeName()).isEqualTo("Snare");
@@ -125,7 +125,7 @@ class IncidentServiceImplTest {
         when(parks.sectorShapes(1L)).thenReturn(List.of());
         when(patrols.activePatrol(7L, 1L)).thenReturn(Optional.empty());
 
-        var result = service.report(ranger, new IncidentCreateRequest(4L, 6.5, 81.5, LocationSource.MANUAL, "  ", null), null);
+        var result = service.report(ranger, new IncidentCreateRequest(4L, 6.5, 81.5, LocationSource.MANUAL, "  ", null, null), null);
 
         ArgumentCaptor<Incident> saved = ArgumentCaptor.forClass(Incident.class);
         verify(incidents).save(saved.capture());
@@ -137,6 +137,28 @@ class IncidentServiceImplTest {
         assertThat(result.photoPath()).isNull();
         assertThat(result.occurredAt()).isEqualTo(NOW);
         verifyNoInteractions(storage);
+    }
+
+    @Test
+    void storesClientIdAndReturnsTheStoredIncidentWhenTheSameReportIsReplayed() {
+        when(parks.sectorShapes(1L)).thenReturn(List.of());
+        when(patrols.activePatrol(7L, 1L)).thenReturn(Optional.empty());
+        when(auth.activeUserIds(1L, Role.MANAGER)).thenReturn(List.of(2L));
+        UUID clientId = UUID.fromString("7d1c3f0e-2b6a-4d8e-9a51-0f3e6c2b9d11");
+        var request = new IncidentCreateRequest(4L, 6.5, 81.5, LocationSource.GPS, null, null, clientId);
+
+        service.report(ranger, request, JPEG);
+        ArgumentCaptor<Incident> saved = ArgumentCaptor.forClass(Incident.class);
+        verify(incidents).save(saved.capture());
+        assertThat(saved.getValue().getClientId()).isEqualTo(clientId.toString());
+
+        when(incidents.findByClientIdAndReporterId(clientId.toString(), 7L)).thenReturn(Optional.of(saved.getValue()));
+        var replayed = service.report(ranger, request, JPEG);
+
+        assertThat(replayed.id()).isEqualTo(10L);
+        verify(incidents, times(1)).save(any());
+        verify(storage, times(1)).save(any(), any(), any());
+        verify(notifications, times(1)).notifyUsers(any(), any(), any(), any());
     }
 
     @Test
@@ -336,6 +358,6 @@ class IncidentServiceImplTest {
     }
 
     private IncidentCreateRequest request(Long typeId, Instant occurredAt) {
-        return new IncidentCreateRequest(typeId, 6.5, 81.5, LocationSource.GPS, null, occurredAt);
+        return new IncidentCreateRequest(typeId, 6.5, 81.5, LocationSource.GPS, null, occurredAt, null);
     }
 }

@@ -354,6 +354,29 @@ class DispatchServiceImplTest {
     }
 
     @Test
+    void repeatingTheSameDispatchActionReturnsTheSavedDispatch() {
+        Dispatch acknowledged = incidentDispatch();
+        acknowledged.setAcknowledgedAt(clock.instant().minusSeconds(60));
+        when(dispatchRepository.findWithDetailsById(99L)).thenReturn(Optional.of(acknowledged));
+        UserResponse caller = new UserResponse(101L, "Ranger One", "ranger@wildx.lk", Role.RANGER, 1L);
+
+        assertThat(service.acknowledgeDispatch(caller, 99L).acknowledgedAt()).isEqualTo(clock.instant().minusSeconds(60));
+
+        acknowledged.setStatus(DispatchStatus.COMPLETED);
+        acknowledged.setOutcome("Snare removed");
+        assertThat(service.completeDispatch(caller, 99L, new DispatchCompleteRequest("Other")).outcome()).isEqualTo("Snare removed");
+        assertThatThrownBy(() -> service.declineDispatch(caller, 99L, null)).isInstanceOf(IllegalStateException.class);
+
+        acknowledged.setStatus(DispatchStatus.DECLINED);
+        assertThat(service.declineDispatch(caller, 99L, null).status()).isEqualTo(DispatchStatus.DECLINED);
+        assertThatThrownBy(() -> service.completeDispatch(caller, 99L, new DispatchCompleteRequest("Other")))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(dispatchRepository, never()).save(any());
+        verifyNoInteractions(incidentService);
+    }
+
+    @Test
     void cannotActOnAnotherRangersDispatch() {
         Dispatch dispatch = new Dispatch();
         dispatch.setId(99L);

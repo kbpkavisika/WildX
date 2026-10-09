@@ -12,11 +12,12 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
             │                                           │
             └──────────────┬────────────────────────────┘
                            │ HTTPS JSON (JWT)
-                 ┌─────────▼──────────┐       Simulators (curl / script)
-                 │  Next.js frontend  │       collar fixes, camera images,
-                 └─────────┬──────────┘       inbound SMS  ── X-Api-Key ──┐
-                           │ REST /api/**                                  │
-                 ┌─────────▼──────────────────────────────────────────────▼┐
+                 ┌─────────▼──────────┐   ┌──────────────────────┐   Simulators (curl / script)
+                 │  Next.js frontend  │   │ Expo ranger app      │   collar fixes, camera images,
+                 └─────────┬──────────┘   │ SQLite outbox        │   inbound SMS  ── X-Api-Key ──┐
+                           │              └──────────┬───────────┘                               │
+                           │ REST /api/**            │ REST /api/** (JWT)                        │
+                 ┌─────────▼─────────────────────────▼────────────────────────────────────────▼┐
                  │  Spring Boot monolith  (controllers → services → JPA)   │
                  │  @Scheduled jobs: escalation, device health             │
                  └─────────┬───────────────────────────┬───────────────────┘
@@ -24,7 +25,7 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
                      PostgreSQL                  ./uploads (photos/images)
 ```
 
-- The system is **one backend and one frontend.** There are no microservices, no message broker and no WebSockets.
+- The system is **one backend, one web frontend and one ranger mobile app** (`mobile/`). There are no microservices, no message broker and no WebSockets.
 - **Real-time behaviour uses polling.** The dashboard polls every 15 s and notifications are polled every 30 s, which meets NFR-04.
 - The **external systems are simulated** through REST endpoints protected by a static API key (§7).
 
@@ -41,6 +42,10 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
 | Styling | Tailwind CSS 4 | Mobile-first: write the base styles for phones and add `lg:` styles for the desktop dashboard |
 | Maps | `leaflet` + `react-leaflet`, OpenStreetMap tiles | Load map components with `dynamic(..., { ssr:false })` |
 | Geometry | Hand-written `GeoUtil` (point-in-polygon, haversine) | **No PostGIS.** Polygons are stored as GeoJSON text |
+| Mobile | Expo SDK 57 (React Native, TypeScript), `expo-router` | Ranger role only, in `mobile/`. Same React Query, Zustand, zod and react-hook-form as the web |
+| Mobile storage | `expo-sqlite` (outbox table and `kv-store` for the query cache), `expo-secure-store` (JWT) | Offline outbox (CMN-04) |
+| Mobile device | `expo-location` + `expo-task-manager` (background GPS), `expo-image-picker` (camera), `expo-network`, `expo-file-system`, `expo-crypto` | Background tracking needs a development build |
+| Mobile maps and look | `react-native-maps` with an OpenStreetMap `UrlTile`, `@expo-google-fonts/geist`, `lucide-react-native` | Styled with `StyleSheet` from DESIGN.md tokens in `lib/theme.ts` |
 
 The project adds **no other dependencies** without team agreement. Phone camera and GPS use native browser features: `<input type="file" accept="image/*" capture="environment">` and `navigator.geolocation.watchPosition`.
 
@@ -48,7 +53,7 @@ The project adds **no other dependencies** without team agreement. Phone camera 
 
 | # | Decision | Why / trade-off |
 |---|---|---|
-| D1 | A responsive web app replaces native mobile apps | One codebase. The trade-off is that GPS stops in the background when the screen is locked, which is a documented limitation |
+| D1 | A responsive web app serves every role, and rangers also get an Expo mobile app | The web stays online only. The mobile app adds offline work and locked-screen GPS for rangers. Pure mapping code is ported from `frontend/lib` rather than shared, because the two apps build separately |
 | D2 | Geometry is stored as GeoJSON in `TEXT` columns and checked in Java | No PostGIS install is needed. The data volumes are prototype-sized |
 | D3 | Polling replaces WebSockets/SSE | It is simpler and works through any proxy. 15–30 s of latency is acceptable |
 | D4 | **Dispatch** is one table with a polymorphic `(source_type, source_id)` | UC2, UC3 and UC4 all reuse one "Dispatch Responder" (CMN-06) |
@@ -58,6 +63,7 @@ The project adds **no other dependencies** without team agreement. Phone camera 
 | D8 | Files are stored on local disk (`wildx.upload-dir`), and the DB holds only the path | No object store is needed for the prototype |
 | D9 | The JWT is kept in `localStorage` | This is acceptable for the prototype, and the trade-off against XSS exposure is noted |
 | D10 | The SMS gateway is simulated: outbound SMS is only logged | Swapping in a real provider later only touches `SmsService` |
+| D11 | Mobile writes go through a SQLite outbox and are replayed in order | Nothing typed in the field is lost. Every replayed endpoint is idempotent, so a resend after a lost response stores nothing twice (§6 Offline replay) |
 
 ## 4. Backend structure
 
@@ -118,7 +124,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | Table | Columns |
 |---|---|
 | `incident_type` | park_id FK, name, default_severity, active |
-| `incident` | park_id FK, type_id FK, reporter_id FK, patrol_id FK NULL, lat, lng, location_source (`GPS/MANUAL`), sector_id FK NULL, description, photo_path, severity, status (`NEW/ASSIGNED/RESOLVED/DISMISSED`), occurred_at (device time; up to 2 min ahead of the server is saved as server time, more is rejected), resolution_note |
+| `incident` | client_id VARCHAR(36) UNIQUE NULL (UUID from the mobile outbox), park_id FK, type_id FK, reporter_id FK, patrol_id FK NULL, lat, lng, location_source (`GPS/MANUAL`), sector_id FK NULL, description, photo_path, severity, status (`NEW/ASSIGNED/RESOLVED/DISMISSED`), occurred_at (device time; up to 2 min ahead of the server is saved as server time, more is rejected), resolution_note |
 
 **UC3**
 
@@ -182,6 +188,15 @@ Every stored collar fix (not a duplicate) is checked against all zones of the co
 
 `GET /alerts?status=` returns the caller's park alerts, newest `occurred_at` first, optionally filtered by status, with the collar code, animal name and zone name.
 
+### Offline replay (CMN-04, NFR-02)
+
+The mobile outbox may send the same write twice when a response is lost, so every endpoint it uses is idempotent:
+- `POST /patrols/{id}/start|end` take the tap time `{at}` and return the saved state on repeats.
+- `POST /patrols/{id}/points` upserts on `(patrol_id, recorded_at)`.
+- `POST /incidents` takes an optional `clientId` (UUID) in `data`. A repeated `clientId` from the same reporter returns the incident already stored, with no second photo and no second notification. A `clientId` used by another reporter returns 409.
+- `POST /dispatches/{id}/acknowledge` on an `ACKNOWLEDGED` dispatch, `complete` on a `COMPLETED` one and `decline` on a `DECLINED` one return the saved dispatch unchanged. Any other move out of a closed state still returns 400.
+- `POST /alerts/{id}/acknowledge|resolve` on a `RESOLVED` alert return it unchanged (§ Alert acknowledge and resolve).
+
 ### Notifications (CMN-07, SEN-07)
 
 `NotificationService` (owned by UC3) is the shared way to notify users: `notifyUsers(userIds, title, body, link)` stores one `notification` row per user. `GET /me/notifications` returns `{unreadCount, notifications}` with the caller's latest 50 notifications, newest first; `unreadCount` counts every unread one and drives the badge. `POST /notifications/{id}/read` marks the caller's own notification read and keeps the first `read_at` on repeats; another user's notification returns 404. Both endpoints are for every role except Admin.
@@ -190,7 +205,7 @@ For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, t
 
 ### Alert acknowledge and resolve (SEN-08, SEN-10)
 
-Rangers and managers can act on alerts of their own park; an alert from another park returns 404. `POST /alerts/{id}/acknowledge` moves an `OPEN` alert to `ACKNOWLEDGED` and records `acknowledged_by_id` and `acknowledged_at`; repeating it on an `ACKNOWLEDGED` alert keeps the first values. `POST /alerts/{id}/resolve` with `{disposition}` (`CONFLICT_AVERTED`, `CONFLICT_OCCURRED`, `NO_ACTION`, `FALSE_ALARM`) moves an `OPEN` or `ACKNOWLEDGED` alert to `RESOLVED` and records `resolved_at` and the disposition; resolving an `OPEN` alert also records the resolver and time as the acknowledgement. Acting on a `RESOLVED` alert returns 400. Both return the alert, and alert responses include `acknowledgedByName`, `acknowledgedAt`, `resolvedAt` and `disposition`. Dispatching a responder (CMN-06) arrives with UC2's `DispatchService`, which resolves the alert through the same resolve logic when a dispatch completes.
+Rangers and managers can act on alerts of their own park; an alert from another park returns 404. `POST /alerts/{id}/acknowledge` moves an `OPEN` alert to `ACKNOWLEDGED` and records `acknowledged_by_id` and `acknowledged_at`; repeating it on an `ACKNOWLEDGED` alert keeps the first values. `POST /alerts/{id}/resolve` with `{disposition}` (`CONFLICT_AVERTED`, `CONFLICT_OCCURRED`, `NO_ACTION`, `FALSE_ALARM`) moves an `OPEN` or `ACKNOWLEDGED` alert to `RESOLVED` and records `resolved_at` and the disposition; resolving an `OPEN` alert also records the resolver and time as the acknowledgement. Acknowledging or resolving a `RESOLVED` alert returns it unchanged, so an offline replay is safe. Both return the alert, and alert responses include `acknowledgedByName`, `acknowledgedAt`, `resolvedAt` and `disposition`. Dispatching a responder (CMN-06) arrives with UC2's `DispatchService`, which resolves the alert through the same resolve logic when a dispatch completes.
 
 ### Alert escalation (SEN-09)
 
@@ -232,7 +247,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
 | UC1 | `POST /patrols/{id}/points` `[{lat, lng, accuracyM, recordedAt, isWaypoint, note}]` | RANGER, batch upsert |
 | UC1 | `GET /patrols/{id}/track`, `GET /monitor/live`, `GET /monitor/coverage` | MANAGER |
-| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}` (both include `responderName` from the latest dispatch that was not declined), `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
+| UC2 | `POST /incidents` (multipart: `data` JSON with optional `clientId` + `photo`), `GET /me/incidents`, `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}` (both include `responderName` from the latest dispatch that was not declined), `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
 | Shared | `GET /responders?lat=&lng=`, which returns the park's active rangers: on-patrol rangers sorted by distance first, then the rest as offline. `GET /dispatches/{id}` and `GET /dispatches?sourceType=&sourceId=` only return a ranger's own dispatches, and staff only see dispatches in their park | — |
 | Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | staff except ADMIN |
@@ -321,6 +336,40 @@ frontend/
 - **Status and severity** are always shown as **text plus a colour**, never colour alone.
 - **Mobile UI:** use `min-h-12` (48 px) for tap targets and the `text-base`/`text-lg` text sizes. The primary action is a full-width button pinned to the bottom of the screen.
 
+## 8a. Mobile app structure (ranger)
+
+```
+mobile/
+├─ app/                          # expo-router
+│  ├─ _layout.tsx                # fonts, React Query (persisted), DB init, sync engine
+│  ├─ login.tsx                  # Sign in; only RANGER may continue
+│  └─ (ranger)/
+│     ├─ _layout.tsx             # guard, header (logo + Log out), sync bar, stack
+│     ├─ (tabs)/_layout.tsx      # bottom nav: Patrols, Report, Tasks, Alerts
+│     ├─ (tabs)/index.tsx        # my patrols today
+│     ├─ (tabs)/report.tsx       # report incident
+│     ├─ (tabs)/tasks.tsx        # my dispatches + my incidents
+│     ├─ (tabs)/alerts.tsx       # open alerts + notifications
+│     ├─ patrol/[id].tsx         # map, Start/End, Waypoint, Report incident
+│     └─ dispatch/[id].tsx       # Acknowledge, Complete, Decline
+├─ components/                   # ui/ (DESIGN.md primitives), layout/, map/, sync/, one folder per feature
+├─ hooks/                        # one React Query hook per screen/resource
+└─ lib/
+   ├─ api/                       # client.ts + one module per resource with its zod schema (ported from frontend)
+   ├─ db/                        # opens wildx.db and creates the outbox table
+   ├─ outbox/                    # repository (SQL), sync engine, pending overlay mappers
+   ├─ tracking/                  # background location task and the 60 s / 50 m rule
+   ├─ <feature>/mappers.ts       # pure view mapping (ported from frontend)
+   └─ theme.ts                   # DESIGN.md tokens
+```
+
+- **Outbox.** Table `outbox(id TEXT PK, user_id, kind, patrol_id, target_id, body, photo_uri, created_at, attempts, status, error)`. Kinds: `PATROL_START`, `PATROL_END`, `TRACK_POINT`, `INCIDENT`, `DISPATCH_ACK`, `DISPATCH_COMPLETE`, `DISPATCH_DECLINE`, `ALERT_ACK`, `ALERT_RESOLVE`. Each ranger write inserts a `PENDING` row first, and the screen confirms as soon as the row is saved. Incident photos are copied into the app's document folder and deleted once sent.
+- **Sync engine.** Sends the signed-in ranger's `PENDING` rows oldest first, one at a time, with consecutive track points of one patrol batched into one `/points` call (at most 1000). It runs after each new row, when the network returns, when the app comes to the foreground and every 30 s while rows wait. A network error or 5xx stops the run and keeps the row. A 401 stops the run and keeps every row until the ranger signs in again. Any other 4xx marks the row `REJECTED` with the server message; the sync bar shows it until the ranger discards it.
+- **Pending overlay.** Pure mappers merge the ranger's pending rows into server data, so offline actions show at once: a started patrol is Active, the walked track and waypoints show, reported incidents are listed as *Pending sync*, and acknowledged dispatches and alerts change state.
+- **Offline reads.** The React Query cache is persisted to `expo-sqlite/kv-store`, so screens open offline with the last data. The session (token and user) is kept in `expo-secure-store`.
+- **Tracking.** A background location task, defined at module scope, receives fixes while a patrol is active (with the Android foreground-service notification), keeps the 60 s / 50 m rule against the last recorded fix and inserts `TRACK_POINT` rows. The patrol screen shows the No GPS banner when location services are off or no fix has arrived for 90 s, and reports `POST /patrols/{id}/gps` while online.
+- **Log out** keeps unsynced rows on the device. They are sent the next time the same ranger signs in.
+
 ## 9. Configuration and local setup
 
 Secrets go in `backend/.env` (git-ignored; `backend/.env.example` lists the keys: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `INGEST_API_KEY`, `UPLOAD_DIR`, `CORS_ORIGINS`). `CORS_ORIGINS` is a comma-separated list of allowed browser origins and defaults to `http://localhost:3000`. Spring loads it through `spring.config.import`. Frontend `.env.local` sets `NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1`.
@@ -339,6 +388,12 @@ cd backend && ./mvnw spring-boot:run
 cd frontend && npm run dev
 ```
 
+The ranger mobile app reads `EXPO_PUBLIC_API_URL` from `mobile/.env` (for example `http://10.0.2.2:8080/api/v1` on the Android emulator, or the computer's LAN address on a phone). Background GPS needs a development build; an Android build also needs `GOOGLE_MAPS_API_KEY` for `react-native-maps`:
+
+```bash
+cd mobile && npx expo run:android
+```
+
 **Seed data:** `config/DataSeeder` runs only when the DB is empty. It creates:
 - park **Yala**, with 2 zones (Kumbukgaha farmland, and a road);
 - alert rules, 5 incident types and 3 boundary segments (`KUMB`, `PAL`, `KAT`);
@@ -353,6 +408,7 @@ Simulation scripts live in `docs/sim/*.http` (IntelliJ/VS Code REST client) and 
 
 - Backend: unit tests with ≥80% coverage on new code; focus on `GeoUtil`, `SmsParser`, alert rules, escalation and the duplicate check.
 - Frontend: manually run each flow in requirements.md at 360 px.
+- Mobile: `npx tsc --noEmit` and `npx expo lint` pass; run F1.2, F2.1 and F2.3 with airplane mode on, then off, and check that each write syncs once.
 
 ## 11. Conventions
 

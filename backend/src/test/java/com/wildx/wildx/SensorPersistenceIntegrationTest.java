@@ -72,8 +72,7 @@ class SensorPersistenceIntegrationTest {
         assertThat(alerts.acknowledge(park.getId(), dayAlert.id(), ranger.getId()).acknowledgedByName()).isEqualTo("Ranger");
         assertThat(alerts.resolve(park.getId(), dayAlert.id(), ranger.getId(), Disposition.CONFLICT_AVERTED).status())
                 .isEqualTo(AlertStatus.RESOLVED);
-        assertThatThrownBy(() -> alerts.acknowledge(park.getId(), dayAlert.id(), ranger.getId()))
-                .hasMessage("Alert is already resolved");
+        assertThat(alerts.acknowledge(park.getId(), dayAlert.id(), ranger.getId()).status()).isEqualTo(AlertStatus.RESOLVED);
         assertThatThrownBy(() -> alerts.acknowledge(park().getId(), nightAlert.id(), ranger.getId()))
                 .isInstanceOf(NotFoundException.class);
 

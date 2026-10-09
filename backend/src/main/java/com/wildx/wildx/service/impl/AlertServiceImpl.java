@@ -99,6 +99,10 @@ public class AlertServiceImpl implements AlertService {
     public AlertResponse resolve(Long parkId, Long alertId, Long userId, Disposition disposition) {
         log.info("resolve alert started alertId={} userId={} disposition={}", alertId, userId, disposition);
         Alert alert = lockedAlert(parkId, alertId);
+        if (alert.getStatus() == AlertStatus.RESOLVED) {
+            log.info("resolve alert skipped alertId={} already resolved", alertId);
+            return AlertResponse.from(alert);
+        }
         if (alert.getAcknowledgedAt() == null) {
             recordAcknowledgement(alert, userId);
         }
@@ -110,12 +114,8 @@ public class AlertServiceImpl implements AlertService {
     }
 
     private Alert lockedAlert(Long parkId, Long alertId) {
-        Alert alert = alerts.findLockedByIdAndParkId(alertId, parkId)
+        return alerts.findLockedByIdAndParkId(alertId, parkId)
                 .orElseThrow(() -> new NotFoundException("Alert not found"));
-        if (alert.getStatus() == AlertStatus.RESOLVED) {
-            throw new IllegalArgumentException("Alert is already resolved");
-        }
-        return alert;
     }
 
     private void recordAcknowledgement(Alert alert, Long userId) {
