@@ -1,7 +1,6 @@
-import { ROLES, type Role } from "@/lib/enums";
-
-const REPORT_ROLES = new Set<Role>([ROLES.MANAGER, ROLES.SUPERVISOR]);
+import { canViewReports } from "@/lib/auth/routes";
+import type { Role } from "@/lib/enums";
 
 export function canViewAlertReport(role: Role | null): boolean {
-  return role !== null && REPORT_ROLES.has(role);
+  return canViewReports(role);
 }
