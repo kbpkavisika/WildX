@@ -295,7 +295,7 @@ frontend/
 │  │  ├─ alerts/  images/  devices/  simulator/   # UC3 (simulator = demo collar and camera data)
 │  │  ├─ community/                            # UC4
 │  │  ├─ reports/                              # all four reports, tabs
-│  │  └─ settings/            # sectors, zones, alert rules, incident types, segments (GeoJSON paste)
+│  │  └─ settings/            # sectors, zones/ (zones and alert rules, UC3), incident types, segments (GeoJSON paste)
 │  ├─ admin/                  # parks, users
 │  └─ report/                 # PUBLIC villager form; [ref]/page.tsx = status
 ├─ components/                # Map (Leaflet), StatusBadge, SeverityBadge, BigButton, PickList, DispatchDialog
