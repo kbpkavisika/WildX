@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { useSession } from "@/lib/auth/store";
-import { API_TIMEOUT_MS } from "@/lib/constants";
+import { API_TIMEOUT_MS, UPLOAD_TIMEOUT_MS } from "@/lib/constants";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const UNAUTHORIZED = 401;
@@ -45,23 +45,32 @@ export function apiUrl(path: string): string {
   return `${API_URL}${path}`;
 }
 
-async function send(path: string, init?: RequestInit): Promise<Response> {
+function parseBody(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+async function send(path: string, init: RequestInit | undefined, timeoutMs: number): Promise<{ response: Response; body: unknown }> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const headers = new Headers(init?.headers);
   Object.entries(authHeaders()).forEach(([name, value]) => headers.set(name, value));
   try {
-    return await fetch(apiUrl(path), { ...init, headers, signal: controller.signal });
-  } catch {
+    const response = await fetch(apiUrl(path), { ...init, headers, signal: controller.signal });
+    return { response, body: parseBody(await response.text()) };
+  } catch (error) {
+    if (__DEV__) console.warn(`${init?.method ?? "GET"} ${path} failed:`, error);
     throw new NetworkError();
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function request<T extends z.ZodType>(path: string, schema: T, init?: RequestInit): Promise<z.infer<T>> {
-  const response = await send(path, init);
-  const body: unknown = await response.json().catch(() => null);
+async function request<T extends z.ZodType>(path: string, schema: T, init?: RequestInit, timeoutMs = API_TIMEOUT_MS): Promise<z.infer<T>> {
+  const { response, body } = await send(path, init, timeoutMs);
   if (!response.ok) {
     if (response.status === UNAUTHORIZED) useSession.getState().clearSession();
     throw new ApiError(response.status, errorSchema.safeParse(body).data?.error);
@@ -82,5 +91,5 @@ export function apiPost<T extends z.ZodType>(path: string, body: unknown, schema
 }
 
 export function apiPostForm<T extends z.ZodType>(path: string, body: FormData, schema: T): Promise<z.infer<T>> {
-  return request(path, schema, { method: "POST", body });
+  return request(path, schema, { method: "POST", body }, UPLOAD_TIMEOUT_MS);
 }

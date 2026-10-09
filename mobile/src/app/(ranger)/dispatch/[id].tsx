@@ -15,7 +15,7 @@ import { useDispatchTaskPage, type TaskAction } from "@/lib/dispatch/store";
 
 export default function DispatchTaskScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id);
-  const { isPending, isError, view, incident, photoSource, sectors, acknowledge, complete, decline } = useDispatchTask(id);
+  const { isPending, isError, view, incident, photoSource, sectors, error, acknowledge, complete, decline } = useDispatchTask(id);
   const { open, notice, openAction, close, reset } = useDispatchTaskPage();
   const action = open?.dispatchId === id ? open.action : null;
 
@@ -34,6 +34,7 @@ export default function DispatchTaskScreen() {
           <PageHeader title={view.title} badge={<Chip chip={view.status} />} />
           <FactList facts={view.facts} />
           {notice && <Notice tone="positive">{notice}</Notice>}
+          {error && <Notice tone="negative">{error}</Notice>}
           <DispatchActions
             view={view}
             openAction={action}

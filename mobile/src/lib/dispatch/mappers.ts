@@ -2,10 +2,7 @@ import type { DispatchResponse } from "@/lib/api/dispatches";
 import type { IncidentResponse } from "@/lib/api/incidents";
 import { DISPATCH_STATUSES, SOURCE_TYPES, type DispatchStatus, type SourceType } from "@/lib/enums";
 import { formatDayTime } from "@/lib/format";
-import { bodyOf, completeBody, declineBody } from "@/lib/outbox/bodies";
-import { pendingFor } from "@/lib/outbox/overlay";
-import { OUTBOX_KINDS, type OutboxRow } from "@/lib/outbox/types";
-import { PENDING_CHIP, type ChipView, type DetailFact, type TaskRow } from "@/lib/view-types";
+import type { ChipView, DetailFact, TaskRow } from "@/lib/view-types";
 
 const DISPATCH_STATUS_DISPLAY: Record<DispatchStatus, ChipView> = {
   [DISPATCH_STATUSES.ASSIGNED]: { tone: "negative", label: "New task" },
@@ -22,11 +19,6 @@ const SOURCE_LABELS: Record<SourceType, string> = {
 
 const OPEN_STATUSES = new Set<DispatchStatus>([DISPATCH_STATUSES.ASSIGNED, DISPATCH_STATUSES.ACKNOWLEDGED]);
 
-export interface LocalDispatch {
-  dispatch: DispatchResponse;
-  pending: boolean;
-}
-
 export interface DispatchView {
   id: number;
   title: string;
@@ -37,42 +29,21 @@ export interface DispatchView {
   canDecline: boolean;
 }
 
-export function withPendingDispatchChanges(dispatch: DispatchResponse, rows: OutboxRow[]): LocalDispatch {
-  const declined = pendingFor(rows, OUTBOX_KINDS.DISPATCH_DECLINE, dispatch.id);
-  if (declined) return { pending: true, dispatch: { ...dispatch, status: DISPATCH_STATUSES.DECLINED, note: bodyOf(declined, declineBody).reason } };
-  const completed = pendingFor(rows, OUTBOX_KINDS.DISPATCH_COMPLETE, dispatch.id);
-  if (completed) {
-    return {
-      pending: true,
-      dispatch: { ...dispatch, status: DISPATCH_STATUSES.COMPLETED, outcome: bodyOf(completed, completeBody).outcome, completedAt: new Date(completed.createdAt).toISOString() },
-    };
-  }
-  const acknowledged = pendingFor(rows, OUTBOX_KINDS.DISPATCH_ACK, dispatch.id);
-  if (acknowledged) {
-    return { pending: true, dispatch: { ...dispatch, status: DISPATCH_STATUSES.ACKNOWLEDGED, acknowledgedAt: new Date(acknowledged.createdAt).toISOString() } };
-  }
-  return { pending: false, dispatch };
-}
-
 function sourceTitle(dispatch: DispatchResponse): string {
   const code = dispatch.sourceType === SOURCE_TYPES.INCIDENT ? `INC-${dispatch.sourceId}` : `#${dispatch.sourceId}`;
   return `${SOURCE_LABELS[dispatch.sourceType]} ${code}`;
 }
 
-function statusOf({ dispatch, pending }: LocalDispatch): ChipView {
-  return pending ? PENDING_CHIP : DISPATCH_STATUS_DISPLAY[dispatch.status];
-}
-
-export function toDispatchRows(dispatches: LocalDispatch[], now: Date): TaskRow[] {
-  const open = ({ dispatch }: LocalDispatch) => Number(OPEN_STATUSES.has(dispatch.status));
+export function toDispatchRows(dispatches: DispatchResponse[], now: Date): TaskRow[] {
+  const open = (dispatch: DispatchResponse) => Number(OPEN_STATUSES.has(dispatch.status));
   return [...dispatches]
-    .sort((a, b) => open(b) - open(a) || b.dispatch.assignedAt.localeCompare(a.dispatch.assignedAt))
-    .map((local) => ({
-      key: `d${local.dispatch.id}`,
-      dispatchId: local.dispatch.id,
-      title: sourceTitle(local.dispatch),
-      caption: `Assigned ${formatDayTime(new Date(local.dispatch.assignedAt), now)}`,
-      status: statusOf(local),
+    .sort((a, b) => open(b) - open(a) || b.assignedAt.localeCompare(a.assignedAt))
+    .map((dispatch) => ({
+      key: `d${dispatch.id}`,
+      dispatchId: dispatch.id,
+      title: sourceTitle(dispatch),
+      caption: `Assigned ${formatDayTime(new Date(dispatch.assignedAt), now)}`,
+      status: DISPATCH_STATUS_DISPLAY[dispatch.status],
     }));
 }
 
@@ -84,12 +55,11 @@ function dispatchFacts(dispatch: DispatchResponse, now: Date): DetailFact[] {
   ];
 }
 
-export function toDispatchView(local: LocalDispatch, incident: IncidentResponse | undefined, now: Date): DispatchView {
-  const { dispatch } = local;
+export function toDispatchView(dispatch: DispatchResponse, incident: IncidentResponse | undefined, now: Date): DispatchView {
   return {
     id: dispatch.id,
     title: incident ? `${incident.typeName} · INC-${incident.id}` : sourceTitle(dispatch),
-    status: statusOf(local),
+    status: DISPATCH_STATUS_DISPLAY[dispatch.status],
     facts: dispatchFacts(dispatch, now),
     canAcknowledge: dispatch.status === DISPATCH_STATUSES.ASSIGNED,
     canComplete: dispatch.status === DISPATCH_STATUSES.ACKNOWLEDGED,

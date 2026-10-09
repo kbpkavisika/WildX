@@ -25,6 +25,4 @@ export interface TaskRow {
   status: ChipView;
 }
 
-export const PENDING_CHIP: ChipView = { tone: "neutral", label: "Pending sync" };
-
 export const NO_VALUE = "—";

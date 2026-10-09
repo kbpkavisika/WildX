@@ -1,38 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { fetchAlerts } from "@/lib/api/alerts";
-import { toRangerAlertsView, withPendingAlertChanges } from "@/lib/alerts/mappers";
+import { acknowledgeAlert, fetchAlerts, resolveAlert } from "@/lib/api/alerts";
+import { apiErrorMessage } from "@/lib/api/client";
+import { toRangerAlertsView } from "@/lib/alerts/mappers";
 import { useAlertsPage } from "@/lib/alerts/store";
-import { useSession } from "@/lib/auth/store";
 import { ALERTS_REFETCH_MS } from "@/lib/constants";
 import type { Disposition } from "@/lib/enums";
-import { savedNotice } from "@/lib/outbox/overlay";
-import { useConnection, useOutbox } from "@/lib/outbox/store";
-import { save } from "@/lib/outbox/sync";
-import { OUTBOX_KINDS } from "@/lib/outbox/types";
+
+const ALERTS_KEY = ["alerts"];
+
+interface AlertAction {
+  send: () => Promise<unknown>;
+  done: string;
+}
 
 export function useRangerAlerts() {
-  const rows = useOutbox((state) => state.rows);
-  const online = useConnection((state) => state.online);
-  const userName = useSession((state) => state.user?.name ?? "");
+  const queryClient = useQueryClient();
   const setNotice = useAlertsPage((state) => state.setNotice);
-  const alerts = useQuery({ queryKey: ["alerts"], queryFn: fetchAlerts, refetchInterval: ALERTS_REFETCH_MS });
+  const alerts = useQuery({ queryKey: ALERTS_KEY, queryFn: fetchAlerts, refetchInterval: ALERTS_REFETCH_MS });
 
-  const view = useMemo(() => {
-    if (!alerts.data) return undefined;
-    const local = alerts.data.flatMap((alert) => withPendingAlertChanges(alert, rows, userName) ?? []);
-    return toRangerAlertsView(local, new Date());
-  }, [alerts.data, rows, userName]);
+  const view = useMemo(() => alerts.data && toRangerAlertsView(alerts.data, new Date()), [alerts.data]);
 
-  const acknowledge = (id: number, title: string) => {
-    save({ kind: OUTBOX_KINDS.ALERT_ACK, targetId: id, label: title, body: {} });
-    if (!online) setNotice(savedNotice("Saved", online));
-  };
-
-  const resolve = (id: number, title: string, disposition: Disposition) => {
-    save({ kind: OUTBOX_KINDS.ALERT_RESOLVE, targetId: id, label: title, body: { disposition } });
-    setNotice(savedNotice("Alert resolved", online));
-  };
+  const action = useMutation({
+    mutationFn: ({ send }: AlertAction) => send(),
+    onSuccess: (_, { done }) => {
+      setNotice(done);
+      void queryClient.invalidateQueries({ queryKey: ALERTS_KEY });
+    },
+  });
 
   return {
     isPending: alerts.isPending,
@@ -40,7 +35,8 @@ export function useRangerAlerts() {
     isRefetching: alerts.isRefetching,
     refetch: alerts.refetch,
     view,
-    acknowledge,
-    resolve,
+    error: action.error ? apiErrorMessage(action.error) : null,
+    acknowledge: (id: number) => action.mutate({ send: () => acknowledgeAlert(id), done: "Acknowledged." }),
+    resolve: (id: number, disposition: Disposition) => action.mutate({ send: () => resolveAlert(id, disposition), done: "Alert resolved." }),
   };
 }

@@ -14,7 +14,7 @@ type RangerPatrol = ReturnType<typeof useRangerPatrol>;
 
 interface RangerPatrolActionsProps {
   view: RangerPatrolView;
-  patrol: Pick<RangerPatrol, "position" | "sectors" | "start" | "end" | "addWaypoint" | "cancelPanel">;
+  patrol: Pick<RangerPatrol, "position" | "sectors" | "busy" | "savingWaypoint" | "start" | "end" | "addWaypoint" | "cancelPanel">;
 }
 
 export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) {
@@ -30,14 +30,23 @@ export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) 
   }
 
   if (view.isActive && panel === "waypoint") {
-    return <WaypointForm gpsPosition={patrol.position} sectors={patrol.sectors} onSubmit={patrol.addWaypoint} onCancel={patrol.cancelPanel} />;
+    return (
+      <WaypointForm
+        gpsPosition={patrol.position}
+        sectors={patrol.sectors}
+        saving={patrol.savingWaypoint}
+        error={error}
+        onSubmit={patrol.addWaypoint}
+        onCancel={patrol.cancelPanel}
+      />
+    );
   }
 
   if (view.isActive && panel === "end") {
     return (
       <FormPanel>
         <AppText variant="label">End this patrol now?</AppText>
-        <Button label="End patrol" onPress={patrol.end} />
+        <Button label={patrol.busy === "end" ? "Ending…" : "End patrol"} disabled={patrol.busy !== null} onPress={patrol.end} />
         <SecondaryButton label="Keep going" onPress={patrol.cancelPanel} />
         {error && <Notice tone="negative">{error}</Notice>}
       </FormPanel>
@@ -47,7 +56,7 @@ export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) 
   return (
     <View style={styles.stack}>
       {notice && <Notice tone="positive">{notice}</Notice>}
-      {view.canStart && <Button label="Start patrol" onPress={patrol.start} />}
+      {view.canStart && <Button label={patrol.busy === "start" ? "Starting…" : "Start patrol"} disabled={patrol.busy !== null} onPress={patrol.start} />}
       {view.isActive && (
         <>
           <Button label="Add waypoint" onPress={() => setPanel("waypoint")} />

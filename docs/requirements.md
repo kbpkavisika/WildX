@@ -98,7 +98,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | INC-01 | A Park Manager manages the incident types for their park: name, default severity and active flag. Example types are Snare, Carcass, Illegal campsite, At-risk species sign and Human-wildlife conflict (fixes W4). | M |
 | INC-02 | A ranger reports an incident by choosing the type from a pick-list, attaching a photo with the phone camera (optional), entering a short description and having the location captured automatically. | M |
 | INC-03 | When GPS fails, the ranger taps the incident location on the map instead. | M |
-| INC-04 | In the mobile app an incident is saved on the device first, so **Submit** works offline. The report is marked *Pending sync* until the server accepts it (fixes W17). | M |
+| INC-04 | In the mobile app **Submit** sends the incident straight away and shows "Incident reported." once the server has stored it. When the server cannot be reached, the report and its photo are saved on the phone and sent automatically once the connection returns, each stored only once. Reports waiting on the phone are listed on the Report screen; one the server refuses stays there with the server's reason until the ranger discards it. | M |
 | INC-05 | The form highlights missing required fields: type and location. | M |
 | INC-06 | An incident is linked to the ranger's active patrol, if there is one. | S |
 | INC-07 | When a High or Critical incident is submitted, the system notifies the park's Managers automatically, with no manual refresh needed (fixes W16). | M |
@@ -182,7 +182,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | ID | Requirement |
 |---|---|
 | NFR-01 | Ranger screens work on a 360 px wide phone in Chrome for Android and in the mobile app. Dashboards are designed for ≥1280 px but stay usable on a phone. |
-| NFR-02 | The mobile app opens offline after the first sign-in and shows the last data it loaded. A record resent from the offline outbox is stored once only (idempotent). |
+| NFR-02 | The mobile app opens offline after the first sign-in and shows the last data it loaded, read only. |
 | NFR-03 | No accepted field data is lost. |
 | NFR-04 | Dashboard data is no more than 30 s old, refreshed by polling. |
 | NFR-05 | Passwords are hashed with BCrypt, and every API except the public villager and simulator endpoints needs a JWT. |
@@ -190,6 +190,6 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 ## 10. Mobile app (ranger)
 
-The mobile app makes ranger field work work offline (fixes W17): PAT-04 to PAT-08, INC-02 to INC-06, the dispatch steps of CMN-06 and the alert steps of SEN-08 and SEN-10 all save on the device first (CMN-04) and sync later. During an active patrol it keeps recording GPS points while the screen is locked. Only the Ranger role can sign in to it; other roles use the web app.
+The mobile app covers ranger field work: PAT-04 to PAT-08, INC-02 to INC-06, the dispatch steps of CMN-06 and the alert steps of SEN-08 and SEN-10 are all sent to the server straight away (CMN-04); only an incident report made without a connection is kept on the phone and sent later (INC-04). During an active patrol it keeps recording GPS points while the screen is locked. Only the Ranger role can sign in to it; other roles use the web app.
 
-**Known limitation:** the web ranger pages are online only and cannot track GPS when the screen is locked. Rangers who need offline work or locked-screen tracking use the mobile app.
+**Known limitation:** the web ranger pages are online only and cannot track GPS when the screen is locked. Rangers who need locked-screen tracking use the mobile app.

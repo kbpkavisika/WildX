@@ -4,6 +4,7 @@ import { LocationPicker } from "@/components/incidents/location-picker";
 import { Button, SecondaryButton } from "@/components/ui/button";
 import { Field, TextField } from "@/components/ui/field";
 import { FormPanel } from "@/components/ui/form-panel";
+import { Notice } from "@/components/ui/notice";
 import { Select } from "@/components/ui/select";
 import { AppText } from "@/components/ui/text";
 import { WAYPOINT_NOTE_MAX } from "@/lib/constants";
@@ -18,11 +19,13 @@ const TYPE_OPTIONS = [{ value: NO_TYPE, label: "No type" }, ...Object.entries(WA
 interface WaypointFormProps {
   gpsPosition: LatLng | null;
   sectors: SectorShape[];
+  saving: boolean;
+  error: string | null;
   onSubmit: (values: WaypointFormValues) => void;
   onCancel: () => void;
 }
 
-export function WaypointForm({ gpsPosition, sectors, onSubmit, onCancel }: WaypointFormProps) {
+export function WaypointForm({ gpsPosition, sectors, saving, error, onSubmit, onCancel }: WaypointFormProps) {
   const { control, handleSubmit, formState: { errors } } = useForm<WaypointFormValues>({
     resolver: zodResolver(waypointFormSchema),
     defaultValues: EMPTY_WAYPOINT,
@@ -70,7 +73,8 @@ export function WaypointForm({ gpsPosition, sectors, onSubmit, onCancel }: Waypo
           </Field>
         )}
       />
-      <Button label="Save waypoint" disabled={!position} onPress={handleSubmit(onSubmit)} />
+      {error && <Notice tone="negative">{error}</Notice>}
+      <Button label={saving ? "Saving…" : "Save waypoint"} disabled={!position || saving} onPress={handleSubmit(onSubmit)} />
       <SecondaryButton label="Cancel" onPress={onCancel} />
     </FormPanel>
   );

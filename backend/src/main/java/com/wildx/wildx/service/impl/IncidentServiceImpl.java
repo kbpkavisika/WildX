@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -41,7 +40,6 @@ import java.util.Map;
 public class IncidentServiceImpl implements IncidentService {
     private static final String PHOTO_FOLDER = "incidents/";
     private static final String INCIDENTS_LINK = "/dashboard/incidents";
-    private static final Duration CLOCK_SKEW = Duration.ofMinutes(2);
 
     private final IncidentRepository incidents;
     private final IncidentTypeRepository types;
@@ -67,9 +65,6 @@ public class IncidentServiceImpl implements IncidentService {
         }
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Instant occurredAt = request.occurredAt() == null ? now : request.occurredAt().truncatedTo(ChronoUnit.MICROS);
-        if (occurredAt.isAfter(now.plus(CLOCK_SKEW))) {
-            throw new IllegalArgumentException("Incident time must not be in the future");
-        }
         if (occurredAt.isAfter(now)) {
             occurredAt = now;
         }

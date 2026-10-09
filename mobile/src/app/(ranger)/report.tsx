@@ -1,4 +1,5 @@
 import { ReportIncidentForm } from "@/components/incidents/report-incident-form";
+import { WaitingReportsCard } from "@/components/offline-reports/waiting-reports-card";
 import { Notice } from "@/components/ui/notice";
 import { PageHeader } from "@/components/ui/page-header";
 import { Screen } from "@/components/ui/screen";
@@ -11,6 +12,7 @@ export default function ReportIncidentScreen() {
   return (
     <Screen>
       <PageHeader title="Report incident" subtitle="Type and location are required." />
+      <WaitingReportsCard />
       {notice && <SuccessBlock>{notice}</SuccessBlock>}
       {typesError && <Notice tone="negative">Could not load incident types.</Notice>}
       <ReportIncidentForm
@@ -19,7 +21,7 @@ export default function ReportIncidentScreen() {
         sectors={sectors}
         saving={saving}
         error={error}
-        onSubmit={(values) => void submit(values)}
+        onSubmit={submit}
       />
     </Screen>
   );

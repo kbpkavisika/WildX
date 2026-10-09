@@ -6,7 +6,7 @@ import { Screen } from "@/components/ui/screen";
 import { useRangerAlerts } from "@/hooks/use-ranger-alerts";
 
 export default function RangerAlertsScreen() {
-  const { isPending, isError, isRefetching, refetch, view, acknowledge, resolve } = useRangerAlerts();
+  const { isPending, isError, isRefetching, refetch, view, error, acknowledge, resolve } = useRangerAlerts();
 
   return (
     <Screen refreshing={isRefetching} onRefresh={() => void refetch()}>
@@ -16,7 +16,7 @@ export default function RangerAlertsScreen() {
       />
       {isPending && <Notice tone="muted">Loading alerts…</Notice>}
       {isError && <Notice tone="negative">Could not load alerts. Retrying.</Notice>}
-      {view && <RangerAlertList view={view} actions={{ acknowledge, resolve }} />}
+      {view && <RangerAlertList view={view} error={error} actions={{ acknowledge, resolve }} />}
       <NotificationsCard />
     </Screen>
   );
