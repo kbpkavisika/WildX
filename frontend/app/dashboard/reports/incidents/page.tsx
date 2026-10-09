@@ -39,7 +39,7 @@ export default function IncidentReportPage() {
       </div>
       {rangeError && <p role="alert" className="m-0 text-caption text-negative">{rangeError}</p>}
       {csv.isError && <p role="alert" className="m-0 text-body text-negative">{apiErrorMessage(csv.error)}</p>}
-      {!allowed && <p className="m-0 text-body text-ink-muted">The incident report is available to supervisors and managers.</p>}
+      {!allowed && <p className="m-0 text-body text-ink-muted">The incident report is available to park managers and researchers.</p>}
       {isPending && <p className="m-0 text-body text-ink-muted">Loading report…</p>}
       {isError && <p className="m-0 text-body text-negative">Could not load the report.</p>}
       {view && (
