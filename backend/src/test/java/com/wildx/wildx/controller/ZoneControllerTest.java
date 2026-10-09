@@ -55,7 +55,7 @@ class ZoneControllerTest {
         mvc.perform(get("/api/v1/parks/1/zones").header("Authorization", token("RANGER"))).andExpect(status().isOk());
         mvc.perform(post("/api/v1/parks/1/zones").header("Authorization", token("ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isForbidden());
-        mvc.perform(delete("/api/v1/parks/1/zones/3").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(delete("/api/v1/parks/1/zones/3").header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isForbidden());
         verify(zones, never()).createZone(any(), any());
         verify(zones, never()).deleteZone(any(), any());

@@ -13,5 +13,5 @@ public interface CameraImageService {
     CameraImageUploadResponse ingest(String cameraCode, Instant capturedAt, byte[] content);
     List<CameraBurstResponse> bursts(Long parkId, CameraImageStatus status);
     CameraImageResponse tag(Long parkId, Long imageId, Long userId, CameraImageTagRequest request);
-    CameraImageFile file(Long parkId, Long imageId, Long userId, boolean restrictedOnly, String reason);
+    CameraImageFile file(Long parkId, Long imageId, Long userId, String reason);
 }

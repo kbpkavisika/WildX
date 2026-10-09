@@ -71,25 +71,25 @@ class IncidentControllerTest {
                         containsString("lng must not be null"))));
         mvc.perform(multipart("/api/v1/incidents").file(data("{\"typeId\":4,\"lat\":95,\"lng\":81.5,\"locationSource\":\"GPS\"}"))
                 .header("Authorization", token("RANGER"))).andExpect(status().isBadRequest());
-        mvc.perform(multipart("/api/v1/incidents").file(data(DATA)).header("Authorization", token("SUPERVISOR")))
+        mvc.perform(multipart("/api/v1/incidents").file(data(DATA)).header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(incidents);
     }
 
     @Test
     void supervisorsAndManagersTriageTheParkQueue() throws Exception {
-        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
+        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.MANAGER, 1L);
         when(auth.current(any())).thenReturn(supervisor);
         when(incidents.list(1L, IncidentStatus.NEW, 4L, Severity.HIGH)).thenReturn(List.of(incident(IncidentStatus.NEW, null)));
         when(incidents.get(supervisor, 10L)).thenReturn(incident(IncidentStatus.NEW, null));
         when(incidents.changeSeverity(1L, 10L, Severity.CRITICAL)).thenReturn(incident(IncidentStatus.NEW, null));
         when(incidents.dismiss(1L, 10L, "Old snare")).thenReturn(incident(IncidentStatus.DISMISSED, "Old snare"));
 
-        mvc.perform(get("/api/v1/incidents?status=NEW&type=4&severity=HIGH").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(get("/api/v1/incidents?status=NEW&type=4&severity=HIGH").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(10));
         mvc.perform(get("/api/v1/incidents/10").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.typeName").value("Snare"));
-        mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"severity\":\"CRITICAL\"}")).andExpect(status().isOk());
         mvc.perform(post("/api/v1/incidents/10/dismiss").header("Authorization", token("MANAGER"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Old snare\"}"))
@@ -102,9 +102,9 @@ class IncidentControllerTest {
         mvc.perform(get("/api/v1/incidents").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
         mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("CLO"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"severity\":\"LOW\"}")).andExpect(status().isForbidden());
-        mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(patch("/api/v1/incidents/10").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"severity\":\"EXTREME\"}")).andExpect(status().isBadRequest());
-        mvc.perform(post("/api/v1/incidents/10/dismiss").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(post("/api/v1/incidents/10/dismiss").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\" \"}")).andExpect(status().isBadRequest());
         verifyNoInteractions(incidents);
     }
@@ -118,7 +118,7 @@ class IncidentControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].reporterId").value(7));
         mvc.perform(get("/api/v1/incidents/10").header("Authorization", token("RANGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ASSIGNED"));
-        mvc.perform(get("/api/v1/me/incidents").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(get("/api/v1/me/incidents").header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isForbidden());
     }
 

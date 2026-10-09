@@ -24,7 +24,7 @@ public class DispatchController {
     private final AuthService auth;
 
     @GetMapping("/responders")
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
     public List<ResponderResponse> responders(
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
@@ -36,7 +36,7 @@ public class DispatchController {
     }
 
     @PostMapping("/dispatches")
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
     public ResponseEntity<DispatchResponse> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody DispatchCreateRequest request
@@ -46,20 +46,20 @@ public class DispatchController {
     }
 
     @GetMapping("/me/dispatches")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER','CLO','ADMIN')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER','CLO','ADMIN')")
     public List<DispatchResponse> myDispatches(@AuthenticationPrincipal Jwt jwt) {
         UserResponse caller = auth.current(jwt);
         return dispatches.getMyDispatches(caller.id());
     }
 
     @GetMapping("/dispatches/{id}")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER','CLO','ADMIN')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER','CLO','ADMIN')")
     public DispatchResponse get(@PathVariable Long id) {
         return dispatches.getDispatch(id);
     }
 
     @GetMapping("/dispatches")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER','CLO','ADMIN')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER','CLO','ADMIN')")
     public List<DispatchResponse> list(
             @RequestParam SourceType sourceType,
             @RequestParam Long sourceId
@@ -68,7 +68,7 @@ public class DispatchController {
     }
 
     @PostMapping("/dispatches/{id}/acknowledge")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER','ADMIN')")
     public DispatchResponse acknowledge(
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt
@@ -78,7 +78,7 @@ public class DispatchController {
     }
 
     @PostMapping("/dispatches/{id}/complete")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER','ADMIN')")
     public DispatchResponse complete(
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt,
@@ -89,7 +89,7 @@ public class DispatchController {
     }
 
     @PostMapping("/dispatches/{id}/decline")
-    @PreAuthorize("hasAnyRole('RANGER','SUPERVISOR','MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('RANGER','MANAGER','ADMIN')")
     public DispatchResponse decline(
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt,

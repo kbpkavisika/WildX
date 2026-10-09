@@ -46,7 +46,7 @@ class AlertReportControllerTest {
                 .andExpect(jsonPath("$.medianAcknowledgeMinutes").value(3.0))
                 .andExpect(jsonPath("$.rows[0].zoneName").value("Kumbukgaha farmland"));
         mvc.perform(get("/api/v1/reports/alerts?from=2026-10-01&to=2026-10-07&format=csv")
-                        .header("Authorization", token("SUPERVISOR")))
+                        .header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isOk()).andExpect(content().contentType("text/csv;charset=UTF-8"))
                 .andExpect(header().string("Content-Disposition", containsString("alerts-2026-10-01-2026-10-07.csv")))
                 .andExpect(content().string(containsString("ALL,,2,3.0,30.0")));
@@ -61,7 +61,7 @@ class AlertReportControllerTest {
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/api/v1/reports/alerts?from=yesterday&to=2026-10-07").header("Authorization", token("MANAGER")))
                 .andExpect(status().isBadRequest());
-        for (String role : new String[] {"RANGER", "CLO", "LEL", "ADMIN"}) {
+        for (String role : new String[] {"RANGER", "CLO", "ADMIN"}) {
             mvc.perform(get("/api/v1/reports/alerts?from=2026-10-01&to=2026-10-07").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }

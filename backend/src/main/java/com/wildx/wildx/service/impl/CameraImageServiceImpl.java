@@ -133,10 +133,9 @@ public class CameraImageServiceImpl implements CameraImageService {
 
     @Override
     @Transactional
-    public CameraImageFile file(Long parkId, Long imageId, Long userId, boolean restrictedOnly, String reason) {
+    public CameraImageFile file(Long parkId, Long imageId, Long userId, String reason) {
         log.info("camera image file started imageId={} userId={}", imageId, userId);
         CameraImage image = images.findByIdAndDeviceParkId(imageId, parkId)
-                .filter(found -> !restrictedOnly || found.getStatus() == CameraImageStatus.RESTRICTED)
                 .orElseThrow(() -> new NotFoundException("Camera image not found"));
         boolean restricted = image.getStatus() == CameraImageStatus.RESTRICTED;
         if (restricted) {

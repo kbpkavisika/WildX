@@ -97,7 +97,7 @@ class DataSeederTest {
         ArgumentCaptor<List<EscalationStep>> steps = ArgumentCaptor.forClass(List.class);
         verify(escalationStepRepository).saveAll(steps.capture());
         assertThat(steps.getValue()).extracting(EscalationStep::getStepNo, EscalationStep::getRole)
-                .containsExactly(tuple(1, Role.SUPERVISOR), tuple(2, Role.MANAGER));
+                .containsExactly(tuple(1, Role.MANAGER));
         ArgumentCaptor<List<IncidentType>> incidentTypes = ArgumentCaptor.forClass(List.class);
         verify(incidentTypeRepository).saveAll(incidentTypes.capture());
         assertThat(incidentTypes.getValue()).extracting(IncidentType::getName).containsExactly(

@@ -20,13 +20,13 @@ public class PatrolCoverageController {
     private final AuthService auth;
 
     @GetMapping("/monitor/coverage")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasRole('MANAGER')")
     public List<SectorCoverageResponse> coverage(@AuthenticationPrincipal Jwt jwt) {
         return coverage.coverage(auth.current(jwt).parkId());
     }
 
     @GetMapping("/reports/coverage")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('MANAGER','RESEARCHER')")
     public ResponseEntity<?> report(@AuthenticationPrincipal Jwt jwt, @RequestParam LocalDate from,
                                      @RequestParam LocalDate to, @RequestParam(defaultValue = "json") String format) {
         if (!format.equals("json") && !format.equals("csv")) {

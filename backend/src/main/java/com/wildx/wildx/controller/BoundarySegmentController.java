@@ -23,7 +23,7 @@ public class BoundarySegmentController {
     private final AuthService auth;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','SUPERVISOR','RANGER','CLO','LEL')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','RANGER','CLO')")
     public List<BoundarySegmentResponse> segments(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt) {
         auth.requireParkAccess(jwt, parkId);
         return segments.segments(parkId);

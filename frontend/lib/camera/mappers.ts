@@ -108,7 +108,6 @@ export function toCameraView(bursts: CameraBurstResponse[], filter: CameraFilter
     filters: filterOptions(images),
     pendingCount: images.filter(pending).length,
     pendingBurstCount: bursts.filter((burst) => burst.images.some(pending)).length,
-    restrictedCount: images.filter((image) => image.status === CAMERA_IMAGE_STATUSES.RESTRICTED).length,
     selected: selected ? toSelected(selected, now) : null,
   };
 }

@@ -97,8 +97,7 @@ class IncidentServiceImplTest {
         sector.setName("Sector 3");
         sector.setPolygonGeojson(SQUARE);
         when(parks.sectorShapes(1L)).thenReturn(List.of(sector));
-        when(auth.activeUserIds(1L, Role.SUPERVISOR)).thenReturn(List.of(2L));
-        when(auth.activeUserIds(1L, Role.MANAGER)).thenReturn(List.of(3L));
+        when(auth.activeUserIds(1L, Role.MANAGER)).thenReturn(List.of(2L, 3L));
 
         service.report(ranger, request(4L, null), null);
         verify(notifications).notifyUsers(List.of(2L, 3L), "New HIGH incident", "Snare, Sector 3", "/dashboard/incidents");
@@ -178,7 +177,7 @@ class IncidentServiceImplTest {
         Incident incident = stored(1L, snare, Severity.HIGH, IncidentStatus.NEW);
         when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(incident));
 
-        assertThat(service.get(supervisor(), 1L).typeName()).isEqualTo("Snare");
+        assertThat(service.get(manager(), 1L).typeName()).isEqualTo("Snare");
         assertThat(service.changeSeverity(1L, 1L, Severity.LOW).severity()).isEqualTo(Severity.LOW);
         var dismissed = service.dismiss(1L, 1L, " Old snare, already removed ");
         assertThat(dismissed.status()).isEqualTo(IncidentStatus.DISMISSED);
@@ -228,8 +227,8 @@ class IncidentServiceImplTest {
                 .hasMessage("Incident severity cannot change in status RESOLVED");
         assertThat(incident.getSeverity()).isEqualTo(Severity.HIGH);
         when(incidents.findByIdAndParkId(1L, 2L)).thenReturn(Optional.empty());
-        UserResponse otherParkSupervisor = new UserResponse(5L, "Supervisor", "s@wildx.lk", Role.SUPERVISOR, 2L);
-        assertThatThrownBy(() -> service.get(otherParkSupervisor, 1L)).isInstanceOf(NotFoundException.class)
+        UserResponse otherParkManager = new UserResponse(5L, "Manager", "m@wildx.lk", Role.MANAGER, 2L);
+        assertThatThrownBy(() -> service.get(otherParkManager, 1L)).isInstanceOf(NotFoundException.class)
                 .hasMessage("Incident not found");
     }
 
@@ -250,7 +249,7 @@ class IncidentServiceImplTest {
         assertThat(service.get(ranger, 2L).id()).isEqualTo(2L);
         assertThatThrownBy(() -> service.get(ranger, 3L)).isInstanceOf(NotFoundException.class)
                 .hasMessage("Incident not found");
-        assertThat(service.get(supervisor(), 3L).id()).isEqualTo(3L);
+        assertThat(service.get(manager(), 3L).id()).isEqualTo(3L);
     }
 
     @Test
@@ -273,7 +272,7 @@ class IncidentServiceImplTest {
         var photo = service.photo(ranger, 1L);
         assertThat(photo.content()).isEqualTo(JPEG);
         assertThat(photo.contentType()).isEqualTo("image/jpeg");
-        assertThat(service.photo(supervisor(), 2L).contentType()).isEqualTo("image/png");
+        assertThat(service.photo(manager(), 2L).contentType()).isEqualTo("image/png");
         assertThatThrownBy(() -> service.photo(ranger, 3L)).isInstanceOf(NotFoundException.class)
                 .hasMessage("Incident has no photo");
         assertThatThrownBy(() -> service.photo(ranger, 4L)).isInstanceOf(NotFoundException.class)
@@ -289,8 +288,8 @@ class IncidentServiceImplTest {
         assertThat(service.mine(7L)).extracting(IncidentResponse::id).containsExactly(2L, 1L);
     }
 
-    private UserResponse supervisor() {
-        return new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
+    private UserResponse manager() {
+        return new UserResponse(5L, "Manager", "manager@wildx.lk", Role.MANAGER, 1L);
     }
 
     private Incident stored(Long id, IncidentType type, Severity severity, IncidentStatus status) {

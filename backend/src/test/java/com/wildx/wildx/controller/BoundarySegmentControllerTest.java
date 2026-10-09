@@ -68,7 +68,7 @@ class BoundarySegmentControllerTest {
         mvc.perform(get("/api/v1/parks/1/segments").header("Authorization", token("CLO"))).andExpect(status().isOk());
         mvc.perform(get("/api/v1/parks/1/segments").header("Authorization", token("RANGER"))).andExpect(status().isOk());
 
-        mvc.perform(post("/api/v1/parks/1/segments").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(post("/api/v1/parks/1/segments").header("Authorization", token("RESEARCHER"))
                         .contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isForbidden());
 

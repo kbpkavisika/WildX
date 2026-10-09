@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class NotificationController {
-    private static final String USERS = "hasAnyRole('MANAGER','SUPERVISOR','RANGER','CLO','LEL')";
+    private static final String USERS = "hasAnyRole('MANAGER','RANGER','CLO')";
 
     private final NotificationService notifications;
     private final AuthService auth;

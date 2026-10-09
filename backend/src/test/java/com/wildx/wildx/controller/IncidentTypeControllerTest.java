@@ -55,7 +55,7 @@ class IncidentTypeControllerTest {
         when(types.types(1L)).thenReturn(List.of(new IncidentTypeResponse(4L, 1L, "Snare", Severity.HIGH, true)));
         mvc.perform(get("/api/v1/parks/1/incident-types").header("Authorization", token("RANGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].active").value(true));
-        mvc.perform(post("/api/v1/parks/1/incident-types").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(post("/api/v1/parks/1/incident-types").header("Authorization", token("RESEARCHER"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isForbidden());
         mvc.perform(delete("/api/v1/parks/1/incident-types/4").header("Authorization", token("ADMIN")))
                 .andExpect(status().isForbidden());

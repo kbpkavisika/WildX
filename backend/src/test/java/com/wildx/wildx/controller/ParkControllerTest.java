@@ -39,7 +39,7 @@ class ParkControllerTest {
                 .andExpect(status().isOk());
         mvc.perform(get("/api/v1/parks/2/sectors").header("Authorization", token("MANAGER")))
                 .andExpect(status().isForbidden());
-        mvc.perform(delete("/api/v1/parks/1/sectors/3").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(delete("/api/v1/parks/1/sectors/3").header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isForbidden());
     }
 

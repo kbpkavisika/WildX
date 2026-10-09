@@ -21,7 +21,7 @@ export const TAG_OPTIONS: { value: TagStatus; label: string; caption: string }[]
   {
     value: TAG_STATUSES.RESTRICTED,
     label: "Restricted",
-    caption: "A suspected poacher. Hides the image from everyone except managers, LEL and admins, and raises a critical alert.",
+    caption: "A suspected poacher. Hides the image from everyone except managers and admins, and raises a critical alert.",
   },
 ];
 

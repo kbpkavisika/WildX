@@ -69,7 +69,7 @@ class CameraImageControllerTest {
 
     @Test
     void otherRolesAndParksCannotSeeImages() throws Exception {
-        for (String role : new String[] {"RANGER", "SUPERVISOR", "CLO"}) {
+        for (String role : new String[] {"RANGER", "CLO", "RESEARCHER"}) {
             mvc.perform(get("/api/v1/parks/1/camera-images").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }
@@ -81,21 +81,11 @@ class CameraImageControllerTest {
     }
 
     @Test
-    void lelOnlyEverListsRestrictedImages() throws Exception {
-        when(images.bursts(eq(1L), any())).thenReturn(List.of());
-        mvc.perform(get("/api/v1/parks/1/camera-images?status=PENDING").header("Authorization", token("LEL")))
-                .andExpect(status().isOk());
-        mvc.perform(get("/api/v1/parks/1/camera-images").header("Authorization", token("LEL")))
-                .andExpect(status().isOk());
-        verify(images, times(2)).bursts(1L, CameraImageStatus.RESTRICTED);
-    }
-
-    @Test
     void restrictedFilesAreNeverCachedAndUseTheCallersIdentity() throws Exception {
         byte[] jpeg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 1};
-        when(images.file(1L, 40L, 6L, true, "Case 114")).thenReturn(new CameraImageFile(jpeg, "image/jpeg", true));
-        when(images.file(1L, 41L, 6L, false, null)).thenReturn(new CameraImageFile(jpeg, "image/jpeg", false));
-        mvc.perform(get("/api/v1/parks/1/camera-images/40/file?reason=Case 114").header("Authorization", token("LEL")))
+        when(images.file(1L, 40L, 6L, "Case 114")).thenReturn(new CameraImageFile(jpeg, "image/jpeg", true));
+        when(images.file(1L, 41L, 6L, null)).thenReturn(new CameraImageFile(jpeg, "image/jpeg", false));
+        mvc.perform(get("/api/v1/parks/1/camera-images/40/file?reason=Case 114").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(content().contentType("image/jpeg"))
                 .andExpect(content().bytes(jpeg)).andExpect(header().string("Cache-Control", "no-store"));
         mvc.perform(get("/api/v1/parks/1/camera-images/41/file").header("Authorization", token("ADMIN")))
@@ -104,18 +94,18 @@ class CameraImageControllerTest {
 
     @Test
     void otherRolesCannotOpenFilesAndErrorsAreMapped() throws Exception {
-        for (String role : new String[] {"RANGER", "SUPERVISOR", "CLO"}) {
+        for (String role : new String[] {"RANGER", "CLO", "RESEARCHER"}) {
             mvc.perform(get("/api/v1/parks/1/camera-images/40/file?reason=x").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }
         verifyNoInteractions(images);
-        when(images.file(1L, 40L, 6L, false, null))
+        when(images.file(1L, 40L, 6L, null))
                 .thenThrow(new IllegalArgumentException("A reason is required to view a restricted image"));
-        when(images.file(1L, 41L, 6L, true, "x")).thenThrow(new NotFoundException("Camera image not found"));
+        when(images.file(1L, 41L, 6L, "x")).thenThrow(new NotFoundException("Camera image not found"));
         mvc.perform(get("/api/v1/parks/1/camera-images/40/file").header("Authorization", token("MANAGER")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("A reason is required to view a restricted image"));
-        mvc.perform(get("/api/v1/parks/1/camera-images/41/file?reason=x").header("Authorization", token("LEL")))
+        mvc.perform(get("/api/v1/parks/1/camera-images/41/file?reason=x").header("Authorization", token("ADMIN")))
                 .andExpect(status().isNotFound());
     }
 

@@ -29,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -210,8 +209,7 @@ public class IncidentServiceImpl implements IncidentService {
         if (incident.severity() != Severity.HIGH && incident.severity() != Severity.CRITICAL) {
             return;
         }
-        List<Long> recipients = new ArrayList<>(auth.activeUserIds(incident.parkId(), Role.SUPERVISOR));
-        recipients.addAll(auth.activeUserIds(incident.parkId(), Role.MANAGER));
+        List<Long> recipients = auth.activeUserIds(incident.parkId(), Role.MANAGER);
         String body = incident.sectorName() == null ? incident.typeName() : incident.typeName() + ", " + incident.sectorName();
         notifications.notifyUsers(recipients, "New " + incident.severity() + " incident", body, INCIDENTS_LINK);
     }

@@ -18,19 +18,19 @@ public class PatrolMonitorController {
     private final AuthService auth;
 
     @GetMapping("/patrols/history")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasRole('MANAGER')")
     public List<PatrolHistoryResponse> history(@AuthenticationPrincipal Jwt jwt) {
         return history.history(auth.current(jwt).parkId());
     }
 
     @GetMapping("/monitor/live")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR')")
+    @PreAuthorize("hasRole('MANAGER')")
     public List<PatrolLiveResponse> live(@AuthenticationPrincipal Jwt jwt) {
         return monitor.live(auth.current(jwt).parkId());
     }
 
     @GetMapping("/patrols/{id}/track")
-    @PreAuthorize("hasAnyRole('MANAGER','SUPERVISOR','RANGER')")
+    @PreAuthorize("hasAnyRole('MANAGER','RANGER')")
     public List<TrackPointResponse> track(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
         return monitor.track(auth.current(jwt), id);
     }

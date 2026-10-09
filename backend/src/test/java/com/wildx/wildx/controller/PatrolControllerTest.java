@@ -36,7 +36,7 @@ class PatrolControllerTest {
         String body = "{\"routeId\":2,\"rangerId\":7,\"scheduledDate\":\"2026-10-07\"}";
         mvc.perform(post("/api/v1/patrols").header("Authorization", token("RANGER"))
                 .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
-        mvc.perform(post("/api/v1/patrols").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(post("/api/v1/patrols").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isCreated());
         mvc.perform(post("/api/v1/patrols").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
@@ -46,7 +46,7 @@ class PatrolControllerTest {
     void staffListRangersOfTheirPark() throws Exception {
         when(auth.current(any())).thenReturn(new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 1L));
         when(auth.activeUsers(1L, Role.RANGER)).thenReturn(List.of(new UserResponse(9L, "K. Bandara", "r@wildx.lk", Role.RANGER, 1L)));
-        mvc.perform(get("/api/v1/rangers").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(get("/api/v1/rangers").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].name").value("K. Bandara"));
         mvc.perform(get("/api/v1/rangers").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
     }
@@ -75,7 +75,7 @@ class PatrolControllerTest {
     @Test
     void onlyRangerCanReportGpsAndBodyMustIncludeAvailability() throws Exception {
         when(auth.current(any())).thenReturn(new UserResponse(7L, "Ranger", "r@wildx.lk", Role.RANGER, 1L));
-        mvc.perform(post("/api/v1/patrols/3/gps").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(post("/api/v1/patrols/3/gps").header("Authorization", token("RESEARCHER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"available\":false}")).andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/patrols/3/gps").header("Authorization", token("RANGER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"available\":false}")).andExpect(status().isOk());
@@ -85,14 +85,14 @@ class PatrolControllerTest {
 
     @Test
     void separatesAssignedRangerReadsFromFilteredStaffReads() throws Exception {
-        var caller = new UserResponse(7L, "Staff", "s@wildx.lk", Role.SUPERVISOR, 1L);
+        var caller = new UserResponse(7L, "Staff", "s@wildx.lk", Role.MANAGER, 1L);
         when(auth.current(any())).thenReturn(caller);
         when(patrols.today(caller)).thenReturn(List.of());
         when(patrols.list(eq(1L), any(), any())).thenReturn(List.of());
         mvc.perform(get("/api/v1/me/patrols").header("Authorization", token("RANGER"))).andExpect(status().isOk());
-        mvc.perform(get("/api/v1/me/patrols").header("Authorization", token("SUPERVISOR"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/me/patrols").header("Authorization", token("RESEARCHER"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/patrols").param("status", "ACTIVE").param("date", "2026-10-07")
-                .header("Authorization", token("SUPERVISOR"))).andExpect(status().isOk());
+                .header("Authorization", token("MANAGER"))).andExpect(status().isOk());
         mvc.perform(get("/api/v1/patrols").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/patrols").param("status", "UNKNOWN")
                 .header("Authorization", token("MANAGER"))).andExpect(status().isBadRequest());

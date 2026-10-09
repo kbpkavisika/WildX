@@ -129,14 +129,14 @@ class DispatchServiceImplTest {
         incident.setType(snare);
         incident.setSector(sector);
         incident.setSeverity(Severity.CRITICAL);
-        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
+        UserResponse manager = new UserResponse(5L, "Manager", "manager@wildx.lk", Role.MANAGER, 1L);
         when(appUserRepository.findById(101L)).thenReturn(Optional.of(ranger1));
         when(appUserRepository.findById(5L)).thenReturn(Optional.empty());
         when(incidentService.assign(1L, 60L)).thenReturn(incident);
         when(patrolMonitorService.live(1L)).thenReturn(List.of());
         when(dispatchRepository.save(any(Dispatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        DispatchResponse response = service.createDispatch(supervisor,
+        DispatchResponse response = service.createDispatch(manager,
                 new DispatchCreateRequest(SourceType.INCIDENT, 60L, 101L, null));
 
         assertThat(response.sourceType()).isEqualTo(SourceType.INCIDENT);
@@ -154,9 +154,9 @@ class DispatchServiceImplTest {
         when(appUserRepository.findById(101L)).thenReturn(Optional.of(ranger1));
         when(appUserRepository.findById(5L)).thenReturn(Optional.empty());
         when(incidentService.assign(1L, 60L)).thenReturn(incident);
-        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.SUPERVISOR, 1L);
+        UserResponse manager = new UserResponse(5L, "Manager", "manager@wildx.lk", Role.MANAGER, 1L);
 
-        assertThatThrownBy(() -> service.createDispatch(supervisor, new DispatchCreateRequest(SourceType.INCIDENT, 60L, 101L, null)))
+        assertThatThrownBy(() -> service.createDispatch(manager, new DispatchCreateRequest(SourceType.INCIDENT, 60L, 101L, null)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Responder and incident belong to different parks");
         verify(dispatchRepository, never()).save(any());
     }

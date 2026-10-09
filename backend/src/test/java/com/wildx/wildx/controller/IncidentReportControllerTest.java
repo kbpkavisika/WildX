@@ -52,7 +52,7 @@ class IncidentReportControllerTest {
                 .andExpect(jsonPath("$.byMonth[0].name").value("2026-10"))
                 .andExpect(jsonPath("$.points[0].lat").value(6.5));
         mvc.perform(get("/api/v1/reports/incidents?from=2026-10-01&to=2026-10-07&format=csv")
-                        .header("Authorization", token("SUPERVISOR")))
+                        .header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isOk()).andExpect(content().contentType("text/csv;charset=UTF-8"))
                 .andExpect(header().string("Content-Disposition", containsString("incidents-2026-10-01-2026-10-07.csv")))
                 .andExpect(content().string(containsString("10,2026-10-03T04:00:00Z,\"Snare\",\"Sector 3\",HIGH,NEW,6.5,81.5")));
@@ -65,7 +65,7 @@ class IncidentReportControllerTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("Report format must be json or csv"));
         mvc.perform(get("/api/v1/reports/incidents?from=2026-10-01").header("Authorization", token("MANAGER")))
                 .andExpect(status().isBadRequest());
-        for (String role : new String[] {"RANGER", "CLO", "LEL", "ADMIN"}) {
+        for (String role : new String[] {"RANGER", "CLO", "ADMIN"}) {
             mvc.perform(get("/api/v1/reports/incidents?from=2026-10-01&to=2026-10-07").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }

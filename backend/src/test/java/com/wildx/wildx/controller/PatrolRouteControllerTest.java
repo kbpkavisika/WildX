@@ -41,14 +41,14 @@ class PatrolRouteControllerTest {
     void routeReadsRequireStaffRole() throws Exception {
         mvc.perform(get("/api/v1/routes")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/routes").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
-        mvc.perform(get("/api/v1/routes").header("Authorization", token("SUPERVISOR")))
+        mvc.perform(get("/api/v1/routes").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].parkId").value(1));
     }
 
     @Test
     void onlyManagerCanCreateAndInvalidPayloadFails() throws Exception {
         String body = "{\"name\":\"North\",\"pathGeojson\":\"geometry\"}";
-        mvc.perform(post("/api/v1/routes").header("Authorization", token("SUPERVISOR"))
+        mvc.perform(post("/api/v1/routes").header("Authorization", token("RESEARCHER"))
                 .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/routes").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\" \"}")).andExpect(status().isBadRequest());

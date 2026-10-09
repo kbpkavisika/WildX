@@ -36,9 +36,9 @@ class AlertEscalationServiceImplTest {
     @Test
     void walksTheParkStepsInOrderThenStops() {
         Alert alert = alert(20L, 0, NOW.minusSeconds(60));
-        stubSteps(step(1, Role.SUPERVISOR), step(2, Role.MANAGER));
+        stubSteps(step(1, Role.CLO), step(2, Role.MANAGER));
         when(alerts.findLockedById(20L)).thenReturn(Optional.of(alert));
-        when(auth.activeUserIds(1L, Role.SUPERVISOR)).thenReturn(List.of(8L, 9L));
+        when(auth.activeUserIds(1L, Role.CLO)).thenReturn(List.of(8L, 9L));
         when(auth.activeUserIds(1L, Role.MANAGER)).thenReturn(List.of(5L));
 
         service.escalate(20L);
@@ -82,9 +82,9 @@ class AlertEscalationServiceImplTest {
         bare.setSeverity(Severity.MEDIUM);
         bare.setDevice(null);
         bare.setZone(null);
-        stubSteps(step(1, Role.SUPERVISOR));
+        stubSteps(step(1, Role.CLO));
         when(alerts.findLockedById(30L)).thenReturn(Optional.of(bare));
-        when(auth.activeUserIds(1L, Role.SUPERVISOR)).thenReturn(List.of());
+        when(auth.activeUserIds(1L, Role.CLO)).thenReturn(List.of());
         service.escalate(30L);
         verify(notifications).notifyUsers(List.of(), "Escalated MEDIUM device health alert",
                 "Alert 30 is not acknowledged since 11:30", "/dashboard/alerts");

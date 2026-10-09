@@ -31,13 +31,13 @@ class PatrolCoverageControllerTest {
 
     @Test
     void scopesCoverageToStaffParkAndRejectsRangers() throws Exception {
-        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.SUPERVISOR, 1L));
+        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.MANAGER, 1L));
         when(coverage.coverage(1L)).thenReturn(List.of());
         mvc.perform(get("/api/v1/monitor/coverage").header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
-        mvc.perform(get("/api/v1/monitor/coverage").header("Authorization", token("SUPERVISOR"))).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/monitor/coverage").header("Authorization", token("RESEARCHER"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/monitor/coverage").header("Authorization", token("MANAGER"))).andExpect(status().isOk());
         mvc.perform(get("/api/v1/monitor/coverage")).andExpect(status().isUnauthorized());
-        verify(coverage, times(2)).coverage(1L);
+        verify(coverage, times(1)).coverage(1L);
     }
 
     private String token(String role) {
@@ -49,11 +49,11 @@ class PatrolCoverageControllerTest {
 
     @Test
     void downloadsCoverageCsvAndRejectsInvalidParametersAndRangerAccess() throws Exception {
-        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.SUPERVISOR, 1L));
+        when(auth.current(any())).thenReturn(new UserResponse(7L, "Staff", "s@wildx.lk", Role.MANAGER, 1L));
         when(coverage.report(eq(1L), any(), any())).thenReturn(List.of(
                 new com.wildx.wildx.dto.SectorCoverageReportResponse(2L, "North", 0, 0, null)));
         var request = get("/api/v1/reports/coverage").param("from", "2026-10-01").param("to", "2026-10-07");
-        mvc.perform(request.header("Authorization", token("SUPERVISOR")))
+        mvc.perform(request.header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].pointCount").value(0));
         mvc.perform(get("/api/v1/reports/coverage").param("from", "2026-10-01").param("to", "2026-10-07")
                         .param("format", "csv").header("Authorization", token("MANAGER")))
