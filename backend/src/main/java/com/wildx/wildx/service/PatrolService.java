@@ -9,6 +9,8 @@ import com.wildx.wildx.model.Patrol;
 
 public interface PatrolService {
     List<PatrolResponse> assign(Long parkId, PatrolAssignRequest request);
+    PatrolResponse update(Long parkId, Long id, PatrolUpdateRequest request);
+    void delete(Long parkId, Long id);
     List<PatrolResponse> today(UserResponse caller);
     List<PatrolResponse> list(Long parkId, PatrolStatus status, LocalDate date);
     PatrolResponse start(UserResponse caller, Long id, PatrolTimeRequest request);

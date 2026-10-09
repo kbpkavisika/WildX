@@ -17,12 +17,15 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     @EntityGraph(attributePaths = "park")
     Optional<AppUser> findWithParkById(Long id);
 
-    @EntityGraph(attributePaths = "park")
-    List<AppUser> findByParkIdOrderByActiveDescNameAsc(Long parkId);
+    @Query("select distinct u from AppUser u left join fetch u.park left join u.managedParks p "
+            + "where u.park.id = :parkId or p.id = :parkId order by u.active desc, u.name asc")
+    List<AppUser> findInPark(Long parkId);
 
     @Modifying
     @Query(value = "UPDATE app_user SET role = 'MANAGER', active = false WHERE role = 'ADMIN'", nativeQuery = true)
     int retireAdmins();
 
-    List<AppUser> findByParkIdAndRoleAndActiveTrueOrderByIdAsc(Long parkId, Role role);
+    @Query("select distinct u from AppUser u left join u.managedParks p "
+            + "where u.active = true and u.role = :role and (u.park.id = :parkId or p.id = :parkId) order by u.id")
+    List<AppUser> findActiveInPark(Long parkId, Role role);
 }

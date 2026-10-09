@@ -26,7 +26,6 @@ import java.time.Instant;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.wildx.wildx.type.Role;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -60,25 +59,21 @@ public class AuthServiceImpl implements AuthService {
 
     private String issueToken(UserResponse user) {
         Instant now = Instant.now();
-        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
+        JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(user.id().toString())
                 .issuedAt(now)
                 .expiresAt(now.plus(TOKEN_TTL))
-                .claim(AuthConstants.ROLE_CLAIM, user.role().name());
-        if (user.parkId() != null) {
-            claims.claim(AuthConstants.PARK_ID_CLAIM, user.parkId());
-        }
+                .claim(AuthConstants.ROLE_CLAIM, user.role().name())
+                .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
-        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
+        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
 
     @Override
     @Transactional(readOnly = true)
     public UserResponse current(Jwt jwt) {
         UserResponse response = UserMapper.toResponse(activeUser(jwt));
-        Object parkClaim = jwt.getClaim(AuthConstants.PARK_ID_CLAIM);
-        if (response.parkId() == null || parkClaim == null
-                || !Objects.equals(response.parkId().toString(), parkClaim.toString())
+        if (response.parkId() == null
                 || !response.role().name().equals(jwt.getClaimAsString(AuthConstants.ROLE_CLAIM))) {
             throw new UnauthorizedException(ACCESS_CHANGED);
         }
@@ -114,14 +109,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public List<Long> activeUserIds(Long parkId, Role role) {
-        return userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, role).stream()
+        return userRepository.findActiveInPark(parkId, role).stream()
                 .map(AppUser::getId).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> activeUsers(Long parkId, Role role) {
-        return userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, role).stream()
+        return userRepository.findActiveInPark(parkId, role).stream()
                 .map(UserMapper::toResponse).toList();
     }
 }

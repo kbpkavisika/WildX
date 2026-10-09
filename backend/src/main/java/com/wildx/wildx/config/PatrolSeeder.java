@@ -15,6 +15,7 @@ import com.wildx.wildx.repository.SectorRepository;
 import com.wildx.wildx.repository.TrackPointRepository;
 import com.wildx.wildx.type.PatrolStatus;
 import com.wildx.wildx.type.Role;
+import com.wildx.wildx.type.WaypointType;
 import com.wildx.wildx.util.GeoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -66,18 +69,19 @@ public class PatrolSeeder implements CommandLineRunner {
         if (patrolRepository.count() > 0) {
             return;
         }
-        Park park = parkRepository.findAll().stream().findFirst().orElse(null);
-        if (park == null) {
-            return;
-        }
+        parkRepository.findAll().forEach(this::seedPark);
+    }
+
+    private void seedPark(Park park) {
+        boolean yala = "YALA".equals(park.getCode());
         List<Sector> sectors = sectorRepository.saveAll(List.of(
-                sector(park, "Kumbukgaha", KUMBUKGAHA_AREA),
-                sector(park, "Katagamuwa", KATAGAMUWA_AREA),
-                sector(park, "Palatupana", PALATUPANA_AREA),
-                sector(park, "Menik river", MENIK_RIVER_AREA)));
-        PatrolRoute katagamuwa = route(park, "Katagamuwa loop", KATAGAMUWA_LOOP);
-        PatrolRoute palatupana = route(park, "Palatupana coast", PALATUPANA_COAST);
-        PatrolRoute kumbukgaha = route(park, "Kumbukgaha river trail", KUMBUKGAHA_RIVER);
+                sector(park, yala ? "Kumbukgaha" : "Sevanagala", KUMBUKGAHA_AREA),
+                sector(park, yala ? "Katagamuwa" : "Walawe", KATAGAMUWA_AREA),
+                sector(park, yala ? "Palatupana" : "Mau Ara", PALATUPANA_AREA),
+                sector(park, yala ? "Menik river" : "Reservoir buffer", MENIK_RIVER_AREA)));
+        PatrolRoute katagamuwa = route(park, yala ? "Katagamuwa loop" : "Walawe woodland loop", KATAGAMUWA_LOOP);
+        PatrolRoute palatupana = route(park, yala ? "Palatupana coast" : "Mau Ara boundary trail", PALATUPANA_COAST);
+        PatrolRoute kumbukgaha = route(park, yala ? "Kumbukgaha river trail" : "Sevanagala river trail", KUMBUKGAHA_RIVER);
         routeRepository.saveAll(List.of(katagamuwa, palatupana, kumbukgaha));
 
         String passwordHash = passwordEncoder.encode(TEST_PASSWORD);
@@ -93,10 +97,16 @@ public class PatrolSeeder implements CommandLineRunner {
         live.setLastContactAt(now.minus(Duration.ofMinutes(1)));
         Patrol offline = patrol(palatupana, kasun, today, PatrolStatus.ACTIVE, now.minus(Duration.ofHours(3)), null);
         offline.setLastContactAt(now.minus(Duration.ofMinutes(20)));
-        List<Patrol> completed = List.of(
-                finished(kumbukgaha, kasun, today.minusDays(1), now.minus(Duration.ofHours(28))),
-                finished(katagamuwa, nimal, today.minusDays(2), now.minus(Duration.ofHours(52))),
-                finished(palatupana, saman, today.minusDays(3), now.minus(Duration.ofHours(76))));
+        List<Patrol> completed = new ArrayList<>(List.of(
+                finished(kumbukgaha, kasun, today.minusDays(1), morning(today.minusDays(1))),
+                finished(katagamuwa, nimal, today.minusDays(2), morning(today.minusDays(2))),
+                finished(palatupana, saman, today.minusDays(3), morning(today.minusDays(3)))));
+        List<PatrolRoute> routes = List.of(katagamuwa, palatupana, kumbukgaha);
+        List<AppUser> rangers = List.of(kasun, nimal, saman);
+        for (int week = 1; week <= 12; week++) {
+            LocalDate date = today.minusWeeks(week);
+            completed.add(finished(routes.get(week % routes.size()), rangers.get(week % rangers.size()), date, morning(date)));
+        }
         List<Patrol> patrols = new ArrayList<>(List.of(live, offline,
                 patrol(kumbukgaha, nimal, today, PatrolStatus.PLANNED, null, null),
                 patrol(palatupana, ranger, today.plusDays(1), PatrolStatus.PLANNED, null, null),
@@ -112,10 +122,11 @@ public class PatrolSeeder implements CommandLineRunner {
     }
 
     private AppUser ranger(Park park, String name, String email, String passwordHash) {
-        return userRepository.findByEmailIgnoreCase(email).orElseGet(() -> userRepository.save(AppUser.builder()
+        String parkEmail = "YALA".equals(park.getCode()) ? email : "udawalawe." + email;
+        return userRepository.findByEmailIgnoreCase(parkEmail).orElseGet(() -> userRepository.save(AppUser.builder()
                 .park(park)
                 .name(name)
-                .email(email)
+                .email(parkEmail)
                 .passwordHash(passwordHash)
                 .role(Role.RANGER)
                 .active(true)
@@ -126,7 +137,9 @@ public class PatrolSeeder implements CommandLineRunner {
         Sector sector = new Sector();
         sector.setPark(park);
         sector.setName(name);
-        sector.setPolygonGeojson("{\"type\":\"Polygon\",\"coordinates\":[[" + ring + "]]}");
+        String polygon = "{\"type\":\"Polygon\",\"coordinates\":[[" + ring + "]]}";
+        sector.setPolygonGeojson("YALA".equals(park.getCode()) ? polygon
+                : "{\"type\":\"Polygon\",\"coordinates\":[[" + shifted(GeoUtil.polygon(polygon).getFirst()) + "]]}");
         return sector;
     }
 
@@ -134,7 +147,7 @@ public class PatrolSeeder implements CommandLineRunner {
         PatrolRoute route = new PatrolRoute();
         route.setPark(park);
         route.setName(name);
-        route.setPathGeojson(pathGeojson);
+        route.setPathGeojson("YALA".equals(park.getCode()) ? pathGeojson : line(shifted(GeoUtil.line(pathGeojson))));
         return route;
     }
 
@@ -173,6 +186,12 @@ public class PatrolSeeder implements CommandLineRunner {
             point.setLat(lat);
             point.setLng(lng);
             point.setRecordedAt(from.plus(step.multipliedBy(i)));
+            point.setAccuracyM(5.0);
+            if (i == TRACK_POINTS / 2) {
+                point.setWaypoint(true);
+                point.setWaypointType(WaypointType.OBSERVATION);
+                point.setNote("Water source checked; fresh elephant tracks observed, no snares found.");
+            }
             point.setSector(sectors.stream().filter(sector -> GeoUtil.contains(sector.getPolygonGeojson(), lat, lng))
                     .findFirst().orElse(null));
             points.add(point);
@@ -182,5 +201,14 @@ public class PatrolSeeder implements CommandLineRunner {
 
     private static String line(String coordinates) {
         return "{\"type\":\"LineString\",\"coordinates\":[" + coordinates + "]}";
+    }
+
+    private Instant morning(LocalDate date) {
+        return date.atTime(6, 0).atZone(PatrolConstants.PARK_ZONE).toInstant();
+    }
+
+    private String shifted(List<GeoUtil.Point> points) {
+        return points.stream().map(point -> String.format(Locale.ROOT, "[%.6f,%.6f]", point.lng() - 0.55, point.lat() + 0.12))
+                .collect(Collectors.joining(","));
     }
 }

@@ -16,6 +16,15 @@ class ParkServiceImplTest {
     private static final String POLYGON = "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[4,0],[4,4],[0,4],[0,0]]]}";
 
     @Test
+    void createsParkWithNormalisedCode() {
+        when(parks.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
+        Park created = service.create(new ParkRequest(" Wilpattu ", " wil "));
+        assertThat(created.getName()).isEqualTo("Wilpattu");
+        assertThat(created.getCode()).isEqualTo("WIL");
+        assertThat(created.getNeglectDays()).isEqualTo(7);
+    }
+
+    @Test
     void createsSectorWithValidatedPolygon() {
         when(parks.findById(1L)).thenReturn(Optional.of(park));
         when(sectors.save(any())).thenAnswer(call -> {

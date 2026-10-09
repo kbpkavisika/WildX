@@ -76,6 +76,12 @@ export interface AssignPatrolRequest {
   scheduledDate: string;
 }
 
+export interface UpdatePatrolRequest {
+  routeId: number;
+  rangerId: number;
+  scheduledDate: string;
+}
+
 export interface RouteRequest {
   name: string;
   pathGeojson: string;
@@ -129,6 +135,14 @@ export function fetchRangers(): Promise<RangerOption[]> {
 
 export function assignPatrol(request: AssignPatrolRequest): Promise<PatrolResponse[]> {
   return apiPost("/patrols", request, z.array(patrolSchema));
+}
+
+export function updatePatrol(patrolId: number, request: UpdatePatrolRequest): Promise<PatrolResponse> {
+  return apiPut(`/patrols/${patrolId}`, request, patrolSchema);
+}
+
+export function deletePatrol(patrolId: number): Promise<void> {
+  return apiDelete(`/patrols/${patrolId}`);
 }
 
 export function fetchMyPatrols(): Promise<PatrolResponse[]> {

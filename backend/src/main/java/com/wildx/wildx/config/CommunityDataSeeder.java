@@ -6,6 +6,7 @@ import com.wildx.wildx.model.Park;
 import com.wildx.wildx.repository.BoundarySegmentRepository;
 import com.wildx.wildx.repository.CommunityReportRepository;
 import com.wildx.wildx.repository.ParkRepository;
+import com.wildx.wildx.repository.SeedHistoryRepository;
 import com.wildx.wildx.type.CommunityReportStatus;
 import com.wildx.wildx.type.ReportChannel;
 import com.wildx.wildx.type.ReportType;
@@ -18,18 +19,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.Clock;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Component
-@Order(2)
+@Order(3)
 @RequiredArgsConstructor
 public class CommunityDataSeeder implements CommandLineRunner {
-
     private final CommunityReportRepository communityReportRepository;
     private final ParkRepository parkRepository;
     private final BoundarySegmentRepository boundarySegmentRepository;
+    private final SeedHistoryRepository history;
+    private final Clock clock;
 
     @Override
     @Transactional
@@ -37,89 +41,108 @@ public class CommunityDataSeeder implements CommandLineRunner {
         if (communityReportRepository.count() > 0) {
             return;
         }
-
-        Optional<Park> yalaOpt = parkRepository.findAll().stream()
-                .filter(p -> "YALA".equalsIgnoreCase(p.getCode()))
-                .findFirst();
-        if (yalaOpt.isEmpty()) {
-            return;
+        int reference = 1001;
+        Instant now = clock.instant();
+        for (Park park : parkRepository.findAll()) {
+            List<BoundarySegment> segments = boundarySegmentRepository.findByParkIdOrderByNameAscIdAsc(park.getId());
+            if (segments.isEmpty()) {
+                continue;
+            }
+            BoundarySegment farmland = segments.stream()
+                    .filter(segment -> List.of("KUMB", "SEVA").contains(segment.getCode()))
+                    .findFirst().orElse(segments.getFirst());
+            List<CommunityReport> reports = new ArrayList<>();
+            for (CommunityReportStatus status : CommunityReportStatus.values()) {
+                BoundarySegment segment = status == CommunityReportStatus.DUPLICATE ? farmland
+                        : segments.get(status.ordinal() % segments.size());
+                Instant reportedAt = status == CommunityReportStatus.CLOSED ? now.minus(Duration.ofDays(2))
+                        : now.minus(Duration.ofMinutes(status == CommunityReportStatus.DUPLICATE ? 15 : 20L + status.ordinal() * 10L));
+                CommunityReport report = report(park, segment, reference++, status, reportedAt);
+                if (status == CommunityReportStatus.NEW) {
+                    report.setSegment(farmland);
+                    report.setLat(farmland.getCenterLat());
+                    report.setLng(farmland.getCenterLng());
+                }
+                if (status == CommunityReportStatus.DUPLICATE) {
+                    report.setDuplicateOf(reports.getFirst());
+                }
+                reports.add(save(report, reportedAt));
+            }
+            for (int i = 0; i < 10; i++) {
+                Instant reportedAt = now.minus(Duration.ofDays(i < 6 ? 1L + i * 4L : 21L + (i - 5L) * 14L));
+                CommunityReport report = report(park, farmland, reference++,
+                        i < 2 ? CommunityReportStatus.VALIDATED : CommunityReportStatus.CLOSED, reportedAt);
+                report.setType(ReportType.CROP_DAMAGE);
+                report.setAnimalCount(i % 3 + 1);
+                report.setDescription("Farmer " + (i + 1) + " reported elephant damage to "
+                        + List.of("paddy", "banana", "maize").get(i % 3) + " cultivation near " + farmland.getName() + ".");
+                if (report.getChannel() == ReportChannel.SMS) {
+                    report.setRawText("CROP " + farmland.getCode() + " " + report.getAnimalCount());
+                }
+                reports.add(save(report, reportedAt));
+            }
+            log.info("Seeded {} community reports for park {}", reports.size(), park.getCode());
         }
+    }
 
-        Park yala = yalaOpt.get();
-        List<BoundarySegment> segments = boundarySegmentRepository.findByParkIdOrderByNameAscIdAsc(yala.getId());
-        BoundarySegment kumbukgaha = segments.stream()
-                .filter(s -> "KUMB".equalsIgnoreCase(s.getCode()))
-                .findFirst()
-                .orElse(null);
-        BoundarySegment palatupana = segments.stream()
-                .filter(s -> "PAL".equalsIgnoreCase(s.getCode()))
-                .findFirst()
-                .orElse(null);
-        BoundarySegment katagamuwa = segments.stream()
-                .filter(s -> "KAT".equalsIgnoreCase(s.getCode()))
-                .findFirst()
-                .orElse(null);
-
-        CommunityReport r1 = new CommunityReport();
-        r1.setPark(yala);
-        r1.setReferenceCode("R-1001");
-        r1.setChannel(ReportChannel.WEB);
-        r1.setType(ReportType.SIGHTING);
-        r1.setAnimalCount(3);
-        r1.setDescription("Herd of 3 Asian elephants spotted feeding near Kumbukgaha boundary fence.");
-        r1.setReporterPhone("+94771234567");
-        r1.setStatus(CommunityReportStatus.NEW);
-        if (kumbukgaha != null) {
-            r1.setSegment(kumbukgaha);
-            r1.setLat(kumbukgaha.getCenterLat());
-            r1.setLng(kumbukgaha.getCenterLng());
+    private CommunityReport report(Park park, BoundarySegment segment, int reference, CommunityReportStatus status, Instant reportedAt) {
+        CommunityReport report = new CommunityReport();
+        report.setPark(park);
+        report.setReferenceCode("R-" + reference);
+        report.setChannel(reference % 2 == 0 ? ReportChannel.SMS : ReportChannel.WEB);
+        report.setType(status == CommunityReportStatus.NEEDS_LOCATION ? ReportType.CROP_DAMAGE : ReportType.SIGHTING);
+        report.setAnimalCount(3);
+        report.setReporterPhone("+9477000" + reference);
+        report.setStatus(status);
+        report.setSegment(segment);
+        report.setLat(segment.getCenterLat());
+        report.setLng(segment.getCenterLng());
+        report.setDescription(description(status, segment.getName()));
+        if (report.getChannel() == ReportChannel.SMS) {
+            report.setRawText((report.getType() == ReportType.CROP_DAMAGE ? "CROP " : "ELE ") + segment.getCode() + " 3");
         }
-
-        CommunityReport r2 = new CommunityReport();
-        r2.setPark(yala);
-        r2.setReferenceCode("R-1002");
-        r2.setChannel(ReportChannel.SMS);
-        r2.setType(ReportType.CROP_DAMAGE);
-        r2.setAnimalCount(1);
-        r2.setDescription("Single bull elephant damaged paddy field near village border.");
-        r2.setReporterPhone("+94719876543");
-        r2.setStatus(CommunityReportStatus.NEEDS_LOCATION);
-
-        CommunityReport r3 = new CommunityReport();
-        r3.setPark(yala);
-        r3.setReferenceCode("R-1003");
-        r3.setChannel(ReportChannel.WEB);
-        r3.setType(ReportType.SIGHTING);
-        r3.setAnimalCount(2);
-        r3.setDescription("Elephants crossing towards Palatupana access corridor.");
-        r3.setReporterPhone("+94751122334");
-        r3.setStatus(CommunityReportStatus.VALIDATED);
-        r3.setSeverity(Severity.HIGH);
-        if (palatupana != null) {
-            r3.setSegment(palatupana);
-            r3.setLat(palatupana.getCenterLat());
-            r3.setLng(palatupana.getCenterLng());
+        switch (status) {
+            case NEEDS_LOCATION -> {
+                report.setSegment(null);
+                report.setLat(null);
+                report.setLng(null);
+                report.setRawText("CROP UNKNOWN 3");
+            }
+            case VALIDATED -> report.setSeverity(Severity.HIGH);
+            case DISPATCHED -> {
+                report.setType(ReportType.OTHER);
+                report.setSeverity(Severity.CRITICAL);
+                if (report.getChannel() == ReportChannel.SMS) {
+                    report.setRawText("OTHER " + segment.getCode() + " 3");
+                }
+            }
+            case CLOSED -> {
+                report.setSeverity(Severity.MEDIUM);
+                report.setOutcome("Rangers guided the herd back to the park; villagers confirmed the access road is clear.");
+                report.setClosedAt(reportedAt.plus(Duration.ofMinutes(20)));
+            }
+            case INVALID -> report.setInvalidReason("Caller confirmed this was an old forwarded sighting, not a current conflict.");
+            default -> { }
         }
+        return report;
+    }
 
-        CommunityReport r4 = new CommunityReport();
-        r4.setPark(yala);
-        r4.setReferenceCode("R-1004");
-        r4.setChannel(ReportChannel.SMS);
-        r4.setType(ReportType.OTHER);
-        r4.setAnimalCount(2);
-        r4.setDescription("Two elephants close to Katagamuwa school access road.");
-        r4.setReporterPhone("+94778889900");
-        r4.setStatus(CommunityReportStatus.CLOSED);
-        r4.setSeverity(Severity.HIGH);
-        r4.setOutcome("Ranger unit responded on-site; elephants safely guided back into sanctuary buffer. Fence verified intact.");
-        r4.setClosedAt(Instant.now());
-        if (katagamuwa != null) {
-            r4.setSegment(katagamuwa);
-            r4.setLat(katagamuwa.getCenterLat());
-            r4.setLng(katagamuwa.getCenterLng());
-        }
+    private CommunityReport save(CommunityReport report, Instant reportedAt) {
+        communityReportRepository.save(report);
+        history.backdate(CommunityReport.class, report.getId(), reportedAt,
+                report.getClosedAt() == null ? reportedAt : report.getClosedAt());
+        return report;
+    }
 
-        communityReportRepository.saveAll(List.of(r1, r2, r3, r4));
-        log.info("Seeded initial community reports for park {}", yala.getCode());
+    private String description(CommunityReportStatus status, String segment) {
+        return switch (status) {
+            case NEW -> "Three Asian elephants feeding beside the boundary fence at " + segment + ".";
+            case NEEDS_LOCATION -> "Elephant damage to a paddy field; caller has not provided a usable landmark.";
+            case DUPLICATE -> "A second villager reported the same herd beside the boundary fence.";
+            case VALIDATED -> "Liaison officer verified elephants approaching cultivated land at " + segment + ".";
+            case DISPATCHED -> "Elephants are blocking the school access road at " + segment + "; ranger response requested.";
+            case CLOSED -> "Elephant herd diverted from the village access road at " + segment + ".";
+            case INVALID -> "Forwarded elephant sighting claimed to be near " + segment + ".";
+        };
     }
 }

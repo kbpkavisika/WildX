@@ -27,6 +27,12 @@ class AlertEscalationServiceImplTest {
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
 
     @Test
+    void addsManagerAsFirstStepForNewPark() {
+        service.addDefaultSteps(park);
+        verify(steps).save(argThat(step -> step.getPark() == park && step.getStepNo() == 1 && step.getRole() == Role.MANAGER));
+    }
+
+    @Test
     void listsOverdueOpenAlertIds() {
         when(alerts.findByStatusAndSlaDueAtLessThanEqual(AlertStatus.OPEN, NOW))
                 .thenReturn(List.of(alert(20L, 0, NOW), alert(21L, 1, NOW)));

@@ -70,7 +70,7 @@ public class DispatchServiceImpl implements DispatchService {
             result.add(new ResponderResponse(rangerId, live.patrol().rangerName(), phone, rangerLat, rangerLng, distance, live.offline(), live.lastSeenAt()));
         }
 
-        for (AppUser ranger : appUserRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, Role.RANGER)) {
+        for (AppUser ranger : appUserRepository.findActiveInPark(parkId, Role.RANGER)) {
             if (seenRangers.add(ranger.getId())) {
                 result.add(new ResponderResponse(ranger.getId(), ranger.getName(), ranger.getPhone(), null, null, null, true, null));
             }

@@ -1,16 +1,15 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { ConflictChart } from "@/components/dashboard/conflict-chart";
 import { ParkActivity } from "@/components/dashboard/park-activity";
 import { PatrolSchedule } from "@/components/dashboard/patrol-schedule";
 import { PageHeader } from "@/components/layout/page-header";
-import { Can } from "@/components/auth/can";
-import { Button } from "@/components/ui/button";
 import { useDashboard } from "@/hooks/use-dashboard";
+import { useParks } from "@/hooks/use-parks";
 
 export default function DashboardPage() {
   const { data, isPending, isError } = useDashboard();
+  const { current } = useParks();
 
   return (
     <>
@@ -19,17 +18,9 @@ export default function DashboardPage() {
         subtitle={
           data && (
             <>
-              <strong className="font-semibold text-ink">{data.greeting}</strong> here&apos;s what&apos;s happening in {data.parkName} today.
+              <strong className="font-semibold text-ink">{data.greeting}</strong> here&apos;s what&apos;s happening in {current?.name ?? "your park"} today.
             </>
           )
-        }
-        action={
-          <Can permission="incident.report">
-            <Button>
-              <Plus className="size-[18px]" strokeWidth={2} />
-              Report incident
-            </Button>
-          </Can>
         }
       />
       {isPending && <p className="text-body text-ink-muted">Loading park activity…</p>}

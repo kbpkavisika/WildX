@@ -16,15 +16,21 @@ export const usePatrolSelection = create<PatrolSelectionState>()((set) => ({
 interface PatrolsPageState {
   filter: PatrolFilter;
   formOpen: boolean;
+  editingId: number | null;
   setFilter: (filter: PatrolFilter) => void;
-  setFormOpen: (open: boolean) => void;
+  openNew: () => void;
+  openEdit: (id: number) => void;
+  close: () => void;
 }
 
 export const usePatrolsPage = create<PatrolsPageState>()((set) => ({
   filter: PATROL_FILTERS.ALL,
   formOpen: false,
+  editingId: null,
   setFilter: (filter) => set({ filter }),
-  setFormOpen: (formOpen) => set({ formOpen }),
+  openNew: () => set({ formOpen: true, editingId: null }),
+  openEdit: (id) => set({ formOpen: true, editingId: id }),
+  close: () => set({ formOpen: false, editingId: null }),
 }));
 
 interface RoutesPageState {

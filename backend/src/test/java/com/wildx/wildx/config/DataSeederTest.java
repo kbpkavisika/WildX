@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -56,7 +57,7 @@ class DataSeederTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void seedsParkAndOneActiveUserPerRoleWhenEmpty() {
+    void seedsBothParksWithEveryRoleDevicesAndAllZoneTypesWhenEmpty() {
         when(userRepository.count()).thenReturn(0L);
         when(parkRepository.save(any(Park.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(passwordEncoder.encode("password")).thenReturn("hash");
@@ -64,42 +65,47 @@ class DataSeederTest {
         seeder.run();
 
         ArgumentCaptor<List<AppUser>> captor = ArgumentCaptor.forClass(List.class);
-        verify(userRepository).saveAll(captor.capture());
-        List<AppUser> users = captor.getValue();
-        assertThat(users).extracting(AppUser::getRole).containsExactly(Role.values());
+        verify(userRepository, times(2)).saveAll(captor.capture());
+        List<AppUser> users = captor.getAllValues().stream().flatMap(List::stream).toList();
+        assertThat(users).extracting(AppUser::getRole).contains(Role.values());
         assertThat(users).allMatch(user -> user.isActive() && "hash".equals(user.getPasswordHash()));
         assertThat(users).allMatch(user -> user.getPark() != null);
         assertThat(users).extracting(AppUser::getEmail).contains("ranger@wildx.lk", "manager@wildx.lk");
         verify(userRepository).retireAdmins();
 
         ArgumentCaptor<List<Device>> devices = ArgumentCaptor.forClass(List.class);
-        verify(deviceRepository).saveAll(devices.capture());
-        assertThat(devices.getValue()).extracting(Device::getCode).containsExactly("COL-001", "CAM-001");
-        assertThat(devices.getValue().get(0).getAnimal().getName()).isEqualTo("Gemunu");
-        assertThat(devices.getValue().get(1).getType()).isEqualTo(DeviceType.CAMERA);
-        assertThat(devices.getValue().get(1).getLat()).isNotNull();
+        verify(deviceRepository, times(2)).saveAll(devices.capture());
+        List<Device> allDevices = devices.getAllValues().stream().flatMap(List::stream).toList();
+        assertThat(allDevices).hasSize(12).extracting(Device::getCode).doesNotHaveDuplicates()
+                .contains("COL-001", "CAM-001", "UDA-COL-001", "UDA-CAM-001");
+        assertThat(allDevices).filteredOn(device -> device.getType() == DeviceType.COLLAR)
+                .allMatch(device -> device.getAnimal() != null);
+        assertThat(allDevices).filteredOn(device -> device.getType() == DeviceType.CAMERA)
+                .allMatch(device -> device.getLat() != null && device.getLng() != null);
 
         ArgumentCaptor<List<Zone>> zones = ArgumentCaptor.forClass(List.class);
-        verify(zoneRepository).saveAll(zones.capture());
-        assertThat(zones.getValue()).extracting(Zone::getType).containsExactly(ZoneType.FARMLAND, ZoneType.ROAD);
-        assertThat(zones.getValue()).extracting(Zone::getName).contains("Kumbukgaha farmland");
-        zones.getValue().forEach(zone -> assertThat(GeoUtil.polygon(zone.getPolygonGeojson())).isNotEmpty());
+        verify(zoneRepository, times(2)).saveAll(zones.capture());
+        zones.getAllValues().forEach(parkZones -> {
+            assertThat(parkZones).extracting(Zone::getType).containsExactlyInAnyOrder(ZoneType.values());
+            parkZones.forEach(zone -> assertThat(GeoUtil.polygon(zone.getPolygonGeojson())).isNotEmpty());
+        });
 
         ArgumentCaptor<List<AlertRule>> rules = ArgumentCaptor.forClass(List.class);
-        verify(alertRuleRepository).saveAll(rules.capture());
+        verify(alertRuleRepository, times(2)).saveAll(rules.capture());
         assertThat(rules.getValue()).extracting(AlertRule::getZoneType).containsExactlyInAnyOrder(ZoneType.values());
         assertThat(rules.getValue()).filteredOn(rule -> rule.getZoneType() == ZoneType.FARMLAND)
                 .extracting(AlertRule::getSeverity).containsExactly(Severity.MEDIUM);
 
         ArgumentCaptor<List<BoundarySegment>> segments = ArgumentCaptor.forClass(List.class);
-        verify(boundarySegmentRepository).saveAll(segments.capture());
-        assertThat(segments.getValue()).extracting(BoundarySegment::getCode).containsExactly("KUMB", "PAL", "KAT");
+        verify(boundarySegmentRepository, times(2)).saveAll(segments.capture());
+        assertThat(segments.getAllValues().getFirst()).extracting(BoundarySegment::getCode).containsExactly("KUMB", "PAL", "KAT");
+        assertThat(segments.getAllValues().getLast()).extracting(BoundarySegment::getCode).containsExactly("SEVA", "MAU", "WALA");
         ArgumentCaptor<List<EscalationStep>> steps = ArgumentCaptor.forClass(List.class);
-        verify(escalationStepRepository).saveAll(steps.capture());
+        verify(escalationStepRepository, times(2)).saveAll(steps.capture());
         assertThat(steps.getValue()).extracting(EscalationStep::getStepNo, EscalationStep::getRole)
                 .containsExactly(tuple(1, Role.MANAGER));
         ArgumentCaptor<List<IncidentType>> incidentTypes = ArgumentCaptor.forClass(List.class);
-        verify(incidentTypeRepository).saveAll(incidentTypes.capture());
+        verify(incidentTypeRepository, times(2)).saveAll(incidentTypes.capture());
         assertThat(incidentTypes.getValue()).extracting(IncidentType::getName).containsExactly(
                 "Snare", "Carcass", "Illegal campsite", "At-risk species sign", "Human-wildlife conflict");
         assertThat(incidentTypes.getValue()).allMatch(type -> type.isActive() && type.getPark() != null);

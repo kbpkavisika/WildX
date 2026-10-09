@@ -32,9 +32,7 @@ public class PatrolServiceImpl implements PatrolService {
     @Transactional
     public List<PatrolResponse> assign(Long parkId, PatrolAssignRequest request) {
         log.info("assign patrol started parkId={} rangerIds={}", parkId, request.rangerIds());
-        if (request.scheduledDate().isBefore(LocalDate.now(clock.withZone(PatrolConstants.PARK_ZONE)))) {
-            throw new IllegalArgumentException("Patrol date cannot be in the past");
-        }
+        requireNotPast(request.scheduledDate());
         var route = routes.require(request.routeId(), parkId);
         List<Patrol> created = request.rangerIds().stream().distinct().map(rangerId -> {
             Patrol patrol = new Patrol();
@@ -46,6 +44,42 @@ public class PatrolServiceImpl implements PatrolService {
         var response = repository.saveAll(created).stream().map(PatrolResponse::from).toList();
         log.info("assign patrol completed count={}", response.size());
         return response;
+    }
+
+    @Override
+    @Transactional
+    public PatrolResponse update(Long parkId, Long id, PatrolUpdateRequest request) {
+        log.info("update patrol started patrolId={}", id);
+        requireNotPast(request.scheduledDate());
+        Patrol patrol = lockPlanned(parkId, id);
+        patrol.setRoute(routes.require(request.routeId(), parkId));
+        patrol.setRanger(auth.requireRanger(request.rangerId(), parkId));
+        patrol.setScheduledDate(request.scheduledDate());
+        log.info("update patrol completed patrolId={}", id);
+        return PatrolResponse.from(patrol);
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long parkId, Long id) {
+        log.info("delete patrol started patrolId={}", id);
+        repository.delete(lockPlanned(parkId, id));
+        log.info("delete patrol completed patrolId={}", id);
+    }
+
+    private Patrol lockPlanned(Long parkId, Long id) {
+        Patrol patrol = repository.findLockedByIdAndRouteParkId(id, parkId)
+                .orElseThrow(() -> new NotFoundException("Patrol not found"));
+        if (patrol.getStatus() != PatrolStatus.PLANNED) {
+            throw new IllegalArgumentException("Only a scheduled patrol can be changed");
+        }
+        return patrol;
+    }
+
+    private void requireNotPast(LocalDate date) {
+        if (date.isBefore(LocalDate.now(clock.withZone(PatrolConstants.PARK_ZONE)))) {
+            throw new IllegalArgumentException("Patrol date cannot be in the past");
+        }
     }
 
     @Override

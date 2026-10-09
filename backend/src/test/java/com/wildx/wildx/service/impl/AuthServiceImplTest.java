@@ -61,20 +61,23 @@ class AuthServiceImplTest {
         Jwt jwt = decoder.decode(response.token());
         assertThat(jwt.getSubject()).isEqualTo("7");
         assertThat(jwt.getClaimAsString("role")).isEqualTo("RANGER");
-        assertThat(jwt.getClaim("parkId").toString()).isEqualTo("3");
+        assertThat(jwt.hasClaim("parkId")).isFalse();
         assertThat(Duration.between(jwt.getIssuedAt(), jwt.getExpiresAt())).isEqualTo(Duration.ofHours(12));
         assertThat(response.user().parkId()).isEqualTo(3L);
         assertThat(response.user().role()).isEqualTo(Role.RANGER);
     }
 
     @Test
-    void parklessTokenHasNoParkClaim() {
-        stubUser(user(Role.MANAGER, null, true));
-
-        LoginResponse response = authService.login(new LoginRequest("manager@wildx.lk", "password"));
-
-        assertThat(decoder.decode(response.token()).hasClaim("parkId")).isFalse();
-        assertThat(response.user().parkId()).isNull();
+    void currentUserFollowsParkSwitchWithoutNewToken() {
+        Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
+        AppUser manager = user(Role.MANAGER, park, true);
+        when(userRepository.findWithParkById(7L)).thenReturn(Optional.of(manager));
+        Jwt jwt = Jwt.withTokenValue("token").header("alg", "HS256").subject("7").claim("role", "MANAGER").build();
+        assertThat(authService.current(jwt).parkId()).isEqualTo(3L);
+        manager.setPark(Park.builder().id(4L).name("Wilpattu").code("WIL").build());
+        assertThat(authService.current(jwt).parkId()).isEqualTo(4L);
+        manager.setPark(null);
+        assertThatThrownBy(() -> authService.current(jwt)).isInstanceOf(UnauthorizedException.class);
     }
 
     @Test
@@ -142,7 +145,7 @@ class AuthServiceImplTest {
         AppUser first = user(Role.MANAGER, park, true);
         AppUser second = user(Role.MANAGER, park, true);
         second.setId(8L);
-        when(userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(3L, Role.MANAGER))
+        when(userRepository.findActiveInPark(3L, Role.MANAGER))
                 .thenReturn(List.of(first, second));
         assertThat(authService.activeUserIds(3L, Role.MANAGER)).containsExactly(7L, 8L);
         assertThat(authService.activeUserIds(3L, Role.CLO)).isEmpty();
@@ -151,7 +154,7 @@ class AuthServiceImplTest {
     @Test
     void listsActiveUsersWithRoleInPark() {
         Park park = Park.builder().id(3L).name("Yala").code("YALA").build();
-        when(userRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(3L, Role.RANGER))
+        when(userRepository.findActiveInPark(3L, Role.RANGER))
                 .thenReturn(List.of(user(Role.RANGER, park, true)));
         assertThat(authService.activeUsers(3L, Role.RANGER))
                 .extracting(UserResponse::id, UserResponse::role, UserResponse::parkId)

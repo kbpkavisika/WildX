@@ -28,6 +28,20 @@ public class PatrolController {
         return ResponseEntity.status(HttpStatus.CREATED).body(patrols.assign(auth.current(jwt).parkId(), request));
     }
 
+    @PutMapping("/patrols/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
+    public PatrolResponse update(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt,
+                                 @Valid @RequestBody PatrolUpdateRequest request) {
+        return patrols.update(auth.current(jwt).parkId(), id, request);
+    }
+
+    @DeleteMapping("/patrols/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<Void> delete(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        patrols.delete(auth.current(jwt).parkId(), id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/rangers")
     @PreAuthorize("hasRole('MANAGER')")
     public List<UserResponse> rangers(@AuthenticationPrincipal Jwt jwt) {

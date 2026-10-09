@@ -54,6 +54,7 @@ export interface PatrolRow {
   distance: string;
   duration: string | null;
   canReplay: boolean;
+  canEdit: boolean;
   status: { tone: ChipTone; label: string };
   filter: PatrolFilter | null;
 }

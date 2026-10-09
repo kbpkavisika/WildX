@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface ParkService {
     Park require(Long parkId);
+    Park create(ParkRequest request);
     List<SectorResponse> sectors(Long parkId);
     SectorResponse createSector(Long parkId, SectorRequest request);
     SectorResponse updateSector(Long parkId, Long sectorId, SectorRequest request);

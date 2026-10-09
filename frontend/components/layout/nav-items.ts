@@ -4,7 +4,6 @@ import type { Permission } from "@/lib/auth/permissions";
 export interface NavChild {
   label: string;
   href: string;
-  count?: number;
   permission?: Permission;
 }
 
@@ -12,7 +11,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  badge?: number;
+  alertBadge?: boolean;
   children?: NavChild[];
   permission?: Permission;
 }
@@ -25,8 +24,8 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Route,
     permission: "nav.patrols",
     children: [
-      { label: "Active patrols", href: "/dashboard/patrols/active", count: 4 },
-      { label: "All patrols", href: "/dashboard/patrols", count: 9 },
+      { label: "Active patrols", href: "/dashboard/patrols/active" },
+      { label: "All patrols", href: "/dashboard/patrols" },
       { label: "Routes", href: "/dashboard/routes" },
       { label: "Coverage", href: "/dashboard/coverage" },
     ],
@@ -38,11 +37,11 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Radio,
     permission: "nav.devices",
     children: [
-      { label: "Collars", href: "/dashboard/devices", count: 12 },
-      { label: "Camera traps", href: "/dashboard/images", count: 31, permission: "nav.images" },
+      { label: "Collars", href: "/dashboard/devices" },
+      { label: "Camera traps", href: "/dashboard/images", permission: "nav.images" },
     ],
   },
-  { label: "Alerts", href: "/dashboard/alerts", icon: Bell, badge: 3, permission: "nav.alerts" },
+  { label: "Alerts", href: "/dashboard/alerts", icon: Bell, alertBadge: true, permission: "nav.alerts" },
   { label: "Community reports", href: "/dashboard/community", icon: MessageSquare, permission: "nav.community" },
   { label: "Analytics", href: "/dashboard/reports", icon: ChartColumn, permission: "nav.reports" },
   {
@@ -51,9 +50,11 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Settings,
     permission: "nav.settings",
     children: [
-      { label: "Incident types", href: "/dashboard/settings/incident-types", count: 5 },
-      { label: "Boundary segments", href: "/dashboard/settings/boundary-segments", count: 3 },
-      { label: "Zones and rules", href: "/dashboard/settings/zones", count: 2 },
+      { label: "Parks", href: "/dashboard/settings/parks", permission: "settings.manage" },
+      { label: "Sectors", href: "/dashboard/settings/sectors" },
+      { label: "Incident types", href: "/dashboard/settings/incident-types" },
+      { label: "Boundary segments", href: "/dashboard/settings/boundary-segments" },
+      { label: "Zones and rules", href: "/dashboard/settings/zones" },
     ],
   },
   { label: "Users", href: "/dashboard/users", icon: Users, permission: "nav.users" },

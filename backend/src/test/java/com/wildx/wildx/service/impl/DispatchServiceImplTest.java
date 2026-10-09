@@ -124,7 +124,7 @@ class DispatchServiceImplTest {
         TrackPointResponse tp1 = new TrackPointResponse(1L, 6.320, 81.415, 5.0, Instant.now(), false, null, null, null);
         when(patrolMonitorService.live(1L)).thenReturn(List.of(new PatrolLiveResponse(p1, tp1, Instant.now(), false)));
         when(appUserRepository.findById(101L)).thenReturn(Optional.of(ranger1));
-        when(appUserRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(1L, Role.RANGER)).thenReturn(List.of(ranger1, ranger2));
+        when(appUserRepository.findActiveInPark(1L, Role.RANGER)).thenReturn(List.of(ranger1, ranger2));
 
         List<ResponderResponse> responders = service.getResponders(1L, 6.3150, 81.4100);
 

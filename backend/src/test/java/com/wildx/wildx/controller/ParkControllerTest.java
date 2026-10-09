@@ -3,6 +3,7 @@ package com.wildx.wildx.controller;
 import com.wildx.wildx.config.SecurityConfig;
 import com.wildx.wildx.dto.UserResponse;
 import com.wildx.wildx.dto.SectorResponse;
+import com.wildx.wildx.dto.ParkResponse;
 import org.springframework.http.MediaType;
 import com.wildx.wildx.service.*;
 import com.wildx.wildx.type.Role;
@@ -30,6 +31,27 @@ class ParkControllerTest {
     @Autowired JwtEncoder encoder;
     @MockitoBean AuthService auth;
     @MockitoBean ParkService parks;
+    @MockitoBean UserService users;
+
+    @Test
+    void listsCreatesAndSwitchesCallerParks() throws Exception {
+        var manager = new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 1L);
+        when(auth.current(any())).thenReturn(manager);
+        when(users.parks(7L)).thenReturn(List.of(new ParkResponse(1L, "Yala", "YALA", 7)));
+        when(users.createPark(eq(7L), any())).thenReturn(new ParkResponse(2L, "Wilpattu", "WIL", 7));
+        when(users.switchPark(7L, 2L)).thenReturn(new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 2L));
+        mvc.perform(get("/api/v1/parks").header("Authorization", token("RESEARCHER")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].code").value("YALA"));
+        mvc.perform(post("/api/v1/parks").header("Authorization", token("MANAGER"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Wilpattu\",\"code\":\"WIL\"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.id").value(2));
+        mvc.perform(post("/api/v1/parks").header("Authorization", token("MANAGER"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\",\"code\":\"WIL\"}")).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/parks/2/switch").header("Authorization", token("MANAGER")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.parkId").value(2));
+        mvc.perform(post("/api/v1/parks/2/switch").header("Authorization", token("RANGER")))
+                .andExpect(status().isForbidden());
+    }
 
     @Test
     void scopesSectorReadsToCurrentPark() throws Exception {

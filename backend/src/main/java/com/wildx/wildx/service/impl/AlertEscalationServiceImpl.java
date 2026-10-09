@@ -2,12 +2,14 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.model.Alert;
 import com.wildx.wildx.model.EscalationStep;
+import com.wildx.wildx.model.Park;
 import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.EscalationStepRepository;
 import com.wildx.wildx.service.AlertEscalationService;
 import com.wildx.wildx.service.AuthService;
 import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.type.AlertStatus;
+import com.wildx.wildx.type.Role;
 import com.wildx.wildx.util.AlertText;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,5 +58,15 @@ public class AlertEscalationServiceImpl implements AlertEscalationService {
         alert.setEscalationLevel(alert.getEscalationLevel() + 1);
         alert.setSlaDueAt(alert.getSlaDueAt().plus(Duration.ofMinutes(alert.getAckSlaMin())));
         log.info("alert escalated alertId={} level={} role={}", alertId, alert.getEscalationLevel(), step.getRole());
+    }
+
+    @Override
+    @Transactional
+    public void addDefaultSteps(Park park) {
+        EscalationStep step = new EscalationStep();
+        step.setPark(park);
+        step.setStepNo(1);
+        step.setRole(Role.MANAGER);
+        steps.save(step);
     }
 }

@@ -12,8 +12,8 @@ Technical design is in [architecture.md](architecture.md).
 ## 1. Scope
 
 - There is one responsive web app (Next.js). Villagers use it on a phone, and managers use it on a desktop.
-- Rangers also have a native mobile app (React Native, Expo) for their field work. It covers every ranger step in this document and needs a connection for every write (§4 CMN-04).
-- Each park is configured separately, so it has its own sectors, zones, incident types, alert rules and boundary segments. Adding a park or hazard type needs no code change (fixes W4).
+- Rangers also have a native mobile app (React Native, Expo) for their field work. It covers every ranger step in this document and works offline (§4 CMN-04, CMN-05).
+- Each park is configured separately, so it has its own sectors, zones, incident types, alert rules and boundary segments. Adding a park or hazard type needs no code change (fixes W4). A Park Manager can manage several parks and switch between them; every other user belongs to one park.
 - The collar feed, camera trap network and SMS gateway are **simulated** through HTTP endpoints. No real hardware or telco integration is built.
 
 **Out of scope:** native apps for roles other than Ranger, real SMS/telco integration, automatic image recognition, route optimisation, multi-tenant hosting, and fully offline map tiles for a whole park.
@@ -23,7 +23,7 @@ Technical design is in [architecture.md](architecture.md).
 | Actor | Role | Main device |
 |---|---|---|
 | Ranger | Patrols, reports incidents, responds to dispatches and alerts | Phone (mobile app or web) |
-| Park Manager | The highest authority in a park. Manages the park's users, plans routes, monitors patrols, triages incidents, configures the park, receives alert escalations, and views reports | Desktop / phone |
+| Park Manager | The highest authority in the parks they manage (one or more). Creates parks, switches between them, manages the park's users, plans routes, monitors patrols, triages incidents, configures the park, receives alert escalations, and views reports | Desktop / phone |
 | Community Liaison Officer (CLO) | Validates community reports and dispatches responders to conflicts | Desktop / phone |
 | Researcher | Views analytics and reports (read only) | Desktop |
 | Villager | Reports sightings or crop damage through the web form or SMS. Does not log in | Phone / feature phone |
@@ -52,22 +52,23 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 |---|---|---|
 | CMN-01 | Users log in with email and password. The system restricts each route and screen by role (§2). *(UC1)* | M |
 | CMN-02 | A Park Manager can create, edit and deactivate the users of their own park and assign each user a role. *(UC1)* | M |
-| CMN-03 | A Park Manager can define sectors as polygons for their park by pasting GeoJSON. *(UC1)* | M |
-| CMN-04 | Online writes (mobile app): every ranger write (patrol start/end, track points, waypoints, incidents, dispatch and alert actions) is sent to the server straight away. The screen confirms only after the server has stored it. A write that cannot reach the server or is rejected shows an error and is not kept on the device. The one exception is an incident report that cannot reach the server (INC-04). *(UC2)* | M |
-| CMN-05 | *Removed.* The mobile app has no offline queue, so it has no sync bar. *(UC2)* | — |
+| CMN-03 | A Park Manager can define sectors as polygons for their park by pasting GeoJSON, and set the park's `neglectDays` (1–3650) used by coverage (PAT-11). *(UC1)* | M |
+| CMN-04 | Offline outbox (mobile app): every ranger write (patrol start/end, track points, waypoints, incidents, dispatch and alert actions) is saved in a SQLite database on the device first, then sent in order. A write that does not reach the server stays on the device and is resent automatically when the connection returns. A resent write is never stored twice. *(UC2)* | M |
+| CMN-05 | A sync bar is always visible on the mobile app's ranger screens and shows *Online/Offline*, the number of items waiting to sync and the last sync time. A write the server rejects stays on the device and is shown with the server's message until the ranger discards it. *(UC2)* | M |
 | CMN-06 | **Dispatch Responder** (shared): a manager or CLO assigns a responder to an incident, alert or conflict report. The responder is notified and can then Acknowledge it, Complete it with an outcome, or Decline it. *(UC2)* | M |
 | CMN-07 | In-app notifications: each user has a notification list. The app polls it while online and shows an unread badge. *(UC3)* | M |
 | CMN-08 | SMS fallback: a High or Critical dispatch or alert sent to a ranger who has been offline for more than 5 minutes is also sent by SMS (simulated). *(UC4)* | S |
 | CMN-09 | Mobile UI rules: text contrast of at least 4.5:1, tap targets of at least 48 px, pick-lists instead of free typing, and a large primary action button on each screen. *(all)* | M |
 | CMN-10 | Language switch on ranger and villager screens: English, Sinhala and Tamil. *(UC4)* | S |
 | CMN-11 | Shared layout for all screens: the same WildX branding, navigation and persona (fixes W26). *(all)* | M |
+| CMN-12 | A Park Manager can create a park (name and unique code) and becomes its manager. A manager sees the list of parks they manage and switches the current park; every screen then shows and configures the current park. *(UC1)* | M |
 
 ## 5. UC1 – Manage & Monitor Ranger Patrols (PAT)
 
 | ID | Requirement | Pri |
 |---|---|---|
 | PAT-01 | A Park Manager creates a patrol route for a park by giving it a name and a path (GeoJSON LineString or points clicked on the map), and can edit or delete it later. A deleted route is archived: it can no longer be assigned, and past patrols keep it. | M |
-| PAT-02 | A Park Manager assigns a route to one or more rangers for a date, which creates one patrol per ranger with status *Planned* (fixes W2). | M |
+| PAT-02 | A Park Manager assigns a route to one or more rangers for a date, which creates one patrol per ranger with status *Planned* (fixes W2). While a patrol is still *Planned*, the manager can change its route, ranger or date, or delete it. | M |
 | PAT-03 | A ranger sees today's assigned patrols and their route on a map. | M |
 | PAT-04 | A ranger starts a patrol, which sets it to *Active* and records the start time. | M |
 | PAT-05 | During an active patrol, the app records a GPS point every 60 s or every 50 m, whichever comes first. | M |

@@ -12,6 +12,7 @@ import com.wildx.wildx.model.Sector;
 import com.wildx.wildx.repository.SectorRepository;
 import com.wildx.wildx.util.GeoUtil;
 import java.util.List;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -25,6 +26,16 @@ public class ParkServiceImpl implements ParkService {
     @Transactional(readOnly = true)
     public Park require(Long parkId) {
         return repository.findById(parkId).orElseThrow(() -> new NotFoundException("Park not found"));
+    }
+
+    @Override
+    @Transactional
+    public Park create(ParkRequest request) {
+        log.info("create park started");
+        Park park = repository.saveAndFlush(Park.builder().name(request.name().strip())
+                .code(request.code().strip().toUpperCase(Locale.ROOT)).build());
+        log.info("create park completed parkId={}", park.getId());
+        return park;
     }
 
     @Override
