@@ -612,5 +612,23 @@ class CommunityReportServiceImplTest {
         PublicReportResponse resp = service.submitPublicReport(req, null);
         assertThat(resp.referenceCode()).isEqualTo("R-1015");
     }
+
+    @Test
+    void getsPublicReportByRefWithCaseAndPrefixTolerance() {
+        CommunityReport r = new CommunityReport();
+        r.setId(50L);
+        r.setReferenceCode("R-1050");
+        r.setStatus(CommunityReportStatus.NEW);
+        r.setType(ReportType.SIGHTING);
+        r.setAnimalCount(2);
+
+        when(reports.findByReferenceCodeIgnoreCase("R-1050")).thenReturn(Optional.of(r));
+
+        PublicReportResponse resp1 = service.getPublicReportByRef("r-1050");
+        assertThat(resp1.referenceCode()).isEqualTo("R-1050");
+
+        PublicReportResponse resp2 = service.getPublicReportByRef("1050");
+        assertThat(resp2.referenceCode()).isEqualTo("R-1050");
+    }
 }
 

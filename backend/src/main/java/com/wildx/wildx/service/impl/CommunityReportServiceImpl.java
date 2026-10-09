@@ -117,7 +117,9 @@ public class CommunityReportServiceImpl implements CommunityReportService {
     @Transactional(readOnly = true)
     public PublicReportResponse getPublicReportByRef(String referenceCode) {
         log.info("get public report started ref={}", referenceCode);
-        CommunityReport report = reports.findByReferenceCode(referenceCode.strip())
+        String clean = normalizeReferenceCode(referenceCode);
+        CommunityReport report = reports.findByReferenceCodeIgnoreCase(clean)
+                .or(() -> reports.findByReferenceCode(clean))
                 .orElseThrow(() -> new NotFoundException("Report not found"));
         PublicReportResponse response = PublicReportResponse.from(report);
         log.info("get public report completed ref={}", referenceCode);
@@ -488,9 +490,22 @@ public class CommunityReportServiceImpl implements CommunityReportService {
     @Transactional(readOnly = true)
     public CommunityReportPhoto getPublicPhoto(String referenceCode) {
         log.info("get public report photo started ref={}", referenceCode);
-        CommunityReport report = reports.findByReferenceCode(referenceCode.strip())
+        String clean = normalizeReferenceCode(referenceCode);
+        CommunityReport report = reports.findByReferenceCodeIgnoreCase(clean)
+                .or(() -> reports.findByReferenceCode(clean))
                 .orElseThrow(() -> new NotFoundException("Report not found"));
         return readPhoto(report.getPhotoPath());
+    }
+
+    private String normalizeReferenceCode(String referenceCode) {
+        if (referenceCode == null) {
+            return "";
+        }
+        String clean = referenceCode.strip().toUpperCase();
+        if (!clean.startsWith("R-") && clean.matches("\\d+")) {
+            return "R-" + clean;
+        }
+        return clean;
     }
 
     private CommunityReportPhoto readPhoto(String photoPath) {
@@ -499,7 +514,21 @@ public class CommunityReportServiceImpl implements CommunityReportService {
         }
         Path path = Path.of(uploadDir, photoPath).normalize();
         if (!Files.exists(path)) {
-            throw new NotFoundException("Photo file not found");
+            Path alt1 = Path.of("uploads", photoPath).normalize();
+            Path alt2 = Path.of("..", "uploads", photoPath).normalize();
+            Path alt3 = Path.of("backend", "uploads", photoPath).normalize();
+            Path alt4 = Path.of(photoPath).normalize();
+            if (Files.exists(alt1)) {
+                path = alt1;
+            } else if (Files.exists(alt2)) {
+                path = alt2;
+            } else if (Files.exists(alt3)) {
+                path = alt3;
+            } else if (Files.exists(alt4)) {
+                path = alt4;
+            } else {
+                throw new NotFoundException("Photo file not found");
+            }
         }
         try {
             byte[] bytes = Files.readAllBytes(path);
