@@ -112,7 +112,7 @@ vi.mock("@/hooks/use-sectors", () => ({ useSectors: (...args: unknown[]) => { (h
 vi.mock("@/hooks/use-zones", () => ({ useZones: (...args: unknown[]) => { (hookCalls["useZones"] ??= vi.fn())(...args); return state.result; } }));
 vi.mock("@/hooks/use-alert-report", () => ({ useAlertReport: (...args: unknown[]) => { (hookCalls["useAlertReport"] ??= vi.fn())(...args); return state.result; } }));
 vi.mock("@/hooks/use-coverage-report", () => ({ useCoverageReport: (...args: unknown[]) => { (hookCalls["useCoverageReport"] ??= vi.fn())(...args); return state.result; } }));
-vi.mock("@/hooks/use-incident-report", () => ({ useIncidentReport: (...args: unknown[]) => { (hookCalls["useIncidentReport"] ??= vi.fn())(...args); return state.result; } }));
+vi.mock("@/hooks/use-incident-report", () => ({ useIncidentReport: (...args: unknown[]) => { (hookCalls["useIncidentReport"] ??= vi.fn())(...args); return state.result; }, useIncidentReportCsv: () => state.result.csv }));
 vi.mock("@/hooks/use-park-sectors", () => ({ useParkSectors: () => [] }));
 vi.mock("@/hooks/use-active-patrols", () => ({ useActivePatrols: (...args: unknown[]) => { (hookCalls["useActivePatrols"] ??= vi.fn())(...args); return state.result; } }));
 vi.mock("@/hooks/use-patrol-replay", () => ({ usePatrolReplay: (...args: unknown[]) => { (hookCalls["usePatrolReplay"] ??= vi.fn())(...args); return state.result; } }));

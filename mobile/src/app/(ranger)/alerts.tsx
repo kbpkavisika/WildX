@@ -1,5 +1,4 @@
 import { RangerAlertList } from "@/components/alerts/ranger-alert-list";
-import { NotificationsCard } from "@/components/notifications/notifications-card";
 import { Notice } from "@/components/ui/notice";
 import { PageHeader, Strong } from "@/components/ui/page-header";
 import { Screen } from "@/components/ui/screen";
@@ -17,7 +16,6 @@ export default function RangerAlertsScreen() {
       {isPending && <Notice tone="muted">Loading alerts…</Notice>}
       {isError && <Notice tone="negative">Could not load alerts. Retrying.</Notice>}
       {view && <RangerAlertList view={view} error={error} actions={{ acknowledge, resolve }} />}
-      <NotificationsCard />
     </Screen>
   );
 }

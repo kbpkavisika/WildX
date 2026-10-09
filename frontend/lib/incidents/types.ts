@@ -28,6 +28,7 @@ export interface IncidentQueueFilters {
   status: StatusFilter;
   typeId: number | typeof ALL;
   severity: Severity | typeof ALL;
+  query: string;
 }
 
 export interface IncidentRow {

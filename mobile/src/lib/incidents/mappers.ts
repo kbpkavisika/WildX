@@ -40,6 +40,7 @@ export function toMyIncidentRows(incidents: IncidentResponse[], now: Date): Task
   return incidents.map((incident) => ({
     key: `s${incident.id}`,
     dispatchId: null,
+    mapsUrl: null,
     title: `${incident.typeName} · INC-${incident.id}`,
     caption: `${incident.sectorName ?? NO_SECTOR} · ${formatDayTime(new Date(incident.occurredAt), now)}`,
     status: INCIDENT_STATUS_DISPLAY[incident.status],

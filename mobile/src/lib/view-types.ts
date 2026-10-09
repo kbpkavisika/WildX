@@ -20,6 +20,7 @@ export interface DetailFact {
 export interface TaskRow {
   key: string;
   dispatchId: number | null;
+  mapsUrl: string | null;
   title: string;
   caption: string;
   status: ChipView;

@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
+import { NotificationsButton } from "@/components/notifications/notifications-button";
 import { IconButton } from "@/components/ui/button";
 import { useLogout } from "@/hooks/use-logout";
 import { colors, space } from "@/lib/theme";
@@ -10,12 +11,16 @@ export function RangerHeader() {
   return (
     <View style={styles.header}>
       <Logo />
-      <IconButton icon={LogOut} accessibilityLabel="Log out" onPress={logout} />
+      <View style={styles.actions}>
+        <NotificationsButton />
+        <IconButton icon={LogOut} accessibilityLabel="Log out" onPress={logout} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  actions: { flexDirection: "row", alignItems: "center", gap: space[3] },
   header: {
     flexDirection: "row",
     alignItems: "center",

@@ -23,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OperationalDataSeeder implements CommandLineRunner {
     private static final int SCENARIOS_PER_PARK = 12;
+    private static final int INCIDENTS_PER_TYPE = 3;
     private static final int COLLAR_FIX_COUNT = 24;
     private static final int ACK_SLA_MIN = 15;
 
@@ -103,12 +104,12 @@ public class OperationalDataSeeder implements CommandLineRunner {
         List<Sector> parkSectors = sectors.findByParkIdOrderByIdAsc(park.getId());
         List<IncidentType> types = incidentTypes.findByParkIdOrderByNameAscIdAsc(park.getId());
         List<Patrol> live = patrols.findByRouteParkIdAndStatusOrderByIdAsc(park.getId(), PatrolStatus.ACTIVE);
-        for (int i = 0; i < SCENARIOS_PER_PARK; i++) {
+        for (int i = 0; i < types.size() * INCIDENTS_PER_TYPE; i++) {
             Sector sector = parkSectors.get(i % parkSectors.size());
             GeoUtil.Point location = center(sector.getPolygonGeojson());
             Incident incident = new Incident();
             incident.setPark(park);
-            incident.setType(types.get(i % types.size()));
+            incident.setType(types.get(i / INCIDENTS_PER_TYPE));
             incident.setReporter(rangers.get(i % rangers.size()));
             incident.setSector(sector);
             incident.setLat(location.lat());
@@ -124,7 +125,8 @@ public class OperationalDataSeeder implements CommandLineRunner {
             }
             incident.setOccurredAt(i < 4 ? now.minus(Duration.ofMinutes(10L + i * 30L))
                     : now.minus(Duration.ofDays((i - 3L) * 7)));
-            incident.setDescription(incidentDescription(incident.getType().getName()) + " Sector: " + sector.getName() + ".");
+            incident.setDescription(incidentDescriptions(incident.getType().getName()).get(i % INCIDENTS_PER_TYPE)
+                    + " Sector: " + sector.getName() + ".");
             if (i == 0 && !live.isEmpty()) {
                 incident.setPatrol(live.getFirst());
                 incident.setReporter(live.getFirst().getRanger());
@@ -284,13 +286,28 @@ public class OperationalDataSeeder implements CommandLineRunner {
         return GeoUtil.contains(polygon, center.lat(), center.lng()) ? center : ring.getFirst();
     }
 
-    private String incidentDescription(String type) {
+    private List<String> incidentDescriptions(String type) {
         return switch (type) {
-            case "Snare" -> "Fresh wire snares found beside a wildlife trail; area marked for removal.";
-            case "Carcass" -> "Spotted deer carcass located near a water source; veterinary inspection requested.";
-            case "Illegal campsite" -> "Unattended campsite and fresh fire ash found inside a restricted woodland.";
-            case "At-risk species sign" -> "Fresh leopard pugmarks recorded near a busy visitor track.";
-            default -> "Elephants approaching cultivated land; ranger assistance requested to protect villagers.";
+            case "Snare" -> List.of(
+                    "Fresh wire snares found beside a wildlife trail; area marked for removal.",
+                    "Cable noose set at neck height across a game path leading to a waterhole.",
+                    "Line of five rusted snares recovered along the boundary fence; tampered posts nearby.");
+            case "Carcass" -> List.of(
+                    "Spotted deer carcass located near a water source; veterinary inspection requested.",
+                    "Wild boar carcass with a wire wound on the leg; suspected snare injury.",
+                    "Sambar carcass partly scavenged near the tank bund; samples needed for disease screening.");
+            case "Illegal campsite" -> List.of(
+                    "Unattended campsite and fresh fire ash found inside a restricted woodland.",
+                    "Tarpaulin shelter with drying meat racks found off the patrol route.",
+                    "Abandoned camp with empty gunpowder packets and tree-felling tools.");
+            case "At-risk species sign" -> List.of(
+                    "Fresh leopard pugmarks recorded near a busy visitor track.",
+                    "Sloth bear scat and fresh claw marks on a termite mound beside the jeep track.",
+                    "Painted stork nesting colony disturbed; abandoned eggs found under the nesting trees.");
+            default -> List.of(
+                    "Elephants approaching cultivated land; ranger assistance requested to protect villagers.",
+                    "Lone tusker broke the electric fence and damaged a paddy field overnight.",
+                    "Herd of six elephants blocking the village access road at dusk; residents unable to pass.");
         };
     }
 }

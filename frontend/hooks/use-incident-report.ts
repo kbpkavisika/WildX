@@ -6,6 +6,14 @@ import { downloadBlob } from "@/lib/files";
 import { reportRangeError, toIncidentReportView } from "@/lib/incidents/report-mappers";
 import { useIncidentReportRange } from "@/lib/incidents/store";
 
+export function useIncidentReportCsv() {
+  const { from, to } = useIncidentReportRange();
+  return useMutation({
+    mutationFn: () => fetchIncidentReportCsv(from, to),
+    onSuccess: (blob) => downloadBlob(blob, `incidents-${from}-${to}.csv`),
+  });
+}
+
 export function useIncidentReport() {
   const { from, to, setRange } = useIncidentReportRange();
   const rangeError = reportRangeError(from, to);
@@ -17,10 +25,7 @@ export function useIncidentReport() {
     enabled: allowed && rangeError === null,
   });
 
-  const csv = useMutation({
-    mutationFn: () => fetchIncidentReportCsv(from, to),
-    onSuccess: (blob) => downloadBlob(blob, `incidents-${from}-${to}.csv`),
-  });
+  const csv = useIncidentReportCsv();
 
   return {
     allowed,
