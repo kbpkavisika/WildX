@@ -17,6 +17,7 @@ import com.wildx.wildx.service.IncidentService;
 import com.wildx.wildx.service.NotificationService;
 import com.wildx.wildx.service.ParkService;
 import com.wildx.wildx.service.PatrolService;
+import com.wildx.wildx.type.DispatchStatus;
 import com.wildx.wildx.type.IncidentStatus;
 import com.wildx.wildx.type.Role;
 import com.wildx.wildx.type.Severity;
@@ -30,7 +31,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -95,11 +98,13 @@ public class IncidentServiceImpl implements IncidentService {
     @Transactional(readOnly = true)
     public List<IncidentResponse> list(Long parkId, IncidentStatus status, Long typeId, Severity severity) {
         log.info("list incidents started parkId={} status={} typeId={} severity={}", parkId, status, typeId, severity);
-        var response = incidents.findByParkIdOrderByOccurredAtDescIdDesc(parkId).stream()
+        var found = incidents.findByParkIdOrderByOccurredAtDescIdDesc(parkId).stream()
                 .filter(incident -> status == null || incident.getStatus() == status)
                 .filter(incident -> typeId == null || incident.getType().getId().equals(typeId))
                 .filter(incident -> severity == null || incident.getSeverity() == severity)
-                .map(IncidentResponse::from).toList();
+                .toList();
+        Map<Long, String> responders = responderNames(found.stream().map(Incident::getId).toList());
+        var response = found.stream().map(incident -> IncidentResponse.from(incident, responders.get(incident.getId()))).toList();
         log.info("list incidents completed parkId={} count={}", parkId, response.size());
         return response;
     }
@@ -110,7 +115,17 @@ public class IncidentServiceImpl implements IncidentService {
         log.info("get incident started incidentId={} callerId={}", id, caller.id());
         Incident incident = requireVisible(caller, id);
         log.info("get incident completed incidentId={}", id);
-        return IncidentResponse.from(incident);
+        return IncidentResponse.from(incident, responderNames(List.of(id)).get(id));
+    }
+
+    private Map<Long, String> responderNames(List<Long> incidentIds) {
+        Map<Long, String> names = new HashMap<>();
+        if (incidentIds.isEmpty()) {
+            return names;
+        }
+        dispatches.findBySourceTypeAndSourceIdInAndStatusNotOrderByAssignedAtAsc(SourceType.INCIDENT, incidentIds, DispatchStatus.DECLINED)
+                .forEach(dispatch -> names.put(dispatch.getSourceId(), dispatch.getResponder().getName()));
+        return names;
     }
 
     @Override
