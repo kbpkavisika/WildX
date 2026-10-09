@@ -51,9 +51,9 @@ interface IncidentsTableProps {
 
 export function IncidentsTable({ rows, selectedId, onSelect }: IncidentsTableProps) {
   return (
-    <div className="overflow-x-auto">
+    <div className="max-h-[60vh] overflow-auto overscroll-contain">
       <div role="table" aria-label="Incidents" className="flex min-w-[760px] flex-col">
-        <div role="row" className={cn(ROW, "border-b border-line px-2 pb-2.5 text-caption text-ink-muted")}>
+        <div role="row" className={cn(ROW, "sticky top-0 z-10 border-b border-line bg-card px-2 pb-2.5 text-caption text-ink-muted")}>
           {COLUMNS.map((column) => (
             <span key={column} role="columnheader">{column}</span>
           ))}
