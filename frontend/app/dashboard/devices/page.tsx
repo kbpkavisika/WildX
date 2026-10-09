@@ -1,7 +1,12 @@
 "use client";
 
+import { Plus } from "lucide-react";
+import { AnimalForm } from "@/components/devices/animal-form";
+import { DeviceForm } from "@/components/devices/device-form";
 import { DevicesTable } from "@/components/devices/devices-table";
+import { FormPanel } from "@/components/devices/form-panel";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button, SecondaryButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { useDevices } from "@/hooks/use-devices";
@@ -23,12 +28,37 @@ function Summary({ view }: { view: DevicesView }) {
 }
 
 export default function DevicesPage() {
-  const { parkId, isPending, isError, view } = useDevices();
-  const { filter, setFilter } = useDevicesPage();
+  const { parkId, canManage, isPending, isError, view } = useDevices();
+  const { filter, setFilter, form, setForm } = useDevicesPage();
+  const close = () => setForm(null);
 
   return (
     <>
-      <PageHeader title="Devices" subtitle={view && <Summary view={view} />} />
+      <PageHeader
+        title="Devices"
+        subtitle={view && <Summary view={view} />}
+        action={
+          canManage && (
+            <div className="flex flex-wrap items-center gap-3">
+              <SecondaryButton onClick={() => setForm("animal")} aria-expanded={form === "animal"}>New animal</SecondaryButton>
+              <Button onClick={() => setForm("device")} aria-expanded={form === "device"}>
+                <Plus className="size-[18px]" strokeWidth={2} />
+                New device
+              </Button>
+            </div>
+          )
+        }
+      />
+      {canManage && form === "device" && (
+        <FormPanel title="New device" onClose={close}>
+          <DeviceForm onClose={close} />
+        </FormPanel>
+      )}
+      {canManage && form === "animal" && (
+        <FormPanel title="New animal" onClose={close}>
+          <AnimalForm onClose={close} />
+        </FormPanel>
+      )}
       {parkId === null && <p className="text-body text-ink-muted">Your account is not linked to a park.</p>}
       {parkId !== null && isPending && <p className="text-body text-ink-muted">Loading devices…</p>}
       {isError && <p className="text-body text-negative">Could not load devices. Retrying.</p>}
