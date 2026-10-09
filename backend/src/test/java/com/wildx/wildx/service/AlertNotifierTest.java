@@ -5,7 +5,6 @@ import com.wildx.wildx.dto.PatrolResponse;
 import com.wildx.wildx.model.Alert;
 import com.wildx.wildx.model.AppUser;
 import com.wildx.wildx.repository.AppUserRepository;
-import com.wildx.wildx.type.AlertStatus;
 import com.wildx.wildx.type.AlertType;
 import com.wildx.wildx.type.PatrolStatus;
 import com.wildx.wildx.type.Severity;

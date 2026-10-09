@@ -15,6 +15,8 @@ const dispatchSchema = z.object({
   completedAt: timestamp.nullable(),
   outcome: z.string().nullable(),
   note: z.string().nullable(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
 });
 
 export type DispatchResponse = z.infer<typeof dispatchSchema>;

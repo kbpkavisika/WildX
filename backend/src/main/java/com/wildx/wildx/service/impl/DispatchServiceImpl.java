@@ -11,6 +11,7 @@ import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.CommunityReportRepository;
 import com.wildx.wildx.repository.DispatchRepository;
+import com.wildx.wildx.repository.IncidentRepository;
 import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.service.DispatchService;
 import com.wildx.wildx.service.IncidentService;
@@ -38,6 +39,7 @@ public class DispatchServiceImpl implements DispatchService {
     private final AppUserRepository appUserRepository;
     private final CommunityReportRepository communityReportRepository;
     private final AlertRepository alertRepository;
+    private final IncidentRepository incidentRepository;
     private final AlertService alertService;
     private final IncidentService incidentService;
     private final PatrolMonitorService patrolMonitorService;
@@ -163,7 +165,7 @@ public class DispatchServiceImpl implements DispatchService {
         }
 
         log.info("create dispatch completed id={} status={}", saved.getId(), saved.getStatus());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 
     @Override
@@ -171,7 +173,7 @@ public class DispatchServiceImpl implements DispatchService {
     public List<DispatchResponse> getMyDispatches(Long responderId) {
         return dispatchRepository.findByResponderIdOrderByAssignedAtDesc(responderId)
                 .stream()
-                .map(DispatchResponse::from)
+                .map(this::response)
                 .toList();
     }
 
@@ -181,7 +183,7 @@ public class DispatchServiceImpl implements DispatchService {
         return dispatchRepository.findBySourceTypeAndSourceIdOrderByAssignedAtDesc(sourceType, sourceId)
                 .stream()
                 .filter(dispatch -> visibleTo(caller, dispatch))
-                .map(DispatchResponse::from)
+                .map(this::response)
                 .toList();
     }
 
@@ -191,7 +193,21 @@ public class DispatchServiceImpl implements DispatchService {
         Dispatch dispatch = dispatchRepository.findWithDetailsById(id)
                 .filter(found -> visibleTo(caller, found))
                 .orElseThrow(() -> new NotFoundException("Dispatch not found"));
-        return DispatchResponse.from(dispatch);
+        return response(dispatch);
+    }
+
+    private DispatchResponse response(Dispatch dispatch) {
+        Optional<GeoUtil.Point> location = switch (dispatch.getSourceType()) {
+            case INCIDENT -> incidentRepository.findById(dispatch.getSourceId()).map(found -> point(found.getLat(), found.getLng()));
+            case ALERT -> alertRepository.findById(dispatch.getSourceId()).map(found -> point(found.getLat(), found.getLng()));
+            case COMMUNITY_REPORT -> communityReportRepository.findById(dispatch.getSourceId()).map(found -> point(found.getLat(), found.getLng()));
+        };
+        GeoUtil.Point point = location.orElse(null);
+        return DispatchResponse.from(dispatch, point == null ? null : point.lat(), point == null ? null : point.lng());
+    }
+
+    private GeoUtil.Point point(Double lat, Double lng) {
+        return lat == null || lng == null ? null : new GeoUtil.Point(lng, lat);
     }
 
     private boolean visibleTo(UserResponse caller, Dispatch dispatch) {
@@ -212,7 +228,7 @@ public class DispatchServiceImpl implements DispatchService {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
         if (dispatch.getStatus() == DispatchStatus.ACKNOWLEDGED) {
-            return DispatchResponse.from(dispatch);
+            return response(dispatch);
         }
         if (dispatch.getStatus() != DispatchStatus.ASSIGNED) {
             throw new IllegalStateException("Dispatch cannot be acknowledged in status " + dispatch.getStatus());
@@ -221,7 +237,7 @@ public class DispatchServiceImpl implements DispatchService {
         dispatch.setAcknowledgedAt(clock.instant());
         Dispatch saved = dispatchRepository.save(dispatch);
         log.info("acknowledge dispatch completed id={}", saved.getId());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 
     @Override
@@ -234,7 +250,7 @@ public class DispatchServiceImpl implements DispatchService {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
         if (dispatch.getStatus() == DispatchStatus.COMPLETED) {
-            return DispatchResponse.from(dispatch);
+            return response(dispatch);
         }
         if (dispatch.getStatus() == DispatchStatus.DECLINED) {
             throw new IllegalStateException("Dispatch is already " + dispatch.getStatus());
@@ -268,7 +284,7 @@ public class DispatchServiceImpl implements DispatchService {
         }
 
         log.info("complete dispatch completed id={} outcome={}", saved.getId(), saved.getOutcome());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 
     @Override
@@ -281,7 +297,7 @@ public class DispatchServiceImpl implements DispatchService {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
         if (dispatch.getStatus() == DispatchStatus.DECLINED) {
-            return DispatchResponse.from(dispatch);
+            return response(dispatch);
         }
         if (dispatch.getStatus() == DispatchStatus.COMPLETED) {
             throw new IllegalStateException("Dispatch is already " + dispatch.getStatus());
@@ -305,6 +321,6 @@ public class DispatchServiceImpl implements DispatchService {
         }
 
         log.info("decline dispatch completed id={}", saved.getId());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 }

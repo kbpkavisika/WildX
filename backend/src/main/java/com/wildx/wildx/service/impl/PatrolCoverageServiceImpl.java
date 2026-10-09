@@ -2,7 +2,9 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.*;
 import com.wildx.wildx.constant.PatrolConstants;
+import com.wildx.wildx.model.TrackPoint;
 import com.wildx.wildx.repository.TrackPointRepository;
+import com.wildx.wildx.util.DailyCounts;
 import com.wildx.wildx.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,17 +49,12 @@ public class PatrolCoverageServiceImpl implements PatrolCoverageService {
     @Transactional(readOnly = true)
     public List<SectorCoverageReportResponse> report(Long parkId, LocalDate from, LocalDate to) {
         log.info("coverage report started parkId={}", parkId);
-        if (from == null || to == null || from.isAfter(to) || to.equals(LocalDate.MAX)) {
-            throw new IllegalArgumentException("Provide a valid inclusive date range");
-        }
+        var points = pointsIn(parkId, from, to);
         var sectors = parks.sectors(parkId);
-        Instant start = from.atStartOfDay(PatrolConstants.PARK_ZONE).toInstant();
-        Instant until = to.plusDays(1).atStartOfDay(PatrolConstants.PARK_ZONE).toInstant();
         Map<Long, Long> counts = new HashMap<>();
         Map<Long, Set<Long>> patrolIds = new HashMap<>();
         Map<Long, Instant> latest = new HashMap<>();
-        tracks.findBySectorParkIdAndRecordedAtGreaterThanEqualAndRecordedAtLessThanOrderByRecordedAtAscIdAsc(parkId, start, until)
-                .forEach(point -> {
+        points.forEach(point -> {
                     Long sectorId = point.getSector().getId();
                     counts.merge(sectorId, 1L, Long::sum);
                     patrolIds.computeIfAbsent(sectorId, id -> new HashSet<>()).add(point.getPatrol().getId());
@@ -68,5 +65,23 @@ public class PatrolCoverageServiceImpl implements PatrolCoverageService {
                 latest.get(sector.id()))).toList();
         log.info("coverage report completed parkId={}", parkId);
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DailyCount> daily(Long parkId, LocalDate from, LocalDate to) {
+        log.info("coverage daily started parkId={}", parkId);
+        var days = DailyCounts.of(pointsIn(parkId, from, to).stream().map(TrackPoint::getRecordedAt), from, to);
+        log.info("coverage daily completed parkId={}", parkId);
+        return days;
+    }
+
+    private List<TrackPoint> pointsIn(Long parkId, LocalDate from, LocalDate to) {
+        if (from == null || to == null || from.isAfter(to) || to.equals(LocalDate.MAX)) {
+            throw new IllegalArgumentException("Provide a valid inclusive date range");
+        }
+        Instant start = from.atStartOfDay(PatrolConstants.PARK_ZONE).toInstant();
+        Instant until = to.plusDays(1).atStartOfDay(PatrolConstants.PARK_ZONE).toInstant();
+        return tracks.findBySectorParkIdAndRecordedAtGreaterThanEqualAndRecordedAtLessThanOrderByRecordedAtAscIdAsc(parkId, start, until);
     }
 }

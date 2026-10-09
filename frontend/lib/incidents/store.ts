@@ -11,7 +11,7 @@ interface IncidentQueueState {
 }
 
 export const useIncidentQueue = create<IncidentQueueState>()((set) => ({
-  filters: { status: INCIDENT_STATUSES.NEW, typeId: ALL, severity: ALL },
+  filters: { status: INCIDENT_STATUSES.NEW, typeId: ALL, severity: ALL, query: "" },
   selectedId: null,
   setFilter: (change) => set((state) => ({ filters: { ...state.filters, ...change } })),
   select: (selectedId) => set({ selectedId }),

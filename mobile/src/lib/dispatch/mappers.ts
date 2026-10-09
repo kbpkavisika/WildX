@@ -1,5 +1,6 @@
 import type { DispatchResponse } from "@/lib/api/dispatches";
 import type { IncidentResponse } from "@/lib/api/incidents";
+import { GOOGLE_MAPS_URL } from "@/lib/constants";
 import { DISPATCH_STATUSES, SOURCE_TYPES, type DispatchStatus, type SourceType } from "@/lib/enums";
 import { formatDayTime } from "@/lib/format";
 import type { ChipView, DetailFact, TaskRow } from "@/lib/view-types";
@@ -41,6 +42,7 @@ export function toDispatchRows(dispatches: DispatchResponse[], now: Date): TaskR
     .map((dispatch) => ({
       key: `d${dispatch.id}`,
       dispatchId: dispatch.id,
+      mapsUrl: dispatch.lat !== null && dispatch.lng !== null ? `${GOOGLE_MAPS_URL}${dispatch.lat},${dispatch.lng}` : null,
       title: sourceTitle(dispatch),
       caption: `Assigned ${formatDayTime(new Date(dispatch.assignedAt), now)}`,
       status: DISPATCH_STATUS_DISPLAY[dispatch.status],

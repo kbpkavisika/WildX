@@ -8,7 +8,7 @@ import type { useRangerPatrol } from "@/hooks/use-ranger-patrol";
 import type { RangerPatrolView } from "@/lib/patrols/mappers";
 import { useRangerPatrolPage } from "@/lib/patrols/store";
 import { space } from "@/lib/theme";
-import { WaypointForm } from "./waypoint-form";
+import { WaypointSheet } from "./waypoint-form";
 
 type RangerPatrol = ReturnType<typeof useRangerPatrol>;
 
@@ -26,19 +26,6 @@ export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) 
         {notice && <Notice tone="positive">{notice}</Notice>}
         <Notice tone="positive">Patrol completed at {view.completedAt}.</Notice>
       </View>
-    );
-  }
-
-  if (view.isActive && panel === "waypoint") {
-    return (
-      <WaypointForm
-        gpsPosition={patrol.position}
-        sectors={patrol.sectors}
-        saving={patrol.savingWaypoint}
-        error={error}
-        onSubmit={patrol.addWaypoint}
-        onCancel={patrol.cancelPanel}
-      />
     );
   }
 
@@ -64,7 +51,17 @@ export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) 
           <SecondaryButton label="End patrol" onPress={() => setPanel("end")} />
         </>
       )}
-      {error && <Notice tone="negative">{error}</Notice>}
+      {error && panel !== "waypoint" && <Notice tone="negative">{error}</Notice>}
+      <WaypointSheet
+        visible={view.isActive && panel === "waypoint"}
+        gpsPosition={patrol.position}
+        near={view.near}
+        sectors={patrol.sectors}
+        saving={patrol.savingWaypoint}
+        error={error}
+        onSubmit={patrol.addWaypoint}
+        onClose={patrol.cancelPanel}
+      />
     </View>
   );
 }

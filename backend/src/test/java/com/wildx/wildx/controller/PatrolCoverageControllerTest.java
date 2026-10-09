@@ -60,6 +60,14 @@ class PatrolCoverageControllerTest {
                 .andExpect(status().isOk()).andExpect(content().contentType("text/csv;charset=UTF-8"))
                 .andExpect(header().string("Content-Disposition", "attachment; filename=\"coverage-2026-10-01-2026-10-07.csv\""))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("2,\"North\",0,0,")));
+        when(coverage.daily(eq(1L), any(), any())).thenReturn(List.of(
+                new com.wildx.wildx.dto.DailyCount(java.time.LocalDate.of(2026, 10, 1), 4)));
+        mvc.perform(get("/api/v1/reports/coverage/daily").param("from", "2026-10-01").param("to", "2026-10-07")
+                        .header("Authorization", token("RESEARCHER")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].date").value("2026-10-01"))
+                .andExpect(jsonPath("$[0].count").value(4));
+        mvc.perform(get("/api/v1/reports/coverage/daily").param("from", "2026-10-01").param("to", "2026-10-07")
+                .header("Authorization", token("RANGER"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/reports/coverage").param("from", "bad").param("to", "2026-10-07")
                 .header("Authorization", token("MANAGER"))).andExpect(status().isBadRequest());
         mvc.perform(get("/api/v1/reports/coverage").param("from", "2026-10-01")

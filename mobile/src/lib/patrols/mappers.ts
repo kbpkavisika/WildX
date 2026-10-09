@@ -1,10 +1,11 @@
 import type { PatrolResponse, TrackPointResponse } from "@/lib/api/patrols";
 import { PATROL_STATUSES, WAYPOINT_TYPES, type PatrolStatus, type WaypointType } from "@/lib/enums";
 import { counted, formatDayLabel, formatKm, formatTime, fromIsoDate, isSameDay } from "@/lib/format";
-import { parseLine, pathLengthM, type LatLng } from "@/lib/geo";
+import { distanceM, parseLine, pathLengthM, type LatLng } from "@/lib/geo";
 import type { ChipView, DetailFact } from "@/lib/view-types";
 
 const NOT_YET = "Not yet";
+const MAX_OFF_ROUTE_M = 50_000;
 
 export const PATROL_STATUS_DISPLAY: Record<PatrolStatus, ChipView> = {
   [PATROL_STATUSES.ACTIVE]: { tone: "positive", label: "Active" },
@@ -49,6 +50,7 @@ export interface RangerPatrolView {
   status: ChipView;
   route: LatLng[];
   track: LatLng[];
+  near: LatLng | null;
   waypoints: WaypointView[];
   facts: DetailFact[];
   canStart: boolean;
@@ -108,15 +110,21 @@ function lastPointFact(points: TrackPoint[]): string {
   return `${formatTime(new Date(last.recordedAt))} · ${counted(points.length, "point", "points")} sent`;
 }
 
+export function isNearRoute(route: LatLng[], point: LatLng): boolean {
+  return route.length === 0 || route.some((routePoint) => distanceM(routePoint, point) <= MAX_OFF_ROUTE_M);
+}
+
 export function toRangerPatrolView(patrol: PatrolResponse, points: TrackPoint[], now: Date): RangerPatrolView {
   const track = points.map((point) => point.position);
+  const route = parseLine(patrol.route.pathGeojson) ?? [];
   return {
     id: patrol.id,
     title: patrol.route.name,
     subtitle: `${dayLabel(patrol, now)} · ${patrol.rangerName}`,
     status: PATROL_STATUS_DISPLAY[patrol.status],
-    route: parseLine(patrol.route.pathGeojson) ?? [],
+    route,
     track,
+    near: track.findLast((point) => isNearRoute(route, point)) ?? route[0] ?? null,
     waypoints: points.filter((point) => point.isWaypoint).map((point) => ({ key: point.key, position: point.position, label: waypointLabel(point) })),
     facts: [
       { label: "Started", value: patrol.startedAt ? formatTime(new Date(patrol.startedAt)) : NOT_YET },

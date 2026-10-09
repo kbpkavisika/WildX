@@ -1,4 +1,4 @@
-import { BASE_TILE_ATTRIBUTION, BASE_TILE_URL, MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_FIT_PADDING_PX, MAP_FOCUS_ZOOM, MAP_MAX_ZOOM } from "@/lib/constants";
+import { BASE_TILE_URL, MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, MAP_FIT_PADDING_PX, MAP_FOCUS_ZOOM, MAP_MAX_ZOOM } from "@/lib/constants";
 import { colors } from "@/lib/theme";
 
 const LEAFLET_URL = "https://unpkg.com/leaflet@1.9.4/dist";
@@ -31,9 +31,8 @@ html, body, #map { margin: 0; height: 100%; background: ${colors.mapGround}; }
 `;
 
 const SCRIPT = `
-const map = L.map("map", { zoomControl: false, maxZoom: ${MAP_MAX_ZOOM} }).setView(${JSON.stringify(MAP_DEFAULT_CENTER)}, ${MAP_DEFAULT_ZOOM});
-map.attributionControl.setPrefix(false);
-L.tileLayer("${BASE_TILE_URL}", { maxZoom: ${MAP_MAX_ZOOM}, attribution: '${BASE_TILE_ATTRIBUTION}' }).addTo(map);
+const map = L.map("map", { zoomControl: false, attributionControl: false, maxZoom: ${MAP_MAX_ZOOM} }).setView(${JSON.stringify(MAP_DEFAULT_CENTER)}, ${MAP_DEFAULT_ZOOM});
+L.tileLayer("${BASE_TILE_URL}", { maxZoom: ${MAP_MAX_ZOOM} }).addTo(map);
 const layer = L.layerGroup().addTo(map);
 let pickable = false;
 map.on("click", (event) => {

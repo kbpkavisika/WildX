@@ -1,5 +1,6 @@
 package com.wildx.wildx.controller;
 
+import com.wildx.wildx.dto.DailyCount;
 import com.wildx.wildx.dto.SectorCoverageResponse;
 import com.wildx.wildx.util.PatrolCsv;
 import com.wildx.wildx.service.*;
@@ -40,5 +41,11 @@ public class PatrolCoverageController {
                     .body(PatrolCsv.coverage(report));
         }
         return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/reports/coverage/daily")
+    @PreAuthorize("hasAnyRole('MANAGER','RESEARCHER')")
+    public List<DailyCount> daily(@AuthenticationPrincipal Jwt jwt, @RequestParam LocalDate from, @RequestParam LocalDate to) {
+        return coverage.daily(auth.current(jwt).parkId(), from, to);
     }
 }

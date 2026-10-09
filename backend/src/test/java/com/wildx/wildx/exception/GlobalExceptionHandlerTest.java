@@ -12,7 +12,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void tooLargeUploadsReturn413WithErrorBody() {
         var response = handler.handleTooLarge(new MaxUploadSizeExceededException(5L * 1024 * 1024));
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONTENT_TOO_LARGE);
         assertThat(response.getBody()).containsEntry("error", "File is too large");
     }
 

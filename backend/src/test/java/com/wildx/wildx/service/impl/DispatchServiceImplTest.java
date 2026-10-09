@@ -10,6 +10,7 @@ import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.CommunityReportRepository;
 import com.wildx.wildx.repository.DispatchRepository;
+import com.wildx.wildx.repository.IncidentRepository;
 import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.service.IncidentService;
 import com.wildx.wildx.model.Incident;
@@ -46,6 +47,7 @@ class DispatchServiceImplTest {
     @Mock AppUserRepository appUserRepository;
     @Mock CommunityReportRepository communityReportRepository;
     @Mock AlertRepository alertRepository;
+    @Mock IncidentRepository incidentRepository;
     @Mock AlertService alertService;
     @Mock IncidentService incidentService;
     @Mock PatrolMonitorService patrolMonitorService;
@@ -66,6 +68,7 @@ class DispatchServiceImplTest {
                 appUserRepository,
                 communityReportRepository,
                 alertRepository,
+                incidentRepository,
                 alertService,
                 incidentService,
                 patrolMonitorService,

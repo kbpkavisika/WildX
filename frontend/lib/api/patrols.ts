@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { PATROL_STATUSES, ROLES, WAYPOINT_TYPES, type WaypointType } from "@/lib/enums";
+import type { DayCount } from "@/lib/reports/types";
 import { apiDelete, apiGet, apiGetBlob, apiPost, apiPut } from "./client";
+import { dayCountSchema } from "./day-count";
 
 const timestamp = z.iso.datetime({ offset: true });
 
@@ -175,6 +177,10 @@ function coverageReportPath(from: string, to: string): string {
 
 export function fetchCoverageReport(from: string, to: string): Promise<CoverageReportRowResponse[]> {
   return apiGet(coverageReportPath(from, to), z.array(coverageReportRowSchema));
+}
+
+export function fetchCoverageDaily(from: string, to: string): Promise<DayCount[]> {
+  return apiGet(`/reports/coverage/daily?from=${from}&to=${to}`, z.array(dayCountSchema));
 }
 
 export function fetchCoverageReportCsv(from: string, to: string): Promise<Blob> {

@@ -32,6 +32,7 @@ class PatrolCoverageReportTest {
         assertThat(report.get(1).pointCount()).isZero();
         assertThat(report.get(1).patrolCount()).isZero();
         assertThat(report.get(1).lastPatrolledAt()).isNull();
+        assertThat(service.daily(1L, date, date)).containsExactly(new com.wildx.wildx.dto.DailyCount(date, 3));
     }
 
     @Test
@@ -40,6 +41,7 @@ class PatrolCoverageReportTest {
         assertThatThrownBy(() -> service.report(1L, date, null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.report(1L, date, date.minusDays(1))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.report(1L, date, LocalDate.MAX)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.daily(1L, date, null)).isInstanceOf(IllegalArgumentException.class);
         verifyNoInteractions(tracks, parks);
     }
 

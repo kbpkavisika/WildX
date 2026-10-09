@@ -24,9 +24,7 @@ export const MAP_DEFAULT_CENTER: [number, number] = [7.87, 80.77];
 export const MAP_DEFAULT_ZOOM = 7;
 export const MAP_MAX_ZOOM = 17;
 export const MAP_FOCUS_ZOOM = 15;
-export const MAP_FIT_PADDING_PX = 48;
-export const BASE_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-export const BASE_TILE_ATTRIBUTION = "&copy; OpenStreetMap contributors";
+export const MAP_FIT_PADDING_PX = 48;export const BASE_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 export const MAP_PAGE_ORIGIN = "https://wildx.lk/";
 export const GOOGLE_MAPS_URL = "https://www.google.com/maps?q=";
 export const SIGN_IN_PHOTO_URL =

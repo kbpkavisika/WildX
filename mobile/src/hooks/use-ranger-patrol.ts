@@ -5,7 +5,7 @@ import { endPatrol, fetchTrack, startPatrol } from "@/lib/api/patrols";
 import { PATROLS_REFETCH_MS } from "@/lib/constants";
 import { PATROL_STATUSES } from "@/lib/enums";
 import { formatTime } from "@/lib/format";
-import { toRangerPatrolView, toTrack } from "@/lib/patrols/mappers";
+import { isNearRoute, toRangerPatrolView, toTrack } from "@/lib/patrols/mappers";
 import { useRangerPatrolPage } from "@/lib/patrols/store";
 import type { WaypointFormValues } from "@/lib/patrols/waypoint-form";
 import type { GpsFix } from "@/lib/tracking/sampling";
@@ -19,7 +19,7 @@ type Transition = "start" | "end";
 export function useRangerPatrol(id: number) {
   const queryClient = useQueryClient();
   const sectors = useParkSectors();
-  const fix = useTracker((state) => state.fix);
+  const trackerFix = useTracker((state) => state.fix);
   const gpsLost = useTracker((state) => state.gpsLost);
   const { setNotice, setPanel, setError } = useRangerPatrolPage();
   const { patrols, isPending, isError } = useMyPatrols();
@@ -35,6 +35,7 @@ export function useRangerPatrol(id: number) {
   });
 
   const view = useMemo(() => patrol && toRangerPatrolView(patrol, toTrack(track.data ?? []), new Date()), [patrol, track.data]);
+  const fix = trackerFix && view && isNearRoute(view.route, trackerFix.position) ? trackerFix : null;
 
   const transition = useMutation({
     mutationFn: (kind: Transition) => {

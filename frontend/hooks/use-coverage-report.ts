@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { fetchCoverageReport, fetchCoverageReportCsv } from "@/lib/api/patrols";
+import { fetchCoverageDaily, fetchCoverageReport, fetchCoverageReportCsv } from "@/lib/api/patrols";
 import { downloadBlob } from "@/lib/files";
 import { reportRangeError } from "@/lib/incidents/report-mappers";
 import { toCoverageReportView } from "@/lib/patrols/coverage-mappers";
@@ -16,6 +16,12 @@ export function useCoverageReport() {
     enabled,
   });
 
+  const daily = useQuery({
+    queryKey: ["reports", "coverage", "daily", from, to],
+    queryFn: () => fetchCoverageDaily(from, to),
+    enabled,
+  });
+
   const csv = useMutation({
     mutationFn: () => fetchCoverageReportCsv(from, to),
     onSuccess: (blob) => downloadBlob(blob, `coverage-${from}-${to}.csv`),
@@ -29,6 +35,7 @@ export function useCoverageReport() {
     isPending: enabled && report.isPending,
     isError: report.isError,
     view: enabled && report.data ? toCoverageReportView(report.data, new Date()) : undefined,
+    days: daily.data ?? [],
     csv,
   };
 }

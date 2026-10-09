@@ -1,12 +1,14 @@
 import { router, type Href } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { X } from "lucide-react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { IconButton } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { AppText } from "@/components/ui/text";
 import { UnreadBadge } from "@/components/ui/unread-badge";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { NotificationRow } from "@/lib/alerts/mappers";
-import { colors, fonts, radii, sizes, space } from "@/lib/theme";
+import { colors, floatingShadow, fonts, radii, sizes, space } from "@/lib/theme";
 
 const NEW_DOT = 7;
 
@@ -19,44 +21,51 @@ function NewMark() {
   );
 }
 
-export function NotificationsCard() {
+export function NotificationsCard({ onClose }: { onClose: () => void }) {
   const { isPending, isError, rows, unreadCount, markRead } = useNotifications();
 
   const open = (row: NotificationRow) => {
     if (row.unread) markRead.mutate(row.id);
+    onClose();
     if (row.link) router.navigate(row.link as Href);
   };
 
   return (
-    <Card>
+    <Card style={styles.card}>
       <View style={styles.header}>
         <View style={styles.title}>
           <CardTitle>Notifications</CardTitle>
         </View>
         <UnreadBadge count={unreadCount} />
+        <IconButton icon={X} accessibilityLabel="Close" size={sizes.quiet} onPress={onClose} />
       </View>
-      {isPending && <Notice tone="muted">Loading notifications…</Notice>}
-      {isError && !rows && <Notice tone="negative">Could not load notifications. Retrying.</Notice>}
-      {rows?.length === 0 && <Notice tone="muted">No notifications yet.</Notice>}
-      {rows && rows.length > 0 && (
-        <View style={styles.list}>
-          {rows.map((row) => (
-            <Pressable key={row.id} accessibilityRole="button" onPress={() => open(row)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-              <View style={styles.rowTitle}>
-                <AppText color={row.unread ? colors.ink : colors.inkBody} style={[styles.rowTitleText, row.unread && styles.unread]}>{row.title}</AppText>
-                {row.unread && <NewMark />}
-              </View>
-              <AppText variant="caption" color={colors.inkBody}>{row.body}</AppText>
-              <AppText variant="caption" color={colors.inkMuted}>{row.time}</AppText>
-            </Pressable>
-          ))}
-        </View>
-      )}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        {isPending && <Notice tone="muted">Loading notifications…</Notice>}
+        {isError && !rows && <Notice tone="negative">Could not load notifications. Retrying.</Notice>}
+        {rows?.length === 0 && <Notice tone="muted">No notifications yet.</Notice>}
+        {rows && rows.length > 0 && (
+          <View style={styles.list}>
+            {rows.map((row) => (
+              <Pressable key={row.id} accessibilityRole="button" onPress={() => open(row)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+                <View style={styles.rowTitle}>
+                  <AppText color={row.unread ? colors.ink : colors.inkBody} style={[styles.rowTitleText, row.unread && styles.unread]}>{row.title}</AppText>
+                  {row.unread && <NewMark />}
+                </View>
+                <AppText variant="caption" color={colors.inkBody}>{row.body}</AppText>
+                <AppText variant="caption" color={colors.inkMuted}>{row.time}</AppText>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </ScrollView>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  card: { flexShrink: 1, ...floatingShadow },
+  scroll: { marginHorizontal: -space[3] },
+  scrollContent: { gap: space[4], paddingHorizontal: space[3] },
   header: { flexDirection: "row", alignItems: "center", gap: 10 },
   title: { flex: 1 },
   list: { marginHorizontal: -space[3], marginTop: -space[2], gap: space[1] },

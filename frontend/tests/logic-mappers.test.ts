@@ -11,6 +11,7 @@ import { toReplayView } from "@/lib/patrols/replay-mappers";
 import { toRouteRow } from "@/lib/patrols/route-mappers";
 import { toRangerPatrolCards, toRangerPatrolView } from "@/lib/patrols/ranger-mappers";
 import { toCoverageView, toCoverageReportView } from "@/lib/patrols/coverage-mappers";
+import { toTrendView, trendChange } from "@/lib/reports/mappers";
 import { toDevicesView } from "@/lib/devices/mappers";
 import { toUsersView } from "@/lib/users/mappers";
 import { toZonesView, zoneDeleteError } from "@/lib/zones/mappers";
@@ -45,13 +46,18 @@ describe("incident mapping and aggregates", () => {
   });
   it("maps every incident status and filters type and severity before counts", () => {
     const list = Object.values(INCIDENT_STATUSES).map((status, index) => ({ ...incident, id: index + 1, status, responderName: "Bob", resolutionNote: "Safe", sectorName: index ? "East" : null }));
-    const view = incidents.toIncidentQueueView(list, { status: ALL, typeId: ALL, severity: ALL }, now);
+    const view = incidents.toIncidentQueueView(list, { status: ALL, typeId: ALL, severity: ALL, query: "" }, now);
     expect(view.rows.map((row) => row.statusNote)).toEqual([null, "To Bob", "Safe", "Safe"]);
     expect(view.statusOptions[0].count).toBe(4);
     expect(view.newCount).toBe(1);
-    expect(incidents.toIncidentQueueView(list, { status: INCIDENT_STATUSES.NEW, typeId: 2, severity: SEVERITIES.HIGH }, now).rows).toHaveLength(1);
-    expect(incidents.toIncidentQueueView(list, { status: ALL, typeId: 99, severity: SEVERITIES.LOW }, now).rows).toEqual([]);
-    expect(incidents.toIncidentQueueView([{ ...incident, status: INCIDENT_STATUSES.ASSIGNED }], { status: ALL, typeId: ALL, severity: ALL }, now).rows[0].statusNote).toBeNull();
+    expect(incidents.toIncidentQueueView(list, { status: INCIDENT_STATUSES.NEW, typeId: 2, severity: SEVERITIES.HIGH, query: "" }, now).rows).toHaveLength(1);
+    expect(incidents.toIncidentQueueView(list, { status: ALL, typeId: 99, severity: SEVERITIES.LOW, query: "" }, now).rows).toEqual([]);
+    expect(incidents.toIncidentQueueView([{ ...incident, status: INCIDENT_STATUSES.ASSIGNED }], { status: ALL, typeId: ALL, severity: ALL, query: "" }, now).rows[0].statusNote).toBeNull();
+    const search = (query: string) => incidents.toIncidentQueueView(list, { status: ALL, typeId: ALL, severity: ALL, query }, now);
+    expect(search("  inc-3 ").rows.map((row) => row.id)).toEqual([3]);
+    expect(search("EAST").statusOptions[0].count).toBe(3);
+    expect(search("bob").rows).toHaveLength(4);
+    expect(search("nothing matches").rows).toEqual([]);
     for (const status of Object.values(INCIDENT_STATUSES)) {
       const detail = incidents.toIncidentDetailView({ ...incident, status, resolutionNote: "Safe", description: "Smoke", patrolId: 4, photoPath: "photo", locationSource: LOCATION_SOURCES.MANUAL }, now);
       expect(detail.position).toEqual([6, 80]);
@@ -161,6 +167,24 @@ describe("patrol map, table and replay views", () => {
     const rows = sectors.map((sector, index) => ({ ...sector, pointCount: index, patrolCount: index }));
     expect(toCoverageReportView(rows, now)).toMatchObject({ visitedCount: 3, sectorCount: 4 });
     expect(toCoverageReportView(rows, now).rows[0].unvisited).toBe(true);
+    const report = toCoverageReportView(rows, now);
+    expect(report.rows.map((row) => row.level)).toEqual(["none", "low", "medium", "high"]);
+    expect(report.highlights.map((highlight) => highlight.value)).toEqual(["75%", "East", "1 sector"]);
+    expect(report.byPatrols.map((bar) => bar.count)).toEqual([3, 2, 1]);
+    expect(report.byPatrols[0].highlighted).toBe(true);
+    expect(report.pointShares.map((share) => share.pct)).toEqual([50, 33, 17]);
+  });
+  it("buckets daily counts into weeks with change and moving average", () => {
+    const days = ["2026-10-05", "2026-10-06", "2026-10-12", "2026-10-13"].map((date, index) => ({ date, count: index + 1 }));
+    const view = toTrendView(days, "week");
+    expect(view.bars.map((bar) => bar.tooltip)).toEqual(["Week of 5 Oct · 3", "Week of 12 Oct · 7"]);
+    expect(view.total).toBe(10);
+    expect(view.change).toBe("+133%");
+    expect(toTrendView(days, "day").bars).toHaveLength(4);
+    expect(trendChange([4, 2])).toBe("−50%");
+    expect(trendChange([0, 2])).toBe("New");
+    expect(trendChange([0, 0])).toBe("0%");
+    expect(trendChange([2])).toBeNull();
   });
 });
 

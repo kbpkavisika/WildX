@@ -10,10 +10,11 @@ interface LocationPickerProps {
   sectors: SectorShape[];
   invalid?: boolean;
   marker?: "incident" | "waypoint";
+  near?: LatLng | null;
   onPick?: (position: LatLng) => void;
 }
 
-export function LocationPicker({ value, sectors, invalid = false, marker = "incident", onPick }: LocationPickerProps) {
+export function LocationPicker({ value, sectors, invalid = false, marker = "incident", near = null, onPick }: LocationPickerProps) {
   const fitTo = useMemo(() => {
     const points = sectors.flatMap((sector) => sector.rings.flat());
     return points.length > 0 ? points : value ? [value] : [];
@@ -25,7 +26,7 @@ export function LocationPicker({ value, sectors, invalid = false, marker = "inci
       height={MAP_HEIGHT}
       fitTo={fitTo}
       markers={markers}
-      focus={value}
+      focus={value ?? near}
       invalid={invalid}
       accessibilityLabel={onPick ? `${LABELS[marker]} map. Tap to set the location.` : `${LABELS[marker]} map`}
       onPick={onPick}

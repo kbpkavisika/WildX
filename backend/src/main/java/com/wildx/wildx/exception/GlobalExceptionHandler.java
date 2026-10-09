@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
     public ResponseEntity<Map<String, String>> handleTooLarge(
             org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
-        return error(HttpStatus.PAYLOAD_TOO_LARGE, "File is too large");
+        return error(HttpStatus.CONTENT_TOO_LARGE, "File is too large");
     }
 
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)

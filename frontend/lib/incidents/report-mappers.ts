@@ -33,7 +33,7 @@ function monthLabel(value: string): string {
   return `${formatMonth(new Date(year, month - 1))} ${year}`;
 }
 
-function toBars(counts: IncidentReportCount[], label: (count: IncidentReportCount) => string): CountBar[] {
+export function toBars(counts: IncidentReportCount[], label: (count: IncidentReportCount) => string): CountBar[] {
   const max = Math.max(0, ...counts.map((count) => count.count));
   const topIndex = max === 0 ? -1 : counts.findIndex((count) => count.count === max);
   return counts.map((count, index) => ({

@@ -1,4 +1,6 @@
 import type { ChipTone } from "@/lib/dashboard/types";
+import type { CountBar } from "@/lib/incidents/report-mappers";
+import type { Highlight, ShareRow } from "@/lib/reports/types";
 
 export type LatLng = [number, number];
 
@@ -127,12 +129,19 @@ export interface CoverageReportRow {
   patrols: number;
   unvisited: boolean;
   lastVisit: string;
+  level: CoverageLevel;
+  tooltip: string;
 }
+
+export type CoverageLevel = "high" | "medium" | "low" | "none";
 
 export interface CoverageReportView {
   rows: CoverageReportRow[];
   visitedCount: number;
   sectorCount: number;
+  highlights: Highlight[];
+  byPatrols: CountBar[];
+  pointShares: ShareRow[];
 }
 
 export interface ReplayView {
