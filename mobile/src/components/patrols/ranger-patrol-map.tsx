@@ -1,7 +1,5 @@
 import { useMemo } from "react";
-import { Polyline } from "react-native-maps";
-import { BaseMap, toMapPoint } from "@/components/map/base-map";
-import { TeamMarker, WaypointMarker } from "@/components/map/markers";
+import { BaseMap, type MapLine, type MapMarker } from "@/components/map/base-map";
 import type { LatLng, SectorShape } from "@/lib/geo";
 import type { WaypointView } from "@/lib/patrols/mappers";
 import { colors } from "@/lib/theme";
@@ -9,7 +7,8 @@ import { colors } from "@/lib/theme";
 const MAP_HEIGHT = 360;
 const PLANNED_WIDTH = 3;
 const WALKED_WIDTH = 5;
-const PLANNED_DASH = [8, 8];
+const MIN_LINE_POINTS = 2;
+const TEAM_NUMBER = "1";
 
 interface RangerPatrolMapProps {
   route: LatLng[];
@@ -21,18 +20,12 @@ interface RangerPatrolMapProps {
 
 export function RangerPatrolMap({ route, track, waypoints, position, sectors }: RangerPatrolMapProps) {
   const fitTo = useMemo(() => (route.length > 0 ? route : sectors.flatMap((sector) => sector.rings.flat())), [route, sectors]);
-  return (
-    <BaseMap height={MAP_HEIGHT} fitTo={fitTo} sectors={sectors} accessibilityLabel="Patrol map">
-      {route.length > 1 && (
-        <Polyline coordinates={route.map(toMapPoint)} strokeColor={colors.track1} strokeWidth={PLANNED_WIDTH} lineDashPattern={PLANNED_DASH} lineCap="round" lineJoin="round" />
-      )}
-      {track.length > 1 && (
-        <Polyline coordinates={track.map(toMapPoint)} strokeColor={colors.track1} strokeWidth={WALKED_WIDTH} lineCap="round" lineJoin="round" />
-      )}
-      {waypoints.map((waypoint) => (
-        <WaypointMarker key={waypoint.key} position={waypoint.position} label={waypoint.label} />
-      ))}
-      {position && <TeamMarker position={position} number={1} />}
-    </BaseMap>
-  );
+  const lines: MapLine[] = [
+    { key: "planned", points: route, color: colors.track1, width: PLANNED_WIDTH, dashed: true },
+    { key: "walked", points: track, color: colors.track1, width: WALKED_WIDTH },
+  ].filter((line) => line.points.length >= MIN_LINE_POINTS);
+  const markers: MapMarker[] = waypoints.map((waypoint) => ({ key: waypoint.key, kind: "waypoint", position: waypoint.position, label: waypoint.label }));
+  if (position) markers.push({ key: "team", kind: "team", position, label: "Your position", text: TEAM_NUMBER });
+
+  return <BaseMap height={MAP_HEIGHT} fitTo={fitTo} sectors={sectors} lines={lines} markers={markers} accessibilityLabel="Patrol map" />;
 }
