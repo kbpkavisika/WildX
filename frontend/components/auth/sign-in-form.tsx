@@ -50,7 +50,7 @@ export function SignInForm() {
         {signIn.isPending ? "Signing in…" : "Sign in"}
       </Button>
       <p className="m-0 text-center text-body text-ink-muted">
-        New to WildX? <a href="#" className="font-medium text-primary hover:text-primary-hover">Create an account</a>
+        Accounts are created by your park admin.
       </p>
     </form>
   );

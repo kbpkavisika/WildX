@@ -94,9 +94,17 @@ public class AuthServiceImpl implements AuthService {
             }
             return;
         }
-        if (activeUser(jwt).getRole() != Role.ADMIN) {
+        requireAdmin(jwt);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long requireAdmin(Jwt jwt) {
+        AppUser user = activeUser(jwt);
+        if (user.getRole() != Role.ADMIN) {
             throw new UnauthorizedException(ACCESS_CHANGED);
         }
+        return user.getId();
     }
 
     private AppUser activeUser(Jwt jwt) {

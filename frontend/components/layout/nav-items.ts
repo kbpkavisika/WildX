@@ -1,9 +1,10 @@
-import { Bell, ChartColumn, House, MessageSquare, Radio, Route, Settings, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Bell, ChartColumn, House, MessageSquare, Radio, Route, Settings, TriangleAlert, Users, type LucideIcon } from "lucide-react";
+import { ROLES, type Role } from "@/lib/enums";
 
 export interface NavChild {
   label: string;
   href: string;
-  count: number;
+  count?: number;
 }
 
 export interface NavItem {
@@ -12,6 +13,7 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: number;
   children?: NavChild[];
+  roles?: Role[];
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -23,6 +25,8 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { label: "Active patrols", href: "/dashboard/patrols/active", count: 4 },
       { label: "All patrols", href: "/dashboard/patrols", count: 9 },
+      { label: "Routes", href: "/dashboard/routes" },
+      { label: "Coverage", href: "/dashboard/coverage" },
     ],
   },
   { label: "Incidents", href: "/dashboard/incidents", icon: TriangleAlert },
@@ -48,4 +52,5 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Zones and rules", href: "/dashboard/settings/zones", count: 2 },
     ],
   },
+  { label: "Users", href: "/dashboard/users", icon: Users, roles: [ROLES.ADMIN] },
 ];
