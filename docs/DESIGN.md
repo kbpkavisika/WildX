@@ -443,6 +443,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Two cards side by side: Collar fixes (`3 1 420px`) and Camera images (`2 1 340px`).
   - Collar fixes: a Collar pick-list ("COL-001 · Gemunu") and the six scenarios as 48px radio rows with a muted one-line explanation each (Walk into zone, Night walk into zone, Single fix, Low battery, Not moving, Duplicate fix). The two walks show a Zone pick-list ("Kumbukgaha farmland · Farmland"); the other four show Latitude and Longitude fields. Send fixes is a 40px primary button.
   - Camera images: a Camera pick-list, an Images pick-list (1–10), a muted line explaining the burst, and Send images.
+  - Without collars or cameras, a muted caption says "No collars yet. Register one on the Devices page." (or cameras). Other roles see "Only park managers can use the simulator."
   - After sending, a positive line beside the button reports the result: "Sent 6 fixes · 6 stored · 0 duplicates." or "Sent 3 images · 3 stored." Errors show in negative red in the same place.
 
 ## Do's and Don'ts

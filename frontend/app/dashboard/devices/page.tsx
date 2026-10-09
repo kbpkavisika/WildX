@@ -5,17 +5,15 @@ import { AnimalForm } from "@/components/devices/animal-form";
 import { DeviceForm } from "@/components/devices/device-form";
 import { DevicesTable } from "@/components/devices/devices-table";
 import { FormPanel } from "@/components/devices/form-panel";
+import { SecondaryLink } from "@/components/devices/secondary-link";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, SecondaryButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { useDevices } from "@/hooks/use-devices";
+import { counted } from "@/lib/devices/mappers";
 import { useDevicesPage } from "@/lib/devices/store";
 import type { DevicesView } from "@/lib/devices/types";
-
-function counted(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
-}
 
 function Summary({ view }: { view: DevicesView }) {
   const attention = view.attentionCount === 0 ? "all healthy" : `${view.attentionCount} ${view.attentionCount === 1 ? "needs" : "need"} attention`;
@@ -40,6 +38,7 @@ export default function DevicesPage() {
         action={
           canManage && (
             <div className="flex flex-wrap items-center gap-3">
+              <SecondaryLink href="/dashboard/simulator">Simulator</SecondaryLink>
               <SecondaryButton onClick={() => setForm("animal")} aria-expanded={form === "animal"}>New animal</SecondaryButton>
               <Button onClick={() => setForm("device")} aria-expanded={form === "device"}>
                 <Plus className="size-[18px]" strokeWidth={2} />

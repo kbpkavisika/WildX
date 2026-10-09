@@ -26,6 +26,10 @@ const HEALTH = {
   noData: { tone: "neutral", label: "No data yet" },
 } satisfies Record<string, ChipView>;
 
+export function counted(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
 function healthOf(device: DeviceResponse, now: Date): ChipView {
   if (!device.lastSeenAt) return HEALTH.noData;
   const silentMs = now.getTime() - new Date(device.lastSeenAt).getTime();

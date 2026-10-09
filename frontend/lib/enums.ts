@@ -113,3 +113,13 @@ export const DEVICE_TYPES = {
   CAMERA: "CAMERA",
 } as const;
 export type DeviceType = (typeof DEVICE_TYPES)[keyof typeof DEVICE_TYPES];
+
+export const SIMULATION_SCENARIOS = {
+  WALK_INTO_ZONE: "WALK_INTO_ZONE",
+  NIGHT_WALK_INTO_ZONE: "NIGHT_WALK_INTO_ZONE",
+  SINGLE_FIX: "SINGLE_FIX",
+  LOW_BATTERY: "LOW_BATTERY",
+  NOT_MOVING: "NOT_MOVING",
+  DUPLICATE: "DUPLICATE",
+} as const;
+export type SimulationScenario = (typeof SIMULATION_SCENARIOS)[keyof typeof SIMULATION_SCENARIOS];

@@ -15,6 +15,17 @@ function isNumberWithin(value: string, limit: number): boolean {
   return value !== "" && Number.isFinite(number) && Math.abs(number) <= limit;
 }
 
+export const LATITUDE_ERROR = `Enter a latitude from -${LATITUDE_LIMIT} to ${LATITUDE_LIMIT}`;
+export const LONGITUDE_ERROR = `Enter a longitude from -${LONGITUDE_LIMIT} to ${LONGITUDE_LIMIT}`;
+
+export function isLatitude(value: string): boolean {
+  return isNumberWithin(value, LATITUDE_LIMIT);
+}
+
+export function isLongitude(value: string): boolean {
+  return isNumberWithin(value, LONGITUDE_LIMIT);
+}
+
 export const deviceFormSchema = z
   .object({
     type: z.enum(DEVICE_TYPES),
@@ -31,11 +42,11 @@ export const deviceFormSchema = z
     if (values.type === DEVICE_TYPES.COLLAR && values.animalId === "") {
       ctx.addIssue({ code: "custom", path: ["animalId"], message: "Choose an animal" });
     }
-    if (values.type === DEVICE_TYPES.CAMERA && !isNumberWithin(values.lat, LATITUDE_LIMIT)) {
-      ctx.addIssue({ code: "custom", path: ["lat"], message: `Enter a latitude from -${LATITUDE_LIMIT} to ${LATITUDE_LIMIT}` });
+    if (values.type === DEVICE_TYPES.CAMERA && !isLatitude(values.lat)) {
+      ctx.addIssue({ code: "custom", path: ["lat"], message: LATITUDE_ERROR });
     }
-    if (values.type === DEVICE_TYPES.CAMERA && !isNumberWithin(values.lng, LONGITUDE_LIMIT)) {
-      ctx.addIssue({ code: "custom", path: ["lng"], message: `Enter a longitude from -${LONGITUDE_LIMIT} to ${LONGITUDE_LIMIT}` });
+    if (values.type === DEVICE_TYPES.CAMERA && !isLongitude(values.lng)) {
+      ctx.addIssue({ code: "custom", path: ["lng"], message: LONGITUDE_ERROR });
     }
   });
 
