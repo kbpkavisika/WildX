@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker } from "react-leaflet";
+import { BaseTiles } from "@/components/map/base-tiles";
 import { FitToData } from "@/components/map/fit-to-data";
 import { SectorLayer } from "@/components/map/sector-layer";
 import { incidentIcon } from "@/components/patrols/map-icons";
@@ -25,6 +26,7 @@ export default function IncidentPointsMap({ points, sectors }: IncidentPointsMap
         attributionControl={false}
         className="absolute! inset-0 isolate bg-map-ground! font-sans"
       >
+        <BaseTiles />
         <FitToData points={fitPoints} />
         <SectorLayer sectors={sectors} />
         {points.map((point) => (
