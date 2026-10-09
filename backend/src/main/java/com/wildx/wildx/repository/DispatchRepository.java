@@ -21,6 +21,10 @@ public interface DispatchRepository extends JpaRepository<Dispatch, Long> {
     @EntityGraph(attributePaths = {"responder", "assignedBy"})
     List<Dispatch> findBySourceTypeAndSourceIdOrderByAssignedAtDesc(SourceType sourceType, Long sourceId);
 
+    @EntityGraph(attributePaths = {"responder"})
+    List<Dispatch> findBySourceTypeAndSourceIdInAndStatusNotOrderByAssignedAtAsc(SourceType sourceType, Collection<Long> sourceIds,
+                                                                                 DispatchStatus status);
+
     boolean existsBySourceTypeAndSourceIdAndResponderId(SourceType sourceType, Long sourceId, Long responderId);
 
     Optional<Dispatch> findFirstBySourceTypeAndSourceIdAndStatusInOrderByAssignedAtDesc(
