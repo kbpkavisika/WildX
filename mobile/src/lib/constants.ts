@@ -21,10 +21,13 @@ export const WAYPOINT_NOTE_MAX = 1000;
 export const TEXT_MAX_LENGTH = 1000;
 export const COORDINATE_DECIMALS = 4;
 export const MAP_DEFAULT_CENTER: [number, number] = [7.87, 80.77];
-export const MAP_DEFAULT_DELTA = 3;
+export const MAP_DEFAULT_ZOOM = 7;
 export const MAP_MAX_ZOOM = 17;
+export const MAP_FOCUS_ZOOM = 15;
 export const MAP_FIT_PADDING_PX = 48;
-export const OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+export const BASE_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+export const BASE_TILE_ATTRIBUTION = "&copy; OpenStreetMap contributors";
+export const MAP_PAGE_ORIGIN = "https://wildx.lk/";
 export const GOOGLE_MAPS_URL = "https://www.google.com/maps?q=";
 export const SIGN_IN_PHOTO_URL =
   "https://images.unsplash.com/photo-1674556275226-47b6b393d623?ixlib=rb-4.1.0&q=85&fm=jpg&crop=entropy&cs=srgb&w=1200";

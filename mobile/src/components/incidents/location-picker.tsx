@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { BaseMap } from "@/components/map/base-map";
-import { IncidentMarker, WaypointMarker } from "@/components/map/markers";
+import { BaseMap, type MapMarker } from "@/components/map/base-map";
 import type { LatLng, SectorShape } from "@/lib/geo";
 
 const MAP_HEIGHT = 280;
@@ -19,18 +18,17 @@ export function LocationPicker({ value, sectors, invalid = false, marker = "inci
     const points = sectors.flatMap((sector) => sector.rings.flat());
     return points.length > 0 ? points : value ? [value] : [];
   }, [sectors, value]);
+  const markers: MapMarker[] = value ? [{ key: marker, kind: marker, position: value, label: LABELS[marker] }] : [];
 
   return (
     <BaseMap
       height={MAP_HEIGHT}
       fitTo={fitTo}
+      markers={markers}
       focus={value}
       invalid={invalid}
       accessibilityLabel={onPick ? `${LABELS[marker]} map. Tap to set the location.` : `${LABELS[marker]} map`}
       onPick={onPick}
-    >
-      {value && marker === "incident" && <IncidentMarker position={value} />}
-      {value && marker === "waypoint" && <WaypointMarker position={value} label="Waypoint location" />}
-    </BaseMap>
+    />
   );
 }
