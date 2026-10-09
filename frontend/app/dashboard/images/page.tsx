@@ -1,7 +1,9 @@
 "use client";
 
+import { ImageFrame, ImagePicture } from "@/components/camera/image-picture";
 import { ImageQueue } from "@/components/camera/image-queue";
 import { ImageReview } from "@/components/camera/image-review";
+import { RestrictedImage } from "@/components/camera/restricted-image";
 import { TagImageForm } from "@/components/camera/tag-image-form";
 import { SecondaryLink } from "@/components/devices/secondary-link";
 import { PageHeader } from "@/components/layout/page-header";
@@ -59,7 +61,19 @@ export default function CameraTrapsPage() {
             <ImageQueue bursts={view.bursts} pictures={pictures} emptyLabel={emptyLabel} />
           </Card>
           <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-5">
-            <ImageReview view={view.selected} picture={view.selected ? pictures.get(view.selected.id) : undefined}>
+            <ImageReview
+              view={view.selected}
+              media={
+                view.selected &&
+                (view.selected.restricted ? (
+                  <RestrictedImage key={view.selected.id} imageId={view.selected.id} title={view.selected.title} />
+                ) : (
+                  <ImageFrame>
+                    <ImagePicture src={pictures.get(view.selected.id)} restricted={false} alt={view.selected.title} large />
+                  </ImageFrame>
+                ))
+              }
+            >
               {canTag && view.selected && <TagImageForm key={view.selected.id} imageId={view.selected.id} defaults={view.selected.tag} />}
             </ImageReview>
           </div>

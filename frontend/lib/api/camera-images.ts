@@ -39,6 +39,10 @@ export function fetchCameraImageFile(parkId: number, imageId: number): Promise<B
   return apiGetBlob(`/parks/${parkId}/camera-images/${imageId}/file`);
 }
 
+export function fetchRestrictedImageFile(parkId: number, imageId: number, reason: string): Promise<Blob> {
+  return apiGetBlob(`/parks/${parkId}/camera-images/${imageId}/file?reason=${encodeURIComponent(reason)}`);
+}
+
 export function tagCameraImage(parkId: number, imageId: number, request: CameraTagRequest): Promise<CameraImageResponse> {
   return apiPost(`/parks/${parkId}/camera-images/${imageId}/tag`, request, cameraImageSchema);
 }

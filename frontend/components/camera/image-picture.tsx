@@ -28,3 +28,7 @@ export function ImagePicture({ src, restricted, alt, large = false }: ImagePictu
     </span>
   );
 }
+
+export function ImageFrame({ children }: { children: React.ReactNode }) {
+  return <div className="overflow-hidden rounded-[14px] border border-line">{children}</div>;
+}
