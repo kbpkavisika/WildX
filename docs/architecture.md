@@ -292,7 +292,7 @@ frontend/
 │  │  ├─ page.tsx             # live map: patrols + open alerts + new incidents + hotspots
 │  │  ├─ patrols/  routes/  coverage/          # UC1
 │  │  ├─ incidents/                            # UC2
-│  │  ├─ alerts/  images/  devices/            # UC3
+│  │  ├─ alerts/  images/  devices/  simulator/   # UC3 (simulator = demo collar and camera data)
 │  │  ├─ community/                            # UC4
 │  │  ├─ reports/                              # all four reports, tabs
 │  │  └─ settings/            # sectors, zones, alert rules, incident types, segments (GeoJSON paste)
