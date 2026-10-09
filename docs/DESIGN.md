@@ -294,6 +294,7 @@ Screens designed so far (`docs/prototypes/`):
 - **Ranger alerts** (`ranger-alerts.html`): the phone screen behind the ranger's Alerts tab, with the park's open alerts, large Acknowledge and Resolve buttons, and the ranger's notifications.
 - **Devices** (`devices.html`): every collar and camera trap of the park with its health, and inline forms to register an animal or a device.
 - **Simulator** (`simulator.html`): the demo tool that sends test collar fixes and camera images through the real ingest, in place of real hardware.
+- **Camera traps** (`camera-review.html`): the image review queue grouped into bursts, the selected image with its tag form, and the reason prompt for a restricted image.
 
 ### Voice
 
@@ -445,6 +446,15 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Camera images: a Camera pick-list, an Images pick-list (1–10), a muted line explaining the burst, and Send images.
   - Without collars or cameras, a muted caption says "No collars yet. Register one on the Devices page." (or cameras). Other roles see "Only park managers can use the simulator."
   - After sending, a positive line beside the button reports the result: "Sent 6 fixes · 6 stored · 0 duplicates." or "Sent 3 images · 3 stored." Errors show in negative red in the same place.
+- **Camera traps.**
+  - The sidebar's Sensors → Camera traps item opens it. Managers, Admins and the LEL can use it; other roles see "Only park managers and the LEL can review camera images." The LEL only ever sees restricted images.
+  - The subtitle counts the work: "**4 images** to review in 2 bursts." Managers get Simulator as a secondary link on the right.
+  - The image queue (`3 1 420px`) sits beside the review card (`2 1 340px`). Filter pills: To review (the default), Tagged, Empty, Unidentifiable, Restricted and All, with counts. The LEL gets only the Restricted list, without pills.
+  - Each burst has a "CAM-001 · Today · 21:40 – 21:42" label (one time for a single image) and a muted "3 images in 1 min" or "1 image" caption, then a grid of 4:3 image tiles (140px minimum) with the capture time and a status chip. The selected tile gets a 2px pine border and the lime-soft ring. A restricted tile never loads its picture: it shows a lock icon and "Restricted" in negative red on `surface-sunken`.
+  - Status chips: To review (neutral), Tagged with the species and count, e.g. "Asian elephant · 2" (positive), Empty (neutral), Unidentifiable (neutral), Restricted (negative).
+  - Without a selection the review card says "Select an image to review it." With one, it shows "CAM-001 · Today · 21:41" as `card-title`, the status chip, the image at 4:3 in an lg-radius frame, and a fact list: Camera, Captured (with seconds) and Reviewed (name · time, or —).
+  - Managers get the **Tag image** panel on `surface-form`: "What is in the image?" with four 48px radio rows that each carry a muted explanation (Animals, Empty, Unidentifiable, Restricted). Animals adds Species and Count (1 or more) fields. The current tag is pre-selected, so re-tagging is allowed. Missing fields are outlined in negative red. Save tag is a 40px primary button; after saving, a positive "Saved." line appears and the tile chip updates.
+  - A restricted image shows the lock placeholder instead of the picture and a **View restricted image** panel: a line saying every view is written to the audit log with your name, the time and the reason, a required Reason field ("Enter a reason") and View image. The picture then appears in place for that visit only; selecting it again asks again.
 
 ## Do's and Don'ts
 
