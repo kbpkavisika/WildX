@@ -90,9 +90,17 @@ function statusNote(incident: IncidentResponse): string | null {
   return incident.resolutionNote;
 }
 
-function matchesTypeAndSeverity(incident: IncidentResponse, filters: IncidentQueueFilters): boolean {
+function matchesQuery(incident: IncidentResponse, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") return true;
+  return [`INC-${incident.id}`, incident.typeName, incident.sectorName, incident.reporterName, incident.responderName, incident.description]
+    .some((value) => value?.toLowerCase().includes(needle));
+}
+
+function matchesFilters(incident: IncidentResponse, filters: IncidentQueueFilters): boolean {
   return (filters.typeId === ALL || incident.typeId === filters.typeId)
-    && (filters.severity === ALL || incident.severity === filters.severity);
+    && (filters.severity === ALL || incident.severity === filters.severity)
+    && matchesQuery(incident, filters.query);
 }
 
 function statusOptions(incidents: IncidentResponse[]): StatusFilterOption[] {
@@ -152,7 +160,7 @@ function byStatus(a: IncidentResponse, b: IncidentResponse): number {
 }
 
 export function toIncidentQueueView(incidents: IncidentResponse[], filters: IncidentQueueFilters, now: Date): IncidentQueueView {
-  const narrowed = incidents.filter((incident) => matchesTypeAndSeverity(incident, filters));
+  const narrowed = incidents.filter((incident) => matchesFilters(incident, filters));
   const shown = filters.status === ALL ? narrowed : narrowed.filter((incident) => incident.status === filters.status);
   return {
     rows: [...shown].sort(byStatus).map((incident) => toIncidentRow(incident, now)),

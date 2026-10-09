@@ -45,13 +45,18 @@ describe("incident mapping and aggregates", () => {
   });
   it("maps every incident status and filters type and severity before counts", () => {
     const list = Object.values(INCIDENT_STATUSES).map((status, index) => ({ ...incident, id: index + 1, status, responderName: "Bob", resolutionNote: "Safe", sectorName: index ? "East" : null }));
-    const view = incidents.toIncidentQueueView(list, { status: ALL, typeId: ALL, severity: ALL }, now);
+    const view = incidents.toIncidentQueueView(list, { status: ALL, typeId: ALL, severity: ALL, query: "" }, now);
     expect(view.rows.map((row) => row.statusNote)).toEqual([null, "To Bob", "Safe", "Safe"]);
     expect(view.statusOptions[0].count).toBe(4);
     expect(view.newCount).toBe(1);
-    expect(incidents.toIncidentQueueView(list, { status: INCIDENT_STATUSES.NEW, typeId: 2, severity: SEVERITIES.HIGH }, now).rows).toHaveLength(1);
-    expect(incidents.toIncidentQueueView(list, { status: ALL, typeId: 99, severity: SEVERITIES.LOW }, now).rows).toEqual([]);
-    expect(incidents.toIncidentQueueView([{ ...incident, status: INCIDENT_STATUSES.ASSIGNED }], { status: ALL, typeId: ALL, severity: ALL }, now).rows[0].statusNote).toBeNull();
+    expect(incidents.toIncidentQueueView(list, { status: INCIDENT_STATUSES.NEW, typeId: 2, severity: SEVERITIES.HIGH, query: "" }, now).rows).toHaveLength(1);
+    expect(incidents.toIncidentQueueView(list, { status: ALL, typeId: 99, severity: SEVERITIES.LOW, query: "" }, now).rows).toEqual([]);
+    expect(incidents.toIncidentQueueView([{ ...incident, status: INCIDENT_STATUSES.ASSIGNED }], { status: ALL, typeId: ALL, severity: ALL, query: "" }, now).rows[0].statusNote).toBeNull();
+    const search = (query: string) => incidents.toIncidentQueueView(list, { status: ALL, typeId: ALL, severity: ALL, query }, now);
+    expect(search("  inc-3 ").rows.map((row) => row.id)).toEqual([3]);
+    expect(search("EAST").statusOptions[0].count).toBe(3);
+    expect(search("bob").rows).toHaveLength(4);
+    expect(search("nothing matches").rows).toEqual([]);
     for (const status of Object.values(INCIDENT_STATUSES)) {
       const detail = incidents.toIncidentDetailView({ ...incident, status, resolutionNote: "Safe", description: "Smoke", patrolId: 4, photoPath: "photo", locationSource: LOCATION_SOURCES.MANUAL }, now);
       expect(detail.position).toEqual([6, 80]);

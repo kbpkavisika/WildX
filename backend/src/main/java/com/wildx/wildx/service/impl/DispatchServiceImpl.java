@@ -163,7 +163,7 @@ public class DispatchServiceImpl implements DispatchService {
         }
 
         log.info("create dispatch completed id={} status={}", saved.getId(), saved.getStatus());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 
     @Override
@@ -171,7 +171,7 @@ public class DispatchServiceImpl implements DispatchService {
     public List<DispatchResponse> getMyDispatches(Long responderId) {
         return dispatchRepository.findByResponderIdOrderByAssignedAtDesc(responderId)
                 .stream()
-                .map(DispatchResponse::from)
+                .map(this::response)
                 .toList();
     }
 
@@ -181,7 +181,7 @@ public class DispatchServiceImpl implements DispatchService {
         return dispatchRepository.findBySourceTypeAndSourceIdOrderByAssignedAtDesc(sourceType, sourceId)
                 .stream()
                 .filter(dispatch -> visibleTo(caller, dispatch))
-                .map(DispatchResponse::from)
+                .map(this::response)
                 .toList();
     }
 
@@ -191,7 +191,7 @@ public class DispatchServiceImpl implements DispatchService {
         Dispatch dispatch = dispatchRepository.findWithDetailsById(id)
                 .filter(found -> visibleTo(caller, found))
                 .orElseThrow(() -> new NotFoundException("Dispatch not found"));
-        return DispatchResponse.from(dispatch);
+        return response(dispatch);
     }
 
     private boolean visibleTo(UserResponse caller, Dispatch dispatch) {
@@ -212,7 +212,7 @@ public class DispatchServiceImpl implements DispatchService {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
         if (dispatch.getStatus() == DispatchStatus.ACKNOWLEDGED) {
-            return DispatchResponse.from(dispatch);
+            return response(dispatch);
         }
         if (dispatch.getStatus() != DispatchStatus.ASSIGNED) {
             throw new IllegalStateException("Dispatch cannot be acknowledged in status " + dispatch.getStatus());
@@ -221,7 +221,7 @@ public class DispatchServiceImpl implements DispatchService {
         dispatch.setAcknowledgedAt(clock.instant());
         Dispatch saved = dispatchRepository.save(dispatch);
         log.info("acknowledge dispatch completed id={}", saved.getId());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 
     @Override
@@ -234,7 +234,7 @@ public class DispatchServiceImpl implements DispatchService {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
         if (dispatch.getStatus() == DispatchStatus.COMPLETED) {
-            return DispatchResponse.from(dispatch);
+            return response(dispatch);
         }
         if (dispatch.getStatus() == DispatchStatus.DECLINED) {
             throw new IllegalStateException("Dispatch is already " + dispatch.getStatus());
@@ -268,7 +268,7 @@ public class DispatchServiceImpl implements DispatchService {
         }
 
         log.info("complete dispatch completed id={} outcome={}", saved.getId(), saved.getOutcome());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 
     @Override
@@ -281,7 +281,7 @@ public class DispatchServiceImpl implements DispatchService {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
         if (dispatch.getStatus() == DispatchStatus.DECLINED) {
-            return DispatchResponse.from(dispatch);
+            return response(dispatch);
         }
         if (dispatch.getStatus() == DispatchStatus.COMPLETED) {
             throw new IllegalStateException("Dispatch is already " + dispatch.getStatus());
@@ -305,6 +305,6 @@ public class DispatchServiceImpl implements DispatchService {
         }
 
         log.info("decline dispatch completed id={}", saved.getId());
-        return DispatchResponse.from(saved);
+        return response(saved);
     }
 }

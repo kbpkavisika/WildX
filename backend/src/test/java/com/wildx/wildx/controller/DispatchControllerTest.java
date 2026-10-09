@@ -95,7 +95,9 @@ class DispatchControllerTest {
                 null,
                 null,
                 null,
-                "Urgent response"
+                "Urgent response",
+                null,
+                null
         );
 
         when(dispatches.createDispatch(eq(clo), any(DispatchCreateRequest.class))).thenReturn(dispatchResponse);
@@ -139,7 +141,9 @@ class DispatchControllerTest {
                 null,
                 null,
                 null,
-                "Urgent response"
+                "Urgent response",
+                null,
+                null
         );
 
         when(dispatches.getMyDispatches(101L)).thenReturn(List.of(dispatchResponse));
@@ -171,7 +175,9 @@ class DispatchControllerTest {
                 Instant.now(),
                 null,
                 null,
-                "Urgent response"
+                "Urgent response",
+                null,
+                null
         );
 
         when(dispatches.acknowledgeDispatch(eq(ranger), eq(99L))).thenReturn(acknowledged);
@@ -202,7 +208,9 @@ class DispatchControllerTest {
                 Instant.now(),
                 Instant.now(),
                 "Conflict averted, elephants guided back",
-                "Urgent response"
+                "Urgent response",
+                null,
+                null
         );
 
         when(dispatches.completeDispatch(eq(ranger), eq(99L), any(DispatchCompleteRequest.class))).thenReturn(completed);
@@ -242,7 +250,9 @@ class DispatchControllerTest {
                 null,
                 null,
                 null,
-                "Vehicle breakdown"
+                "Vehicle breakdown",
+                null,
+                null
         );
 
         when(dispatches.declineDispatch(eq(ranger), eq(99L), any(DispatchDeclineRequest.class))).thenReturn(declined);

@@ -28,6 +28,10 @@ import { WaypointList } from "@/components/patrols/waypoint-list";
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: ComponentProps<"a">) => <a href={href} {...props}>{children}</a> }));
 const language = vi.hoisted(() => ({ language: "en", setLanguage: vi.fn() }));
 vi.mock("@/lib/i18n", async (original) => ({ ...await original<typeof import("@/lib/i18n")>(), useT: () => language }));
+const notifications = vi.hoisted(() => ({ view: undefined as { unreadCount: number } | undefined }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+vi.mock("@/hooks/use-notifications", () => ({ useNotifications: () => notifications }));
+vi.mock("@/components/notifications/notifications-card", () => ({ NotificationsCard: () => <section aria-label="Notifications list" /> }));
 
 describe("shared controls", () => {
   it.each([Button, SecondaryButton, QuietButton, IconButton])("forwards button state and events", (Control) => {
@@ -108,6 +112,23 @@ describe("shared controls", () => {
     expect(screen.getByRole("link", { name: "Simulator" }).getAttribute("href")).toBe("/simulator");
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Elephant" } });
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Elephant");
+  });
+  it("toggles the notifications dropdown and shows the unread dot", () => {
+    notifications.view = { unreadCount: 2 };
+    const { container } = render(<Topbar />);
+    const bell = screen.getByRole("button", { name: "Notifications" });
+    expect(container.querySelector(".bg-coral")).toBeTruthy();
+    fireEvent.click(bell);
+    expect(screen.getByRole("region", { name: "Notifications list" })).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("region", { name: "Notifications list" })).toBeNull();
+    fireEvent.click(bell);
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("region", { name: "Notifications list" })).toBeNull();
+    fireEvent.click(bell);
+    fireEvent.click(bell);
+    expect(screen.queryByRole("region", { name: "Notifications list" })).toBeNull();
+    notifications.view = { unreadCount: 0 };
   });
   it("explains map states and waypoint empty/data states", () => {
     const { rerender } = render(<><NoGpsBanner /><MapLegend /><PatrolBadge number={2} colorIndex={0} /><WaypointList waypoints={[]} /></>);
