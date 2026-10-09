@@ -198,12 +198,11 @@ export default function PublicReportStatusPage() {
               {report.photoPath && (
                 <div className="mt-2">
                   <span className="text-caption text-ink-muted">Photo</span>
-                  <div className="mt-1 overflow-hidden rounded-lg border border-line">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <div className="mt-1 overflow-hidden rounded-lg border border-line bg-black/90">
                     <img
-                      src={`${API_URL}/files/${report.photoPath}`}
-                      alt="Incident photo"
-                      className="max-h-64 w-full object-cover"
+                      src={`${API_URL}/api/v1/public/reports/${encodeURIComponent(report.referenceCode)}/photo`}
+                      alt={`Evidence for ${report.referenceCode}`}
+                      className="max-h-72 w-full object-contain"
                     />
                   </div>
                 </div>

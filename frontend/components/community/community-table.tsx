@@ -1,8 +1,10 @@
 "use client";
 
-import { Check, ExternalLink, MapPin, MessageSquare, PhoneCall, Send, X } from "lucide-react";
+import { useState } from "react";
+import { Camera, Check, ExternalLink, MapPin, MessageSquare, PhoneCall, Send, X } from "lucide-react";
 import { formatAgo } from "@/lib/format";
 import type { CommunityReport } from "@/lib/api/community";
+import { EvidenceDialog } from "./evidence-dialog";
 
 interface CommunityTableProps {
   reports: CommunityReport[];
@@ -80,6 +82,7 @@ export function CommunityTable({
     );
   }
 
+  const [evidenceReport, setEvidenceReport] = useState<CommunityReport | null>(null);
   const now = new Date();
 
   return (
@@ -134,6 +137,16 @@ export function CommunityTable({
                       <span className="line-clamp-1 max-w-xs text-caption text-ink-body">
                         {report.description}
                       </span>
+                    )}
+                    {report.photoPath && (
+                      <button
+                        type="button"
+                        onClick={() => setEvidenceReport(report)}
+                        className="mt-1 inline-flex items-center gap-1 self-start rounded border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <Camera className="size-3" />
+                        View photo
+                      </button>
                     )}
                   </div>
                 </td>
@@ -243,6 +256,14 @@ export function CommunityTable({
           })}
         </tbody>
       </table>
+
+      <EvidenceDialog
+        report={evidenceReport}
+        open={Boolean(evidenceReport)}
+        onOpenChange={(open) => {
+          if (!open) setEvidenceReport(null);
+        }}
+      />
     </div>
   );
 }

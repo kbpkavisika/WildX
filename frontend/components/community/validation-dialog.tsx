@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Camera, Loader2, X } from "lucide-react";
 import { Button, SecondaryButton } from "@/components/ui/button";
 import { SEVERITIES, type Severity } from "@/lib/enums";
 import type { CommunityReport } from "@/lib/api/community";
+import { useCommunityReportPhoto } from "@/hooks/use-community-report-photo";
 
 interface ValidationDialogProps {
   report: CommunityReport | null;
@@ -16,6 +17,10 @@ interface ValidationDialogProps {
 
 export function ValidationDialog({ report, open, onClose, onValidate, loading }: ValidationDialogProps) {
   const [severity, setSeverity] = useState<Severity>(SEVERITIES.MEDIUM);
+  const { photoUrl, photoLoading } = useCommunityReportPhoto(
+    report?.id ?? null,
+    Boolean(report?.photoPath) && open
+  );
 
   if (!open || !report) return null;
 
@@ -43,6 +48,28 @@ export function ValidationDialog({ report, open, onClose, onValidate, loading }:
             Validate report <strong className="font-semibold text-ink">{report.referenceCode}</strong> and set its
             urgency level. This transitions the report to a validated conflict case.
           </p>
+
+          {report.photoPath && (
+            <div className="overflow-hidden rounded-lg border border-line bg-surface-sunken">
+              <div className="flex items-center gap-1.5 border-b border-line bg-surface-muted px-3 py-1.5 text-caption font-medium text-ink">
+                <Camera className="size-3.5 text-primary" />
+                <span>Attached Evidence Photo</span>
+              </div>
+              {photoLoading ? (
+                <div className="flex h-36 items-center justify-center">
+                  <Loader2 className="size-5 animate-spin text-primary" />
+                </div>
+              ) : photoUrl ? (
+                <div className="relative flex max-h-48 items-center justify-center bg-black/90 p-1">
+                  <img
+                    src={photoUrl}
+                    alt={`Evidence for ${report.referenceCode}`}
+                    className="max-h-44 w-auto object-contain rounded"
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
 
           <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
             <legend className="text-field-label text-ink-body">Severity</legend>
