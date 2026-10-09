@@ -6,7 +6,6 @@ export interface UserRow {
   phone: string | null;
   email: string;
   role: string;
-  park: string | null;
   status: ChipView;
   active: boolean;
   canDeactivate: boolean;

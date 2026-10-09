@@ -88,23 +88,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public void requireParkAccess(Jwt jwt, Long parkId) {
-        if (!Role.ADMIN.name().equals(jwt.getClaimAsString(AuthConstants.ROLE_CLAIM))) {
-            if (!parkId.equals(current(jwt).parkId())) {
-                throw new AccessDeniedException("Access denied");
-            }
-            return;
+        if (!parkId.equals(current(jwt).parkId())) {
+            throw new AccessDeniedException("Access denied");
         }
-        requireAdmin(jwt);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Long requireAdmin(Jwt jwt) {
-        AppUser user = activeUser(jwt);
-        if (user.getRole() != Role.ADMIN) {
-            throw new UnauthorizedException(ACCESS_CHANGED);
-        }
-        return user.getId();
     }
 
     private AppUser activeUser(Jwt jwt) {

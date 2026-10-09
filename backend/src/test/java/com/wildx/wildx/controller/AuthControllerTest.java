@@ -36,12 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, AuthControllerTest.AdminOnlyController.class})
+@Import({SecurityConfig.class, AuthControllerTest.ManagerOnlyController.class})
 @TestPropertySource(properties = "wildx.jwt-secret=test-secret-test-secret-test-secret-123")
 class AuthControllerTest {
 
     private static final String LOGIN_URL = "/api/v1/auth/login";
-    private static final String ADMIN_URL = "/api/v1/test/admin-only";
+    private static final String MANAGER_URL = "/api/v1/test/manager-only";
 
     @Autowired
     private MockMvc mockMvc;
@@ -86,7 +86,7 @@ class AuthControllerTest {
 
     @Test
     void corsPreflightFromFrontendIsAllowed() throws Exception {
-        mockMvc.perform(options(ADMIN_URL)
+        mockMvc.perform(options(MANAGER_URL)
                         .header("Origin", "http://localhost:3000")
                         .header("Access-Control-Request-Method", "GET")
                         .header("Access-Control-Request-Headers", "Authorization"))
@@ -96,7 +96,7 @@ class AuthControllerTest {
 
     @Test
     void corsPreflightFromUnknownOriginIsRejected() throws Exception {
-        mockMvc.perform(options(ADMIN_URL)
+        mockMvc.perform(options(MANAGER_URL)
                         .header("Origin", "http://evil.example")
                         .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isForbidden());
@@ -104,27 +104,27 @@ class AuthControllerTest {
 
     @Test
     void protectedRouteWithoutTokenReturnsUnauthorized() throws Exception {
-        mockMvc.perform(get(ADMIN_URL))
+        mockMvc.perform(get(MANAGER_URL))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").exists());
     }
 
     @Test
     void protectedRouteWithInvalidTokenReturnsUnauthorized() throws Exception {
-        mockMvc.perform(get(ADMIN_URL).header("Authorization", "Bearer not-a-jwt"))
+        mockMvc.perform(get(MANAGER_URL).header("Authorization", "Bearer not-a-jwt"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void roleOutsidePreAuthorizeIsForbidden() throws Exception {
-        mockMvc.perform(get(ADMIN_URL).header("Authorization", bearer(Role.RANGER)))
+        mockMvc.perform(get(MANAGER_URL).header("Authorization", bearer(Role.RANGER)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Access denied"));
     }
 
     @Test
     void roleInPreAuthorizeIsAllowed() throws Exception {
-        mockMvc.perform(get(ADMIN_URL).header("Authorization", bearer(Role.ADMIN)))
+        mockMvc.perform(get(MANAGER_URL).header("Authorization", bearer(Role.MANAGER)))
                 .andExpect(status().isOk());
     }
 
@@ -141,11 +141,11 @@ class AuthControllerTest {
     }
 
     @RestController
-    static class AdminOnlyController {
+    static class ManagerOnlyController {
 
-        @GetMapping(ADMIN_URL)
-        @PreAuthorize("hasRole('ADMIN')")
-        String adminOnly() {
+        @GetMapping(MANAGER_URL)
+        @PreAuthorize("hasRole('MANAGER')")
+        String managerOnly() {
             return "ok";
         }
     }

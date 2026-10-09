@@ -64,7 +64,7 @@ export function SignInForm() {
               </View>
             }
             error={errors.password?.message}
-            hint={showReset && <AppText variant="caption" color={colors.inkMuted}>Ask your park admin to reset it.</AppText>}
+            hint={showReset && <AppText variant="caption" color={colors.inkMuted}>Ask your park manager to reset it.</AppText>}
           >
             <TextField
               value={field.value}
@@ -97,7 +97,7 @@ export function SignInForm() {
       />
       {signIn.isError && <AppText variant="caption" color={colors.negative} accessibilityRole="alert">{signInErrorMessage(signIn.error)}</AppText>}
       <Button label={signIn.isPending ? "Signing in…" : "Sign in"} disabled={signIn.isPending} onPress={handleSubmit((values) => signIn.mutate(values))} />
-      <AppText color={colors.inkMuted} style={styles.centered}>Accounts are created by your park admin.</AppText>
+      <AppText color={colors.inkMuted} style={styles.centered}>Accounts are created by your park manager.</AppText>
     </View>
   );
 }

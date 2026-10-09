@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { RouteRequest } from "@/lib/api/patrols";
+import type { RouteRequest, RouteResponse } from "@/lib/api/patrols";
 import { ROUTE_NAME_MAX } from "@/lib/constants";
-import { toLineGeojson } from "./geo";
+import { parseLine, toLineGeojson } from "./geo";
 
 const MIN_ROUTE_POINTS = 2;
 
@@ -13,6 +13,10 @@ export const routeFormSchema = z.object({
 export type RouteFormValues = z.infer<typeof routeFormSchema>;
 
 export const EMPTY_ROUTE: RouteFormValues = { name: "", points: [] };
+
+export function toRouteValues(route: RouteResponse): RouteFormValues {
+  return { name: route.name, points: parseLine(route.pathGeojson) ?? [] };
+}
 
 export function toRouteRequest(values: RouteFormValues): RouteRequest {
   return { name: values.name, pathGeojson: toLineGeojson(values.points) };

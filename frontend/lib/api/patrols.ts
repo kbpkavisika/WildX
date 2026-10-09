@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PATROL_STATUSES, ROLES, WAYPOINT_TYPES, type WaypointType } from "@/lib/enums";
-import { apiGet, apiGetBlob, apiPost } from "./client";
+import { apiDelete, apiGet, apiGetBlob, apiPost, apiPut } from "./client";
 
 const timestamp = z.iso.datetime({ offset: true });
 
@@ -72,7 +72,7 @@ export type CoverageReportRowResponse = z.infer<typeof coverageReportRowSchema>;
 
 export interface AssignPatrolRequest {
   routeId: number;
-  rangerId: number;
+  rangerIds: number[];
   scheduledDate: string;
 }
 
@@ -115,12 +115,20 @@ export function createRoute(request: RouteRequest): Promise<RouteResponse> {
   return apiPost("/routes", request, routeSchema);
 }
 
+export function updateRoute(routeId: number, request: RouteRequest): Promise<RouteResponse> {
+  return apiPut(`/routes/${routeId}`, request, routeSchema);
+}
+
+export function deleteRoute(routeId: number): Promise<void> {
+  return apiDelete(`/routes/${routeId}`);
+}
+
 export function fetchRangers(): Promise<RangerOption[]> {
   return apiGet("/rangers", z.array(rangerSchema));
 }
 
-export function assignPatrol(request: AssignPatrolRequest): Promise<PatrolResponse> {
-  return apiPost("/patrols", request, patrolSchema);
+export function assignPatrol(request: AssignPatrolRequest): Promise<PatrolResponse[]> {
+  return apiPost("/patrols", request, z.array(patrolSchema));
 }
 
 export function fetchMyPatrols(): Promise<PatrolResponse[]> {

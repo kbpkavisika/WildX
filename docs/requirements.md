@@ -23,10 +23,9 @@ Technical design is in [architecture.md](architecture.md).
 | Actor | Role | Main device |
 |---|---|---|
 | Ranger | Patrols, reports incidents, responds to dispatches and alerts | Phone (mobile app or web) |
-| Park Manager | Plans routes, monitors patrols, triages incidents, configures the park, receives alert escalations, and views reports | Desktop / phone |
+| Park Manager | The highest authority in a park. Manages the park's users, plans routes, monitors patrols, triages incidents, configures the park, receives alert escalations, and views reports | Desktop / phone |
 | Community Liaison Officer (CLO) | Validates community reports and dispatches responders to conflicts | Desktop / phone |
 | Researcher | Views analytics and reports (read only) | Desktop |
-| Admin | Manages parks and users | Desktop |
 | Villager | Reports sightings or crop damage through the web form or SMS. Does not log in | Phone / feature phone |
 | *Collar Service, Camera Trap Network, SMS Gateway* | External systems (simulated) | – |
 
@@ -52,7 +51,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | ID | Requirement | Pri |
 |---|---|---|
 | CMN-01 | Users log in with email and password. The system restricts each route and screen by role (§2). *(UC1)* | M |
-| CMN-02 | An Admin can create, edit and deactivate parks and users, and assign each user a role and a park. *(UC1)* | M |
+| CMN-02 | A Park Manager can create, edit and deactivate the users of their own park and assign each user a role. *(UC1)* | M |
 | CMN-03 | A Park Manager can define sectors as polygons for their park by pasting GeoJSON. *(UC1)* | M |
 | CMN-04 | Offline outbox (mobile app): every ranger write (patrol start/end, track points, waypoints, incidents, dispatch and alert actions) is saved in a SQLite database on the device first, then sent in order. A write that does not reach the server stays on the device and is resent automatically when the connection returns. A resent write is never stored twice. *(UC2)* | M |
 | CMN-05 | A sync bar is always visible on the mobile app's ranger screens and shows *Online/Offline*, the number of items waiting to sync and the last sync time. A write the server rejects stays on the device and is shown with the server's message until the ranger discards it. *(UC2)* | M |
@@ -67,12 +66,12 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 | ID | Requirement | Pri |
 |---|---|---|
-| PAT-01 | A Park Manager creates a patrol route for a park by giving it a name and a path (GeoJSON LineString or points clicked on the map). | M |
-| PAT-02 | A Park Manager assigns a route to a ranger for a date, which creates a patrol with status *Planned* (fixes W2). | M |
+| PAT-01 | A Park Manager creates a patrol route for a park by giving it a name and a path (GeoJSON LineString or points clicked on the map), and can edit or delete it later. A deleted route is archived: it can no longer be assigned, and past patrols keep it. | M |
+| PAT-02 | A Park Manager assigns a route to one or more rangers for a date, which creates one patrol per ranger with status *Planned* (fixes W2). | M |
 | PAT-03 | A ranger sees today's assigned patrols and their route on a map. | M |
 | PAT-04 | A ranger starts a patrol, which sets it to *Active* and records the start time. | M |
 | PAT-05 | During an active patrol, the app records a GPS point every 60 s or every 50 m, whichever comes first. | M |
-| PAT-06 | A ranger adds a manual waypoint with an optional note in one tap plus an optional pick-list choice. A waypoint is a track point with a flag, **not** an incident (fixes W27). | M |
+| PAT-06 | A ranger adds a manual waypoint with an optional note in one tap plus an optional pick-list choice. Its location starts at the ranger's GPS position and the ranger can tap the map to choose another one. A waypoint is a track point with a flag, **not** an incident (fixes W27). | M |
 | PAT-07 | When GPS is unavailable, the app shows a "No GPS" banner and keeps the patrol running. Tracking resumes when the signal returns. | M |
 | PAT-08 | A ranger ends a patrol, which sets it to *Completed* and records the end time. | M |
 | PAT-09 | The server maps every track point to the sector it falls in. | M |
@@ -83,9 +82,9 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 ### UC1 user flows
 
-**F1.1 Plan and assign (Manager, desktop):** Routes → New route → enter a name and draw or paste the path → Save → Assign → choose a ranger and a date → the patrol is *Planned*.
+**F1.1 Plan and assign (Manager, desktop):** Routes → New route → enter a name and draw or paste the path → Save → Assign → choose one or more rangers and a date → the patrol is *Planned*.
 
-**F1.2 Run a patrol (Ranger, phone):** Home → My patrols → choose a patrol → **Start** → the map shows the route and the ranger's live position → the ranger taps **Waypoint** when needed → the ranger taps **Report incident** when needed (UC2) → **End patrol**.
+**F1.2 Run a patrol (Ranger, phone):** Home → My patrols → choose a patrol → **Start** → the map shows the route and the ranger's live position → the ranger taps **Waypoint** when needed and can tap the map to set its location → the ranger taps **Report incident** when needed (UC2) → **End patrol**.
 
 **F1.3 Monitor (Manager, desktop):** Dashboard → Live patrols map, which refreshes automatically → click a ranger to see their track → Coverage tab → neglected sectors are listed first → assign a new patrol to a neglected sector (F1.1).
 
@@ -121,7 +120,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 | ID | Requirement | Pri |
 |---|---|---|
-| SEN-01 | Admins and Managers register devices: **collars**, which are linked to an animal (name, species), and **camera traps**, which have a location. Each device has an expected reporting interval. | M |
+| SEN-01 | Managers register devices: **collars**, which are linked to an animal (name, species), and **camera traps**, which have a location. Each device has an expected reporting interval. | M |
 | SEN-02 | A Park Manager defines high-risk **zones** as polygons with a type: Farmland, Road, Village buffer or Restricted. | M |
 | SEN-03 | A Park Manager configures an **alert rule** for each zone type with a severity, a cool-down period (minutes) and an acknowledgement SLA (minutes). | M |
 | SEN-04 | Collar ingest endpoint: the system accepts a fix (collar code, latitude, longitude, timestamp, battery). It rejects malformed fixes and ignores duplicates, where a duplicate has the same collar and timestamp. | M |
@@ -135,7 +134,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | SEN-12 | Mortality/immobility: when a collar moves less than 50 m in 6 h, the system raises a **Critical** alert. | S |
 | SEN-13 | Camera upload endpoint: the system accepts an image with a camera code and capture time, and drops duplicates (same camera and capture time). | M |
 | SEN-14 | The image review queue lets reviewers tag each image with a species and count, or mark it *Empty* or *Unidentifiable*. Images from the same camera within 1 min are shown as one burst. | M |
-| SEN-15 | A reviewer marks an image as **Restricted** when it shows a suspected poacher. Only the Manager and Admin can see restricted images. The system raises an alert, and every view of the image is written to the audit log with the user, the time and a reason. | M |
+| SEN-15 | A reviewer marks an image as **Restricted** when it shows a suspected poacher. Only the Manager can see restricted images. The system raises an alert, and every view of the image is written to the audit log with the user, the time and a reason. | M |
 | SEN-16 | Report: alert counts by type and zone, plus the median time to acknowledge and median time to resolve. | S |
 | SEN-17 | A Park Manager can send an advisory SMS broadcast for an alert to the registered villager numbers near the affected boundary segment. | C |
 
@@ -145,7 +144,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 **F3.2 Escalation:** No one acknowledges the alert within the SLA → the escalation job notifies the Manager → the Manager dispatches a specific ranger.
 
-**F3.3 Camera review (Manager, desktop):** Image review → the queue shows bursts → the Manager tags each one with a species and count, or marks it Empty → for a suspected poacher, marks it **Restricted** → the system raises an alert, and the image is now visible only to the Manager and Admin, with each view audited.
+**F3.3 Camera review (Manager, desktop):** Image review → the queue shows bursts → the Manager tags each one with a species and count, or marks it Empty → for a suspected poacher, marks it **Restricted** → the system raises an alert, and the image is now visible only to the Manager, with each view audited.
 
 ---
 

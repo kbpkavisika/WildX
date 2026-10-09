@@ -397,13 +397,13 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Nav items are 44px pills with a 20px icon and 12px gap. The active item gets the lime fill and 500 weight.
   - Expandable groups (Patrols → Active patrols, All patrols, Routes, Coverage; Sensors → Collars, Camera traps) are buttons that expand and collapse their children on click, with a chevron pointing up when open and down when closed. Groups start open. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
   - Alerts carries a coral count badge.
-  - Users (people icon) is the last item and only Admins see it.
+  - Users (people icon) is the last item and only Park managers see it.
 - **Buttons.**
   - Primary: pine, 48px tall in page headers, 40px in forms, with a leading plus icon for create actions.
   - Secondary: white with a `line` border.
   - Quiet: 32px `surface-muted` with a border, for Today, Filter, Full map and more-options.
   - Icon-only buttons always have an `aria-label`.
-- **Modal.** Create and edit forms that open from a page header button (New route, New user, Edit user) open in a modal, not inline. It is a native dialog centred over a backdrop of `ink` at 40%: white, lg radius, 24px padding, the floating shadow, full width up to 640px (560px for forms without a map) with a 16px gap to the screen edge, and scrolls inside when taller than the screen. A `form-title` heading sits top-left with a 32px quiet close (X) button top-right. Esc, the close button and Cancel close it; clicking the backdrop does not, so typed input is not lost. Focus moves into the modal and returns to the opening button.
+- **Modal.** Create and edit forms that open from a page header button (New route, Edit route, New user, Edit user) open in a modal, not inline. It is a native dialog centred over a backdrop of `ink` at 40%: white, lg radius, 24px padding, the floating shadow, full width up to 640px (560px for forms without a map) with a 16px gap to the screen edge, and scrolls inside when taller than the screen. A `form-title` heading sits top-left with a 32px quiet close (X) button top-right. Esc, the close button and Cancel close it; clicking the backdrop does not, so typed input is not lost. Focus moves into the modal and returns to the opening button.
 - **Status chip.** Caption text, 2px × 6px padding, xs radius, with the tinted fill, border and text trio. Variants: positive, negative, neutral (Scheduled), done (Completed).
 - **Metric cell.** A body-size label, then a `metric` value with an optional chip beside it.
 - **Bar chart.** Six rounded bars in `surface-sunken` with the value inside at the top. One coral highlighted bar. A dotted `ink-faint` average line with a pine "Avg 6" tag. Month labels underneath, with the highlighted month in ink 600.
@@ -435,7 +435,9 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - A patrol without track points shows "No track recorded for this patrol." in place of the map.
 - **Routes.**
   - The subtitle counts the routes: "**3 routes** in this park." Managers get New route (primary 48px with a plus icon).
-  - A table with grid rows (`2fr 1fr 1fr`): Route (name), Length (km from the path) and Points (how many path points it has).
+  - A table with grid rows (`2fr 1fr 1fr 80px`): Route (name), Length (km from the path), Points (how many path points it has) and, for managers, 32px quiet Edit and Delete icon buttons.
+  - Edit opens the route form as a modal titled "Edit Kumbukgaha river trail" with the saved name and path, and Save changes in place of Create route.
+  - Delete asks first: "Delete Kumbukgaha river trail? It can no longer be assigned. Past patrols keep it." The route then leaves the table.
   - **New route form**: a modal titled "New route". It has a Name field, then a 360px lg-radius map. Each click on the map adds a numbered path point, and the path is drawn in `track-1`. Undo and Clear quiet buttons sit above the map, with a muted "4 points · 2.1 km" caption. A Paste GeoJSON quiet button swaps the map for a textarea that takes a LineString. A missing name, or fewer than 2 points, is outlined in negative red with a caption. A server error shows in negative red above the buttons. Cancel and Create route are right-aligned.
 - **Coverage.**
   - The subtitle counts neglected sectors: "**2 sectors** not patrolled for more than 7 days." (or "Every sector patrolled in the last 7 days.")
@@ -455,18 +457,18 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - A 360px xl-radius map shows sectors, the planned route as a dashed `track-1` line, the walked track in solid `track-1`, waypoints as flag circles and the ranger's own position as the numbered team marker.
   - Under the map is a fact list: Started, Last point ("07:42 · 12 points sent") and Distance.
   - Stacked full-width 48px buttons. A scheduled patrol has Start patrol (primary). An active patrol has Add waypoint (primary), Report incident (secondary, opens the incident form) and End patrol (secondary). A completed patrol has no actions, only a positive "Patrol completed at 08:25." line.
-  - Add waypoint opens an inline panel on `surface-form`, titled "Add waypoint" and saying it uses your current position. It has an optional Type pick-list (Checkpoint, Observation, Rest, Other) and an optional Note textarea. Save waypoint and Cancel are stacked full width. After saving, a positive "Waypoint saved at 07:15." line shows.
+  - Add waypoint opens an inline panel on `surface-form`, titled "Add waypoint" with the muted caption "Tap the map to choose the location." A 280px xl-radius map (like the incident location map) shows the waypoint as a flag circle, starting at the ranger's current position; tapping the map moves it. Without GPS and before a tap, the caption is negative: "Waiting for GPS. Tap the map to choose the location." and Save waypoint is disabled. It has an optional Type pick-list (Checkpoint, Observation, Rest, Other) and an optional Note textarea. Save waypoint and Cancel are stacked full width. After saving, a positive "Waypoint saved at 07:15." line shows.
   - End patrol asks for confirmation in place: "End this patrol now?" with End patrol (primary) and Keep going (secondary).
   - A failed action shows the server's message in negative red under the buttons.
 - **Sign in.**
   - A centred card (max 1120px, xl radius, 12px padding, `line` border) that wraps into two equal panels and stacks on phones.
   - Left: a lg-radius photo panel with a `page-title` tagline at the top and a white xs-radius "Udawalawe NP · 30,821 ha" location chip at the bottom.
-  - Right: a 380px form with the logo, a "Sign in" `page-title` and a 15px `ink-body` subtitle, a `line` divider, Work email and Password fields ("Forgot password?" link beside the password label), a "Keep me signed in on this device" checkbox in pine, a full-width 48px primary button and a centred muted "Accounts are created by your park admin." line. There is no self sign-up.
+  - Right: a 380px form with the logo, a "Sign in" `page-title` and a 15px `ink-body` subtitle, a `line` divider, Work email and Password fields ("Forgot password?" link beside the password label), a "Keep me signed in on this device" checkbox in pine, a full-width 48px primary button and a centred muted "Accounts are created by your park manager." line. There is no self sign-up.
   - A focused input gets a pine border and a 3px `lime-soft` ring. A failed sign-in shows a negative caption above the button.
 - **New patrol form.**
   - An inline panel on `surface-form` with an lg radius, a "New patrol" title and a close button.
-  - Fields: route, ranger (both pick-lists) and date. Missing fields are outlined in negative red with a caption below.
-  - Cancel and Create patrol buttons, right-aligned.
+  - Fields: route (pick-list), date, then a full-width Rangers field: the park's rangers as a wrapping row of checkboxes in pine, one per ranger name. Missing fields are outlined in negative red with a caption below ("Choose at least one ranger").
+  - Cancel and Create patrol buttons, right-aligned. With more than one ranger checked the button reads "Create 3 patrols", one per ranger.
 - **Alerts page.**
   - A pulsing **Live** chip sits next to the title. The subtitle counts open alerts and those escalated past their acknowledge time. Zones and rules and Report are secondary buttons on the right; there is no primary action, because sensors raise alerts.
   - The alert map is a 360px card in `map-ground`. High-risk zones are drawn in `negative-bg` with a 1.5px dashed `negative` outline. Each listed alert has a 24px numbered marker on a 3px white stroke, in its status colour; the selected marker gets the 18px halo. The legend sits bottom-left (Open, Acknowledged, Resolved, High-risk zone); the map zooms by scroll or pinch, with no zoom buttons. The map shows only the alerts in the current filter.
@@ -495,7 +497,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - **Pick-lists.** A pick-list looks like an input (48px on ranger screens, field radius, `line-strong` border, a chevron-down icon right, muted placeholder "Choose a type"). Tapping it opens a modal from the bottom: white, lg radius, 16px gap to the screen edges, 16px padding, the floating shadow, over an `ink` 40% backdrop, with a `form-title` heading and the options as 48px choice rows (the checked row gets the pine border and lime-soft ring). Tapping a row picks it and closes the modal.
   - **Photo field.** A 48px full-width secondary button with a camera icon, "Take photo". Once taken, the photo shows at 4:3 in an lg-radius frame with Retake and Remove quiet buttons under it.
   - **Maps.** The same OpenStreetMap base layer, markers and track colours as the web, in an xl-radius bordered frame: 360px on Ranger patrol, 280px for the incident location and the dispatch location. Tapping the incident map moves the marker.
-  - **Sign in.** The Sign in card stacks on the phone: the photo panel first (220px tall, lg radius, tagline and location chip), then the form. "Forgot password?" shows the muted line "Ask your park admin to reset it." under the password field. A user who is not a ranger gets the negative caption "This app is for rangers. Use the WildX web console." above the button.
+  - **Sign in.** The Sign in card stacks on the phone: the photo panel first (220px tall, lg radius, tagline and location chip), then the form. "Forgot password?" shows the muted line "Ask your park manager to reset it." under the password field. A user who is not a ranger gets the negative caption "This app is for rangers. Use the WildX web console." above the button.
 - **Devices.**
   - The sidebar's Sensors → Collars item opens it. The subtitle counts collars and cameras and how many need attention: "**3 collars** and 2 cameras, 2 need attention." (or "all healthy" when none do).
   - Managers get Simulator (secondary link), New animal (secondary) and New device (primary 48px with a plus icon) on the right. Other roles only read the page.
@@ -511,7 +513,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Without collars or cameras, a muted caption says "No collars yet. Register one on the Devices page." (or cameras). Other roles see "Only park managers can use the simulator."
   - After sending, a positive line beside the button reports the result: "Sent 6 fixes · 6 stored · 0 duplicates." or "Sent 3 images · 3 stored." Errors show in negative red in the same place.
 - **Camera traps.**
-  - The sidebar's Sensors → Camera traps item opens it. Managers and Admins can use it; other roles see "Only park managers and admins can review camera images."
+  - The sidebar's Sensors → Camera traps item opens it. Managers can use it; other roles see "Only park managers can review camera images."
   - The subtitle counts the work: "**4 images** to review in 2 bursts." Managers get Simulator as a secondary link on the right.
   - The image queue (`3 1 420px`) sits beside the review card (`2 1 340px`). Filter pills: To review (the default), Tagged, Empty, Unidentifiable, Restricted and All, with counts.
   - Each burst has a "CAM-001 · Today · 21:40 – 21:42" label (one time for a single image) and a muted "3 images in 1 min" or "1 image" caption, then a grid of 4:3 image tiles (140px minimum) with the capture time and a status chip. The selected tile gets a 2px pine border and the lime-soft ring. A restricted tile never loads its picture: it shows a lock icon and "Restricted" in negative red on `surface-sunken`.
@@ -538,10 +540,10 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - The By type and zone card has a grid table (`1.2fr 1.6fr 0.7fr 1fr 1fr`) that scrolls horizontally below 640px: Alert type, Zone ("No zone" in muted text for device health, mortality and human detected alerts), Alerts, Median to acknowledge and Median to resolve, highest count first. Without alerts it says "No alerts raised in this range."
 
 - **Users.**
-  - The sidebar's Users item opens it, for Admins only; other roles see "Only admins can manage users."
+  - The sidebar's Users item opens it, for Park managers only; other roles see "Only park managers can manage users." It lists the users of the manager's own park.
   - The subtitle counts the accounts: "**8 users**, 1 deactivated." New user (primary 48px with a plus icon) is on the right.
-  - One card holds a grid table (`1.4fr 1.6fr 1.2fr 1fr 0.8fr 180px`) that scrolls horizontally below 760px: Name (with the phone as a muted caption, or none), Email, Role ("Park manager"), Park ("Yala NP", or "All parks" in muted text for an Admin), a Status chip (Active positive, Deactivated neutral) and 32px quiet Edit and Deactivate buttons. A deactivated user gets Edit only. The signed-in admin's own row has no Deactivate. Active users come first, then by name.
-  - New user and Edit open a modal titled "New user" or "Edit K. Bandara": Name, Email, Phone (optional), Role (pick-list), Park (pick-list, hidden for Admin) and Password. On edit the password is optional, with the muted caption "Leave blank to keep the current password.", and an "Active · can sign in" checkbox in pine. Missing or invalid fields are outlined in negative red with a caption ("Enter a name", "Enter a valid email", "Choose a park", "Use at least 8 characters"); a server error (such as an email already in use) shows in negative red above the buttons. Cancel and Create user (or Save changes) are right-aligned.
+  - One card holds a grid table (`1.4fr 1.6fr 1.2fr 0.8fr 180px`) that scrolls horizontally below 760px: Name (with the phone as a muted caption, or none), Email, Role ("Park manager"), a Status chip (Active positive, Deactivated neutral) and 32px quiet Edit and Deactivate buttons. A deactivated user gets Edit only. The signed-in manager's own row has no Deactivate. Active users come first, then by name.
+  - New user and Edit open a modal titled "New user" or "Edit K. Bandara": Name, Email, Phone (optional), Role (pick-list) and Password. New users join the manager's park. On edit the password is optional, with the muted caption "Leave blank to keep the current password.", and an "Active · can sign in" checkbox in pine. Missing or invalid fields are outlined in negative red with a caption ("Enter a name", "Enter a valid email", "Use at least 8 characters"); a server error (such as an email already in use) shows in negative red above the buttons. Cancel and Create user (or Save changes) are right-aligned.
   - Deactivate asks first: "Deactivate K. Bandara? They will no longer be able to sign in." Their history stays, and Edit can make them active again.
 
 ## Do's and Don'ts

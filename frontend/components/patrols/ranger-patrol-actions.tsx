@@ -15,7 +15,7 @@ const SECONDARY_LINK = "inline-flex h-12 w-full items-center justify-center roun
 
 interface RangerPatrolActionsProps {
   view: RangerPatrolView;
-  patrol: Pick<RangerPatrol, "fix" | "start" | "end" | "waypoint">;
+  patrol: Pick<RangerPatrol, "fix" | "sectors" | "start" | "end" | "waypoint">;
 }
 
 function actionError({ start, end }: RangerPatrolActionsProps["patrol"]): Error | null {
@@ -24,7 +24,7 @@ function actionError({ start, end }: RangerPatrolActionsProps["patrol"]): Error 
 
 export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) {
   const { panel, notice, setPanel } = useRangerPatrolPage();
-  const { fix, start, end, waypoint } = patrol;
+  const { fix, sectors, start, end, waypoint } = patrol;
   const error = actionError(patrol);
 
   if (view.completedAt) {
@@ -34,10 +34,11 @@ export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) 
   if (view.isActive && panel === "waypoint") {
     return (
       <WaypointForm
-        hasFix={fix !== null}
+        gpsPosition={fix?.position ?? null}
+        sectors={sectors}
         saving={waypoint.isPending}
         error={waypoint.error}
-        onSubmit={(values) => fix && waypoint.mutate({ values, at: fix })}
+        onSubmit={(values) => waypoint.mutate({ values, at: fix })}
         onCancel={() => setPanel(null)}
       />
     );

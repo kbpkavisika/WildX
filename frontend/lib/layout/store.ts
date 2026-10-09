@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 interface NavState {
-  collapsed: Record<string, boolean>;
-  toggle: (group: string) => void;
+  expanded: Record<string, boolean>;
+  setExpanded: (group: string, value: boolean) => void;
 }
 
 export const useNavStore = create<NavState>()((set) => ({
-  collapsed: {},
-  toggle: (group) => set((state) => ({ collapsed: { ...state.collapsed, [group]: !state.collapsed[group] } })),
+  expanded: {},
+  setExpanded: (group, value) => set((state) => ({ expanded: { ...state.expanded, [group]: value } })),
 }));

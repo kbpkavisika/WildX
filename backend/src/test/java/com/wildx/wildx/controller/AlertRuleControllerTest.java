@@ -55,7 +55,7 @@ class AlertRuleControllerTest {
         when(rules.rules(1L)).thenReturn(List.of());
         mvc.perform(get("/api/v1/parks/1/alert-rules").header("Authorization", token("RANGER")))
                 .andExpect(status().isOk());
-        mvc.perform(put("/api/v1/parks/1/alert-rules/ROAD").header("Authorization", token("ADMIN"))
+        mvc.perform(put("/api/v1/parks/1/alert-rules/ROAD").header("Authorization", token("CLO"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isForbidden());
         mvc.perform(delete("/api/v1/parks/1/alert-rules/ROAD").header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isForbidden());

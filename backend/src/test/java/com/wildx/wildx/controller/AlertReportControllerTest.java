@@ -61,7 +61,7 @@ class AlertReportControllerTest {
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/api/v1/reports/alerts?from=yesterday&to=2026-10-07").header("Authorization", token("MANAGER")))
                 .andExpect(status().isBadRequest());
-        for (String role : new String[] {"RANGER", "CLO", "ADMIN"}) {
+        for (String role : new String[] {"RANGER", "CLO"}) {
             mvc.perform(get("/api/v1/reports/alerts?from=2026-10-01&to=2026-10-07").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }

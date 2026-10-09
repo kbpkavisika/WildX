@@ -17,4 +17,6 @@ public class PatrolRoute extends Auditable {
     private String name;
     @Column(nullable = false, columnDefinition = "TEXT")
     private String pathGeojson;
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean archived;
 }

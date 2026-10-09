@@ -68,9 +68,9 @@ class DataSeederTest {
         List<AppUser> users = captor.getValue();
         assertThat(users).extracting(AppUser::getRole).containsExactly(Role.values());
         assertThat(users).allMatch(user -> user.isActive() && "hash".equals(user.getPasswordHash()));
-        assertThat(users).filteredOn(user -> user.getRole() == Role.ADMIN).allMatch(user -> user.getPark() == null);
-        assertThat(users).filteredOn(user -> user.getRole() != Role.ADMIN).allMatch(user -> user.getPark() != null);
-        assertThat(users).extracting(AppUser::getEmail).contains("ranger@wildx.lk", "admin@wildx.lk");
+        assertThat(users).allMatch(user -> user.getPark() != null);
+        assertThat(users).extracting(AppUser::getEmail).contains("ranger@wildx.lk", "manager@wildx.lk");
+        verify(userRepository).retireAdmins();
 
         ArgumentCaptor<List<Device>> devices = ArgumentCaptor.forClass(List.class);
         verify(deviceRepository).saveAll(devices.capture());

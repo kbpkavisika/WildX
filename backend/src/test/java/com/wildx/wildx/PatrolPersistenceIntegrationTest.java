@@ -44,7 +44,7 @@ class PatrolPersistenceIntegrationTest {
         parks.createSector(park.getId(), new SectorRequest("Never",
                 "{\"type\":\"Polygon\",\"coordinates\":[[[82,5],[83,5],[83,7],[82,7],[82,5]]]}") );
         LocalDate date = LocalDate.of(2026, 10, 7);
-        Long id = patrols.assign(park.getId(), new PatrolAssignRequest(routeId, ranger.getId(), date)).id();
+        Long id = patrols.assign(park.getId(), new PatrolAssignRequest(routeId, List.of(ranger.getId()), date)).getFirst().id();
         Instant deviceStart = clock.instant().minusSeconds(300).plusNanos(123456789);
         PatrolTimeRequest start = new PatrolTimeRequest(deviceStart);
         assertThat(patrols.start(caller, id, start).status()).isEqualTo(PatrolStatus.ACTIVE);
@@ -85,7 +85,7 @@ class PatrolPersistenceIntegrationTest {
         AppUser other = ranger(park);
         Long route = routes.create(park.getId(), new PatrolRouteRequest("Test",
                 "{\"type\":\"LineString\",\"coordinates\":[[80,6],[81,7]]}")).id();
-        Long id = patrols.assign(park.getId(), new PatrolAssignRequest(route, owner.getId(), LocalDate.of(2026, 10, 7))).id();
+        Long id = patrols.assign(park.getId(), new PatrolAssignRequest(route, List.of(owner.getId()), LocalDate.of(2026, 10, 7))).getFirst().id();
         assertThatThrownBy(() -> patrols.start(caller(other), id, new PatrolTimeRequest(clock.instant())))
                 .isInstanceOf(AccessDeniedException.class);
         UserResponse foreign = caller(ranger(park()));

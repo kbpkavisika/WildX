@@ -43,24 +43,24 @@ class PatrolServiceImplTest {
     }
 
     @Test
-    void assignsPlannedPatrolToValidatedRanger() {
+    void assignsOnePlannedPatrolPerValidatedRanger() {
+        AppUser second = AppUser.builder().id(8L).name("Second").role(Role.RANGER).active(true).build();
         when(routes.require(2L, 1L)).thenReturn(route);
         when(auth.requireRanger(7L, 1L)).thenReturn(ranger);
-        when(repository.save(any())).thenAnswer(call -> {
-            Patrol patrol = call.getArgument(0);
-            patrol.setId(3L);
-            return patrol;
+        when(auth.requireRanger(8L, 1L)).thenReturn(second);
+        when(repository.saveAll(anyList())).thenAnswer(call -> call.getArgument(0));
+        var response = service.assign(1L, new PatrolAssignRequest(2L, List.of(7L, 8L, 7L), LocalDate.of(2026, 10, 7)));
+        assertThat(response).extracting(PatrolResponse::rangerId).containsExactly(7L, 8L);
+        assertThat(response).allSatisfy(patrol -> {
+            assertThat(patrol.status()).isEqualTo(PatrolStatus.PLANNED);
+            assertThat(patrol.route().name()).isEqualTo("North");
+            assertThat(patrol.startedAt()).isNull();
         });
-        var response = service.assign(1L, new PatrolAssignRequest(2L, 7L, LocalDate.of(2026, 10, 7)));
-        assertThat(response.status()).isEqualTo(PatrolStatus.PLANNED);
-        assertThat(response.route().name()).isEqualTo("North");
-        assertThat(response.rangerId()).isEqualTo(7L);
-        assertThat(response.startedAt()).isNull();
     }
 
     @Test
     void rejectsAssignmentsInThePast() {
-        assertThatThrownBy(() -> service.assign(1L, new PatrolAssignRequest(2L, 7L, LocalDate.of(2026, 10, 6))))
+        assertThatThrownBy(() -> service.assign(1L, new PatrolAssignRequest(2L, List.of(7L), LocalDate.of(2026, 10, 6))))
                 .isInstanceOf(IllegalArgumentException.class);
         verifyNoInteractions(repository, routes, auth);
     }

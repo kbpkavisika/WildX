@@ -15,8 +15,8 @@ import java.util.List;
 @RequestMapping("/api/v1/parks/{parkId}")
 @RequiredArgsConstructor
 public class DeviceController {
-    private static final String STAFF = "hasAnyRole('ADMIN','MANAGER','RANGER','CLO')";
-    private static final String WRITERS = "hasAnyRole('ADMIN','MANAGER')";
+    private static final String STAFF = "hasAnyRole('MANAGER','RANGER','CLO')";
+    private static final String WRITERS = "hasAnyRole('MANAGER')";
 
     private final DeviceService devices;
     private final AuthService auth;

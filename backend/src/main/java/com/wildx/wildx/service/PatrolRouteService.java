@@ -6,6 +6,8 @@ import java.util.List;
 
 public interface PatrolRouteService {
     PatrolRouteResponse create(Long parkId, PatrolRouteRequest request);
+    PatrolRouteResponse update(Long parkId, Long id, PatrolRouteRequest request);
+    void archive(Long parkId, Long id);
     List<PatrolRouteResponse> list(Long parkId);
     PatrolRoute require(Long id, Long parkId);
 }

@@ -4,6 +4,5 @@ public enum Role {
     RANGER,
     MANAGER,
     CLO,
-    RESEARCHER,
-    ADMIN
+    RESEARCHER
 }

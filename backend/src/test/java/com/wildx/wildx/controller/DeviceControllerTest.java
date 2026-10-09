@@ -35,7 +35,7 @@ class DeviceControllerTest {
     @MockitoBean DeviceService devices;
 
     @Test
-    void managerAndAdminRegisterAnimalsAndDevices() throws Exception {
+    void managerRegistersAnimalsAndDevices() throws Exception {
         var animal = new AnimalResponse(5L, 1L, "Gemunu", "Asian elephant");
         var device = new DeviceResponse(9L, 1L, DeviceType.COLLAR, "COL-001", 15, animal, null, null, null, null);
         when(devices.createAnimal(eq(1L), any())).thenReturn(animal);
@@ -45,9 +45,9 @@ class DeviceControllerTest {
         mvc.perform(post("/api/v1/parks/1/animals").header("Authorization", token("MANAGER"))
                         .contentType(MediaType.APPLICATION_JSON).content(ANIMAL))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.id").value(5));
-        mvc.perform(put("/api/v1/parks/1/animals/5").header("Authorization", token("ADMIN"))
+        mvc.perform(put("/api/v1/parks/1/animals/5").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content(ANIMAL)).andExpect(status().isOk());
-        mvc.perform(post("/api/v1/parks/1/devices").header("Authorization", token("ADMIN"))
+        mvc.perform(post("/api/v1/parks/1/devices").header("Authorization", token("MANAGER"))
                         .contentType(MediaType.APPLICATION_JSON).content(COLLAR))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.animal.name").value("Gemunu"));
         mvc.perform(put("/api/v1/parks/1/devices/9").header("Authorization", token("MANAGER"))

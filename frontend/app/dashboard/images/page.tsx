@@ -35,7 +35,7 @@ export default function CameraTrapsPage() {
         action={canTag && <SecondaryLink href="/dashboard/simulator">Simulator</SecondaryLink>}
       />
       {parkId === null && <p className="text-body text-ink-muted">Your account is not linked to a park.</p>}
-      {parkId !== null && !canView && <p className="text-body text-ink-muted">Only park managers and admins can review camera images.</p>}
+      {parkId !== null && !canView && <p className="text-body text-ink-muted">Only park managers can review camera images.</p>}
       {parkId !== null && canView && isPending && <p className="text-body text-ink-muted">Loading images…</p>}
       {isError && <p className="text-body text-negative">Could not load images. Retrying.</p>}
       {view && (

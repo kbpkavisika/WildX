@@ -33,15 +33,15 @@ class SimulatorControllerTest {
     @MockitoBean SimulatorService simulator;
 
     @Test
-    void managerAndAdminRunScenarios() throws Exception {
+    void managerRunsScenarios() throws Exception {
         when(simulator.simulate(eq(1L), any())).thenReturn(new SimulationResponse(6, 6, 0));
-        for (String role : new String[] {"MANAGER", "ADMIN"}) {
+        for (String role : new String[] {"MANAGER"}) {
             mvc.perform(post("/api/v1/parks/1/simulator/collar-fixes").header("Authorization", token(role))
                             .contentType(MediaType.APPLICATION_JSON).content(BODY))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.sent").value(6))
                     .andExpect(jsonPath("$.stored").value(6)).andExpect(jsonPath("$.duplicates").value(0));
         }
-        verify(simulator, times(2)).simulate(eq(1L), argThat(request ->
+        verify(simulator).simulate(eq(1L), argThat(request ->
                 request.scenario() == SimulationScenario.WALK_INTO_ZONE && request.zoneId() == 1L));
     }
 
@@ -61,7 +61,7 @@ class SimulatorControllerTest {
     }
 
     @Test
-    void managersAndAdminsSimulateCameraBurstsWithValidatedCounts() throws Exception {
+    void managersSimulateCameraBurstsWithValidatedCounts() throws Exception {
         when(simulator.simulateCamera(eq(1L), any())).thenReturn(new SimulationResponse(3, 3, 0));
         mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("MANAGER"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cameraCode\":\"CAM-001\",\"count\":3}"))
@@ -69,7 +69,7 @@ class SimulatorControllerTest {
         verify(simulator).simulateCamera(eq(1L), argThat(request -> request.count() == 3));
         for (String body : new String[] {"{\"cameraCode\":\"CAM-001\",\"count\":0}",
                 "{\"cameraCode\":\"CAM-001\",\"count\":11}", "{\"count\":2}"}) {
-            mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("ADMIN"))
+            mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("MANAGER"))
                     .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
         }
         mvc.perform(post("/api/v1/parks/1/simulator/camera-images").header("Authorization", token("RESEARCHER"))

@@ -197,7 +197,6 @@ public class DispatchServiceImpl implements DispatchService {
     private boolean visibleTo(UserResponse caller, Dispatch dispatch) {
         AppUser responder = dispatch.getResponder();
         return switch (caller.role()) {
-            case ADMIN -> true;
             case RANGER -> responder.getId().equals(caller.id());
             default -> responder.getPark() != null && responder.getPark().getId().equals(caller.parkId());
         };

@@ -72,7 +72,7 @@ class BoundarySegmentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isForbidden());
 
-        mvc.perform(delete("/api/v1/parks/1/segments/10").header("Authorization", token("ADMIN")))
+        mvc.perform(delete("/api/v1/parks/1/segments/10").header("Authorization", token("CLO")))
                 .andExpect(status().isForbidden());
 
         verify(segments, never()).createSegment(any(), any());

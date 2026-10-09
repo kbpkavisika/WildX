@@ -30,4 +30,18 @@ public class PatrolRouteController {
                                                     @Valid @RequestBody PatrolRouteRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(routes.create(auth.current(jwt).parkId(), request));
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
+    public PatrolRouteResponse update(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt,
+                                      @Valid @RequestBody PatrolRouteRequest request) {
+        return routes.update(auth.current(jwt).parkId(), id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<Void> archive(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        routes.archive(auth.current(jwt).parkId(), id);
+        return ResponseEntity.noContent().build();
+    }
 }

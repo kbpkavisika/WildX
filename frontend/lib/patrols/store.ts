@@ -29,12 +29,18 @@ export const usePatrolsPage = create<PatrolsPageState>()((set) => ({
 
 interface RoutesPageState {
   formOpen: boolean;
-  setFormOpen: (open: boolean) => void;
+  editingId: number | null;
+  openNew: () => void;
+  openEdit: (id: number) => void;
+  close: () => void;
 }
 
 export const useRoutesPage = create<RoutesPageState>()((set) => ({
   formOpen: false,
-  setFormOpen: (formOpen) => set({ formOpen }),
+  editingId: null,
+  openNew: () => set({ formOpen: true, editingId: null }),
+  openEdit: (id) => set({ formOpen: true, editingId: id }),
+  close: () => set({ formOpen: false, editingId: null }),
 }));
 
 interface CoverageSelectionState {

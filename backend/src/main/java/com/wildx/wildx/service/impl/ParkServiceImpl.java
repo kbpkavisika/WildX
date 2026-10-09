@@ -29,15 +29,6 @@ public class ParkServiceImpl implements ParkService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ParkResponse> parks() {
-        log.info("list parks started");
-        var response = repository.findAllByOrderByNameAsc().stream().map(ParkResponse::from).toList();
-        log.info("list parks completed count={}", response.size());
-        return response;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<SectorResponse> sectors(Long parkId) {
         log.info("list sectors started parkId={}", parkId);
         var response = sectors.findByParkIdOrderByIdAsc(parkId).stream().map(SectorResponse::from).toList();

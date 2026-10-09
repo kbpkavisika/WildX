@@ -52,10 +52,10 @@ class AlertControllerTest {
     }
 
     @Test
-    void rejectsUnknownStatusAdminAndAnonymousCallers() throws Exception {
+    void rejectsUnknownStatusRoleAndAnonymousCallers() throws Exception {
         mvc.perform(get("/api/v1/alerts?status=SNOOZED").header("Authorization", token("MANAGER")))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/v1/alerts").header("Authorization", token("ADMIN"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/alerts").header("Authorization", token("UNKNOWN"))).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/alerts")).andExpect(status().isUnauthorized());
         verifyNoInteractions(alerts);
     }
@@ -76,7 +76,7 @@ class AlertControllerTest {
 
     @Test
     void acknowledgeRejectsViewersAndMapsServiceErrors() throws Exception {
-        for (String role : new String[] {"CLO", "RESEARCHER", "ADMIN"}) {
+        for (String role : new String[] {"CLO", "RESEARCHER"}) {
             mvc.perform(post("/api/v1/alerts/20/acknowledge").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }
@@ -108,7 +108,7 @@ class AlertControllerTest {
 
     @Test
     void resolveRejectsViewersAndMissingOrUnknownDisposition() throws Exception {
-        for (String role : new String[] {"CLO", "RESEARCHER", "ADMIN"}) {
+        for (String role : new String[] {"CLO", "RESEARCHER"}) {
             mvc.perform(post("/api/v1/alerts/20/resolve").header("Authorization", token(role))
                             .contentType(MediaType.APPLICATION_JSON).content("{\"disposition\":\"FALSE_ALARM\"}"))
                     .andExpect(status().isForbidden());

@@ -57,7 +57,7 @@ class IncidentTypeControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].active").value(true));
         mvc.perform(post("/api/v1/parks/1/incident-types").header("Authorization", token("RESEARCHER"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isForbidden());
-        mvc.perform(delete("/api/v1/parks/1/incident-types/4").header("Authorization", token("ADMIN")))
+        mvc.perform(delete("/api/v1/parks/1/incident-types/4").header("Authorization", token("CLO")))
                 .andExpect(status().isForbidden());
         verify(types, never()).createType(any(), any());
         verify(types, never()).deleteType(any(), any());

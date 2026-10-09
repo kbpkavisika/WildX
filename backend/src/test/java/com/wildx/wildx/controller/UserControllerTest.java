@@ -22,59 +22,57 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AdminController.class)
+@WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = "wildx.jwt-secret=test-secret-test-secret-test-secret-123")
-class AdminControllerTest {
+class UserControllerTest {
     private static final String BODY = "{\"name\":\"K. Bandara\",\"email\":\"kb@wildx.lk\",\"password\":\"secret123\","
-            + "\"role\":\"RANGER\",\"parkId\":1,\"active\":true}";
-    private static final AdminUserResponse USER =
-            new AdminUserResponse(9L, "K. Bandara", "kb@wildx.lk", null, Role.RANGER, 1L, "Yala", true);
+            + "\"role\":\"RANGER\",\"active\":true}";
+    private static final UserAccountResponse USER =
+            new UserAccountResponse(9L, "K. Bandara", "kb@wildx.lk", null, Role.RANGER, 1L, "Yala", true);
+    private static final UserResponse MANAGER = new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 1L);
 
     @Autowired MockMvc mvc;
     @Autowired JwtEncoder encoder;
     @MockitoBean AuthService auth;
     @MockitoBean UserService users;
-    @MockitoBean ParkService parks;
 
     @Test
-    void adminManagesUsers() throws Exception {
-        when(auth.requireAdmin(any())).thenReturn(7L);
-        when(parks.parks()).thenReturn(List.of(new ParkResponse(1L, "Yala")));
-        when(users.users()).thenReturn(List.of(USER));
-        when(users.createUser(any())).thenReturn(USER);
-        when(users.updateUser(eq(7L), eq(9L), any())).thenReturn(USER);
-        mvc.perform(get("/api/v1/admin/parks").header("Authorization", token("ADMIN")))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].name").value("Yala"));
-        mvc.perform(get("/api/v1/admin/users").header("Authorization", token("ADMIN")))
+    void managerManagesParkUsers() throws Exception {
+        when(auth.current(any())).thenReturn(MANAGER);
+        when(users.users(1L)).thenReturn(List.of(USER));
+        when(users.createUser(eq(1L), any())).thenReturn(USER);
+        when(users.updateUser(eq(MANAGER), eq(9L), any())).thenReturn(USER);
+        mvc.perform(get("/api/v1/users").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].parkName").value("Yala"));
-        mvc.perform(post("/api/v1/admin/users").header("Authorization", token("ADMIN"))
+        mvc.perform(post("/api/v1/users").header("Authorization", token("MANAGER"))
                         .contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.id").value(9));
-        mvc.perform(put("/api/v1/admin/users/9").header("Authorization", token("ADMIN"))
+        mvc.perform(put("/api/v1/users/9").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isOk());
-        mvc.perform(delete("/api/v1/admin/users/9").header("Authorization", token("ADMIN")))
+        mvc.perform(delete("/api/v1/users/9").header("Authorization", token("MANAGER")))
                 .andExpect(status().isNoContent());
-        verify(users).deactivateUser(7L, 9L);
+        verify(users).deactivateUser(MANAGER, 9L);
     }
 
     @Test
     void rejectsOtherRolesInvalidBodiesAndDuplicates() throws Exception {
-        mvc.perform(get("/api/v1/admin/users").header("Authorization", token("MANAGER")))
+        when(auth.current(any())).thenReturn(MANAGER);
+        mvc.perform(get("/api/v1/users").header("Authorization", token("RANGER")))
                 .andExpect(status().isForbidden());
-        mvc.perform(post("/api/v1/admin/users").header("Authorization", token("ADMIN"))
+        mvc.perform(post("/api/v1/users").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\",\"email\":\"nope\"}"))
                 .andExpect(status().isBadRequest());
-        verify(users, never()).createUser(any());
-        when(users.createUser(any())).thenThrow(new DataIntegrityViolationException("duplicate"));
-        mvc.perform(post("/api/v1/admin/users").header("Authorization", token("ADMIN"))
+        verify(users, never()).createUser(any(), any());
+        when(users.createUser(eq(1L), any())).thenThrow(new DataIntegrityViolationException("duplicate"));
+        mvc.perform(post("/api/v1/users").header("Authorization", token("MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isConflict());
     }
 
     private String token(String role) {
         Instant now = Instant.now();
         var claims = JwtClaimsSet.builder().subject("7").issuedAt(now).expiresAt(now.plusSeconds(60))
-                .claim("role", role).build();
+                .claim("role", role).claim("parkId", 1L).build();
         return "Bearer " + encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
     }
 }

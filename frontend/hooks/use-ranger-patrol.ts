@@ -36,7 +36,7 @@ export function useRangerPatrol(id: number) {
   const start = useMutation({ mutationFn: () => startPatrol(id, new Date().toISOString()), onSuccess: refresh });
   const end = useMutation({ mutationFn: () => endPatrol(id, new Date().toISOString()), onSuccess: refresh });
   const waypoint = useMutation({
-    mutationFn: ({ values, at }: { values: WaypointFormValues; at: GpsFix }) =>
+    mutationFn: ({ values, at }: { values: WaypointFormValues; at: GpsFix | null }) =>
       recordPoints(id, [toWaypointRequest(values, at, Date.now())]),
     onSuccess: async (saved) => {
       const at = saved[0] ? formatTime(new Date(saved[0].recordedAt)) : formatTime(new Date());

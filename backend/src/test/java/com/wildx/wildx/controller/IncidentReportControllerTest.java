@@ -65,7 +65,7 @@ class IncidentReportControllerTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("Report format must be json or csv"));
         mvc.perform(get("/api/v1/reports/incidents?from=2026-10-01").header("Authorization", token("MANAGER")))
                 .andExpect(status().isBadRequest());
-        for (String role : new String[] {"RANGER", "CLO", "ADMIN"}) {
+        for (String role : new String[] {"RANGER", "CLO"}) {
             mvc.perform(get("/api/v1/reports/incidents?from=2026-10-01&to=2026-10-07").header("Authorization", token(role)))
                     .andExpect(status().isForbidden());
         }

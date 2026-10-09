@@ -35,7 +35,7 @@ public class CommunityReportController {
     private final AuthService auth;
 
     @GetMapping("/community-reports")
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER')")
     public List<CommunityReportResponse> list(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) CommunityReportStatus status,
@@ -46,7 +46,7 @@ public class CommunityReportController {
     }
 
     @GetMapping("/community-reports/{id}")
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER')")
     public CommunityReportResponse get(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
@@ -57,7 +57,7 @@ public class CommunityReportController {
     }
 
     @GetMapping("/community-reports/{id}/photo")
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN','SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','SUPERVISOR')")
     public ResponseEntity<byte[]> photo(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
@@ -108,7 +108,7 @@ public class CommunityReportController {
     }
 
     @GetMapping({"/community/hotspots", "/community-reports/hotspots"})
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER')")
     public List<HotspotResponse> hotspots(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) Long parkId
@@ -118,7 +118,7 @@ public class CommunityReportController {
     }
 
     @GetMapping("/reports/conflicts")
-    @PreAuthorize("hasAnyRole('MANAGER','CLO','ADMIN','RESEARCHER')")
+    @PreAuthorize("hasAnyRole('MANAGER','CLO','RESEARCHER')")
     public ResponseEntity<?> conflictTrends(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam LocalDate from,
@@ -142,7 +142,7 @@ public class CommunityReportController {
     }
 
     @GetMapping({"/community/sms-help-card", "/community-reports/sms-help-card"})
-    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER')")
     public SmsHelpCardResponse helpCard(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) Long parkId

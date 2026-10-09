@@ -146,7 +146,6 @@ class DispatchServiceImplTest {
         foreign.setResponder(outsider);
         UserResponse otherRanger = new UserResponse(102L, "Ranger Two", "ranger2@wildx.lk", Role.RANGER, 1L);
         UserResponse manager = new UserResponse(5L, "Manager", "manager@wildx.lk", Role.MANAGER, 1L);
-        UserResponse admin = new UserResponse(1L, "Admin", "admin@wildx.lk", Role.ADMIN, null);
         when(dispatchRepository.findWithDetailsById(99L)).thenReturn(Optional.of(own));
         when(dispatchRepository.findBySourceTypeAndSourceIdOrderByAssignedAtDesc(SourceType.INCIDENT, 60L))
                 .thenReturn(List.of(own, foreign));
@@ -155,7 +154,6 @@ class DispatchServiceImplTest {
         assertThat(service.getDispatch(manager, 99L).id()).isEqualTo(99L);
         assertThat(service.getDispatches(otherRanger, SourceType.INCIDENT, 60L)).isEmpty();
         assertThat(service.getDispatches(manager, SourceType.INCIDENT, 60L)).extracting(DispatchResponse::id).containsExactly(99L);
-        assertThat(service.getDispatches(admin, SourceType.INCIDENT, 60L)).hasSize(2);
     }
 
     @Test

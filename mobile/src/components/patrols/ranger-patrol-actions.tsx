@@ -14,7 +14,7 @@ type RangerPatrol = ReturnType<typeof useRangerPatrol>;
 
 interface RangerPatrolActionsProps {
   view: RangerPatrolView;
-  patrol: Pick<RangerPatrol, "hasFix" | "start" | "end" | "addWaypoint" | "cancelPanel">;
+  patrol: Pick<RangerPatrol, "position" | "sectors" | "start" | "end" | "addWaypoint" | "cancelPanel">;
 }
 
 export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) {
@@ -30,7 +30,7 @@ export function RangerPatrolActions({ view, patrol }: RangerPatrolActionsProps) 
   }
 
   if (view.isActive && panel === "waypoint") {
-    return <WaypointForm hasFix={patrol.hasFix} onSubmit={patrol.addWaypoint} onCancel={patrol.cancelPanel} />;
+    return <WaypointForm gpsPosition={patrol.position} sectors={patrol.sectors} onSubmit={patrol.addWaypoint} onCancel={patrol.cancelPanel} />;
   }
 
   if (view.isActive && panel === "end") {

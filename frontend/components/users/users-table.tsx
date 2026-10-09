@@ -4,8 +4,8 @@ import { Chip } from "@/components/ui/chip";
 import type { UserRow } from "@/lib/users/types";
 import { cn } from "@/lib/utils";
 
-const ROW = "grid grid-cols-[1.4fr_1.6fr_1.2fr_1fr_0.8fr_180px] items-center gap-3";
-const COLUMNS = ["Name", "Email", "Role", "Park", "Status"];
+const ROW = "grid grid-cols-[1.4fr_1.6fr_1.2fr_0.8fr_180px] items-center gap-3";
+const COLUMNS = ["Name", "Email", "Role", "Status"];
 
 interface UsersTableProps {
   rows: UserRow[];
@@ -33,7 +33,6 @@ export function UsersTable({ rows, deactivatingId, onEdit, onDeactivate }: Users
             </span>
             <span role="cell" className="truncate">{user.email}</span>
             <span role="cell">{user.role}</span>
-            <span role="cell" className={cn(!user.park && "text-ink-muted")}>{user.park ?? "All parks"}</span>
             <span role="cell"><Chip tone={user.status.tone}>{user.status.label}</Chip></span>
             <span role="cell" className="flex justify-end gap-2">
               <QuietButton aria-label={`Edit ${user.name}`} onClick={() => onEdit(user.id)}>

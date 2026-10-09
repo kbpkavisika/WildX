@@ -50,12 +50,12 @@ class NotificationControllerTest {
     }
 
     @Test
-    void hidesOtherUsersNotificationsAndRejectsAdminAndAnonymous() throws Exception {
+    void hidesOtherUsersNotificationsAndRejectsUnknownRoleAndAnonymous() throws Exception {
         when(auth.current(any())).thenReturn(new UserResponse(5L, "Clo", "c@wildx.lk", Role.CLO, 1L));
         when(notifications.markRead(5L, 9L)).thenThrow(new NotFoundException("Notification not found"));
         mvc.perform(post("/api/v1/notifications/9/read").header("Authorization", token("CLO")))
                 .andExpect(status().isNotFound());
-        mvc.perform(get("/api/v1/me/notifications").header("Authorization", token("ADMIN")))
+        mvc.perform(get("/api/v1/me/notifications").header("Authorization", token("UNKNOWN")))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/me/notifications")).andExpect(status().isUnauthorized());
         verify(notifications, never()).myNotifications(any());

@@ -13,39 +13,28 @@ const userSchema = z.object({
   active: z.boolean(),
 });
 
-const parkSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-});
+export type UserAccountResponse = z.infer<typeof userSchema>;
 
-export type AdminUserResponse = z.infer<typeof userSchema>;
-export type ParkOption = z.infer<typeof parkSchema>;
-
-export interface AdminUserRequest {
+export interface UserAccountRequest {
   name: string;
   email: string;
   phone: string;
   password: string;
   role: Role;
-  parkId: number | null;
   active: boolean;
 }
 
-const USERS_PATH = "/admin/users";
+const USERS_PATH = "/users";
 
-export function fetchUsers(): Promise<AdminUserResponse[]> {
+export function fetchUsers(): Promise<UserAccountResponse[]> {
   return apiGet(USERS_PATH, z.array(userSchema));
 }
 
-export function fetchParks(): Promise<ParkOption[]> {
-  return apiGet("/admin/parks", z.array(parkSchema));
-}
-
-export function createUser(request: AdminUserRequest): Promise<AdminUserResponse> {
+export function createUser(request: UserAccountRequest): Promise<UserAccountResponse> {
   return apiPost(USERS_PATH, request, userSchema);
 }
 
-export function updateUser(userId: number, request: AdminUserRequest): Promise<AdminUserResponse> {
+export function updateUser(userId: number, request: UserAccountRequest): Promise<UserAccountResponse> {
   return apiPut(`${USERS_PATH}/${userId}`, request, userSchema);
 }
 

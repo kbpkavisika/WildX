@@ -33,7 +33,7 @@ class PatrolControllerTest {
     @Test
     void onlyStaffCanAssignWithValidPayload() throws Exception {
         when(auth.current(any())).thenReturn(new UserResponse(7L, "Manager", "m@wildx.lk", Role.MANAGER, 1L));
-        String body = "{\"routeId\":2,\"rangerId\":7,\"scheduledDate\":\"2026-10-07\"}";
+        String body = "{\"routeId\":2,\"rangerIds\":[7],\"scheduledDate\":\"2026-10-07\"}";
         mvc.perform(post("/api/v1/patrols").header("Authorization", token("RANGER"))
                 .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/patrols").header("Authorization", token("MANAGER"))

@@ -73,7 +73,7 @@ The backend keeps the existing layer packages under `com.wildx.wildx` and adds `
 com.wildx.wildx
 ├─ config/      SecurityConfig (JWT, CORS), DataSeeder
 ├─ constant/    Roles, AppConstants (night hours, thresholds)
-├─ controller/  AuthController, AdminController, Park*Controller,
+├─ controller/  AuthController, UserController, Park*Controller,
 │               Patrol*, Incident*, Dispatch*, Alert*, Device*, CameraImage*, Community*, Sms*, Report*
 ├─ dto/         request/response records, e.g. IncidentCreateRequest
 ├─ exception/   NotFoundException, BadRequestException, GlobalExceptionHandler (@RestControllerAdvice)
@@ -98,7 +98,7 @@ Rules:
 - Controllers stay thin and call services. A service may call another module's service, but **never another module's repository**.
 - Every endpoint returns DTOs and never entities.
 - Errors are returned as `{ "error": "message" }` with the right HTTP status from `GlobalExceptionHandler`.
-- Every list is scoped to the caller's park. The server reads `parkId` from the JWT, except for Admin.
+- Every list is scoped to the caller's park. The server reads `parkId` from the JWT.
 
 ## 5. Database design (PostgreSQL)
 
@@ -112,8 +112,8 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 |---|---|
 | `park` | name, code UNIQUE, boundary_geojson, neglect_days (7), duplicate_window_min (120), hotspot_threshold (5) |
 | `sector` | park_id FK, name, polygon_geojson |
-| `app_user` | park_id FK NULL (null for Admin), name, email UNIQUE, phone, password_hash, role, language (`en`/`si`/`ta`), active, on_duty, last_lat, last_lng, last_seen_at |
-| `patrol_route` | park_id FK, name, path_geojson (LineString) |
+| `app_user` | park_id FK, name, email UNIQUE, phone, password_hash, role, language (`en`/`si`/`ta`), active, on_duty, last_lat, last_lng, last_seen_at |
+| `patrol_route` | park_id FK, name, path_geojson (LineString), archived |
 | `patrol` | route_id FK, ranger_id FK, scheduled_date, status (`PLANNED/ACTIVE/COMPLETED/CANCELLED`), started_at, ended_at, gps_available, last_contact_at |
 | `track_point` | patrol_id FK, lat, lng, accuracy_m, recorded_at, sector_id FK NULL, is_waypoint, note, waypoint_type — UNIQUE(patrol_id, recorded_at) |
 | `notification` | user_id FK, title, body, link, read_at |
@@ -148,7 +148,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | `community_report` | reference_code UNIQUE (`R-1042`), park_id FK, segment_id FK NULL, channel (`SMS/WEB`), reporter_phone, type (`SIGHTING/CROP_DAMAGE/OTHER`), animal_count, description, photo_path, lat, lng, raw_text, status (`NEW/NEEDS_LOCATION/DUPLICATE/VALIDATED/DISPATCHED/CLOSED/INVALID`), duplicate_of_id FK NULL, severity, invalid_reason, outcome, closed_at |
 
 The enums live in `type/`:
-- `Role`: RANGER, MANAGER, CLO, RESEARCHER, ADMIN ("staff" below means every role except RESEARCHER, who only reads reports)
+- `Role`: RANGER, MANAGER, CLO, RESEARCHER (the Manager is the highest authority in a park; "staff" below means every role except RESEARCHER, who only reads reports)
 - `Severity`: LOW, MEDIUM, HIGH, CRITICAL
 - Disposition: CONFLICT_AVERTED, CONFLICT_OCCURRED, NO_ACTION, FALSE_ALARM
 
@@ -160,7 +160,7 @@ Patrol APIs use the existing JWT roles and scope every read/write to the caller'
 
 Route paths are GeoJSON LineStrings. Sector polygons support holes; exterior boundaries are included and hole boundaries excluded. Overlapping sectors resolve to the lowest sector ID. Geometry input is validated before persistence.
 
-The backend accepts validated timestamped tracking batches and samples automatic points when 60 seconds or 50 metres have passed since the previous accepted point. First points are always recorded; new out-of-order points are rejected. Device scheduling, GPS acquisition, banners and map rendering remain frontend responsibilities. Manual waypoints are flagged track points; their optional pick-list value is a `WaypointType` enum (CHECKPOINT, OBSERVATION, REST or OTHER), stored as `waypoint_type`. Waypoints bypass automatic sampling. `POST /patrols/{id}/gps` accepts `{available}` and preserves patrol state while GPS is unavailable. Location uploads restore GPS availability.
+The backend accepts validated timestamped tracking batches and samples automatic points when 60 seconds or 50 metres have passed since the previous accepted point. First points are always recorded; new out-of-order points are rejected. Device scheduling, GPS acquisition, banners and map rendering remain frontend responsibilities. Manual waypoints are flagged track points whose `lat`/`lng` is the ranger's GPS position or a point the ranger tapped on the map (then `accuracyM` is null); their optional pick-list value is a `WaypointType` enum (CHECKPOINT, OBSERVATION, REST or OTHER), stored as `waypoint_type`. Waypoints bypass automatic sampling. `POST /patrols/{id}/gps` accepts `{available}` and preserves patrol state while GPS is unavailable. Location uploads restore GPS availability.
 
 Patrol transitions and point writes lock the patrol row. Repeated start/end requests return the saved state. Upload retries use the unique patrol/timestamp key; a matching automatic point can be upgraded to a waypoint without replacing its coordinates. Device timestamps are truncated to PostgreSQL microsecond precision before validation and persistence. Timestamps must be ordered within patrol bounds, and future timestamps are rejected. Batch retries may repeat sampled-out automatic points following a matching saved anchor; they never insert historical points.
 
@@ -170,7 +170,7 @@ GET `/rangers` (Manager) lists the active rangers of the caller's park for the a
 
 ### Device registry contract (SEN-01)
 
-Collars and camera traps are simulated, so registering them only creates records. Animals are registered first at `/parks/{id}/animals`; a `COLLAR` then references an `animalId` from the same park, and a `CAMERA` requires `lat`/`lng`. Fields that do not belong to the device type are ignored. `code` is unique across all parks, `expectedIntervalMin` is 1–10080, and a device's type cannot change after registration. There is no delete, because later fixes, alerts and images reference devices. A Manager can write only to their own park, and an Admin can write to any park.
+Collars and camera traps are simulated, so registering them only creates records. Animals are registered first at `/parks/{id}/animals`; a `COLLAR` then references an `animalId` from the same park, and a `CAMERA` requires `lat`/`lng`. Fields that do not belong to the device type are ignored. `code` is unique across all parks, `expectedIntervalMin` is 1–10080, and a device's type cannot change after registration. There is no delete, because later fixes, alerts and images reference devices. A Manager can write only to their own park.
 
 ### Alert rule contract (SEN-03)
 
@@ -199,7 +199,7 @@ The mobile outbox may send the same write twice when a response is lost, so ever
 
 ### Notifications (CMN-07, SEN-07)
 
-`NotificationService` (owned by UC3) is the shared way to notify users: `notifyUsers(userIds, title, body, link)` stores one `notification` row per user. `GET /me/notifications` returns `{unreadCount, notifications}` with the caller's latest 50 notifications, newest first; `unreadCount` counts every unread one and drives the badge. `POST /notifications/{id}/read` marks the caller's own notification read and keeps the first `read_at` on repeats; another user's notification returns 404. Both endpoints are for every role except Admin.
+`NotificationService` (owned by UC3) is the shared way to notify users: `notifyUsers(userIds, title, body, link)` stores one `notification` row per user. `GET /me/notifications` returns `{unreadCount, notifications}` with the caller's latest 50 notifications, newest first; `unreadCount` counts every unread one and drives the badge. `POST /notifications/{id}/read` marks the caller's own notification read and keeps the first `read_at` on repeats; another user's notification returns 404. Both endpoints are for every role.
 
 For SEN-07, an on-duty ranger is a ranger with an `ACTIVE` patrol in the park, taken from `PatrolMonitorService.live`; the `app_user.on_duty` column is not used. Each raised alert sends every such ranger one notification, e.g. title "New HIGH zone breach alert", body "Gemunu (COL-001) entered Kumbukgaha farmland at 22:05" (Asia/Colombo time) and link `/ranger/alerts`. For `HIGH` and `CRITICAL` alerts, `AlertNotifier` also sends the SMS fallback (CMN-08) through UC4's `SmsService` to each of those rangers who is offline (no patrol contact for more than 5 minutes) and has a phone number, with the text "WildX Alert [SEVERITY]: " followed by the notification body.
 
@@ -219,11 +219,11 @@ Each park lists its escalation steps in `escalation_step`, ordered by `step_no`;
 
 `POST /ingest/camera-images` is multipart with `cameraCode`, `capturedAt` and `image`, protected by the same `X-Api-Key` as collar ingest through the shared `ApiKeyGuard`. Only JPEG and PNG are accepted, checked by the file's first bytes, up to 5 MB (`spring.servlet.multipart.max-file-size`; larger returns 413). The file is stored under `wildx.upload-dir` (`UPLOAD_DIR`, default `./uploads`) with a generated name, and `file_path` holds the path relative to that folder; stored paths can never point outside it. A new image returns 201, starts `PENDING` and updates the camera's `last_seen_at`; the same camera and `capturedAt` returns 200 with `stored: false`; a future `capturedAt` returns 400 and an unknown or non-camera code returns 404.
 
-`GET /parks/{id}/camera-images?status=` returns the park's images newest first, grouped into bursts: images of the same camera where each is at most 1 minute after the previous one. Managers and Admins see every status. `POST /parks/{id}/camera-images/{imageId}/tag` (Manager only) takes `{status, species, animalCount}` with status `TAGGED` (species and animalCount ≥ 1 required), `EMPTY`, `UNIDENTIFIABLE` or `RESTRICTED`, and records `reviewed_by_id` and `reviewed_at`; re-tagging is allowed. Changing an image to `RESTRICTED` raises one `HUMAN_DETECTED` alert (`CRITICAL`, ack SLA 15 min) at the camera's location with the capture time as `occurred_at`, linked through `camera_image_id`, which escalates like other alerts and notifies on-duty rangers with e.g. "Suspected poacher on CAM-001 at 22:05" and never the image.
+`GET /parks/{id}/camera-images?status=` returns the park's images newest first, grouped into bursts: images of the same camera where each is at most 1 minute after the previous one. Managers see every status. `POST /parks/{id}/camera-images/{imageId}/tag` (Manager only) takes `{status, species, animalCount}` with status `TAGGED` (species and animalCount ≥ 1 required), `EMPTY`, `UNIDENTIFIABLE` or `RESTRICTED`, and records `reviewed_by_id` and `reviewed_at`; re-tagging is allowed. Changing an image to `RESTRICTED` raises one `HUMAN_DETECTED` alert (`CRITICAL`, ack SLA 15 min) at the camera's location with the capture time as `occurred_at`, linked through `camera_image_id`, which escalates like other alerts and notifies on-duty rangers with e.g. "Suspected poacher on CAM-001 at 22:05" and never the image.
 
-`GET /parks/{id}/camera-images/{imageId}/file?reason=` returns the image to Managers and Admins. Viewing a `RESTRICTED` image requires a non-blank `reason` (otherwise 400), writes an `audit_log` row (user, action `VIEW_RESTRICTED_IMAGE`, entity `camera_image`, id, reason) and is sent with `Cache-Control: no-store`. No other role can open camera images, so restricted images never reach unauthorised users (NFR-06). Alert responses include `cameraImageId`.
+`GET /parks/{id}/camera-images/{imageId}/file?reason=` returns the image to Managers. Viewing a `RESTRICTED` image requires a non-blank `reason` (otherwise 400), writes an `audit_log` row (user, action `VIEW_RESTRICTED_IMAGE`, entity `camera_image`, id, reason) and is sent with `Cache-Control: no-store`. No other role can open camera images, so restricted images never reach unauthorised users (NFR-06). Alert responses include `cameraImageId`.
 
-For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}` (1–10, Manager or Admin) generates placeholder JPEGs 20 s apart, ending now, and sends them through the same upload logic.
+For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}` (1–10, Manager) generates placeholder JPEGs 20 s apart, ending now, and sends them through the same upload logic.
 
 ### Alert report (SEN-16)
 
@@ -231,18 +231,18 @@ For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}`
 
 ### User management (CMN-02)
 
-There is no self sign-up: only an Admin creates accounts. `POST /admin/users` needs a password of 8–100 characters; on `PUT` a blank password keeps the current one. Every role except `ADMIN` needs a `parkId`, and an Admin has none. A duplicate email returns 409. `DELETE /admin/users/{id}` does not remove the row, because patrols, dispatches and audit logs reference users: it sets `active = false`, so the user can no longer log in, and `PUT` with `active: true` restores them. An Admin cannot deactivate or demote themselves. The list returns every user (active first, then by name) with `{id, name, email, phone, role, parkId, parkName, active}`.
+There is no self sign-up: the Park Manager creates the accounts of their own park, and every new user joins the Manager's park. `POST /users` needs a password of 8–100 characters; on `PUT` a blank password keeps the current one. A duplicate email returns 409. A user in another park returns 404. `DELETE /users/{id}` does not remove the row, because patrols, dispatches and audit logs reference users: it sets `active = false`, so the user can no longer log in, and `PUT` with `active: true` restores them. A Manager cannot deactivate or demote themselves. The list returns the park's users (active first, then by name) with `{id, name, email, phone, role, parkId, parkName, active}`. The former `ADMIN` role was removed; on startup any leftover `ADMIN` rows become deactivated Managers.
 
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
 |---|---|---|
 | Auth | `POST /auth/login` → `{token, user}` | public |
-| Admin | `GET /admin/parks` → `[{id, name}]`, `GET/POST /admin/users`, `PUT/DELETE /admin/users/{id}` `{name, email, phone, password, role, parkId, active}` | ADMIN |
+| Users | `GET/POST /users`, `PUT/DELETE /users/{id}` `{name, email, phone, password, role, active}` | MANAGER (own park) |
 | Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|incident-types\|segments` | MANAGER (writes), staff (reads) |
-| UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | ADMIN, MANAGER (writes), staff (reads) |
+| UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | MANAGER (writes), staff (reads) |
 | UC3 | `GET /parks/{id}/alert-rules`, `PUT/DELETE /parks/{id}/alert-rules/{zoneType}` `{severity, cooldownMin, ackSlaMin}` | MANAGER (writes), staff (reads) |
-| UC1 | `GET/POST /routes`, `POST /patrols` (assign), `GET /patrols?status=&date=` | MANAGER |
+| UC1 | `GET/POST /routes`, `PUT /routes/{id}` `{name, pathGeojson}`, `DELETE /routes/{id}` (archives: hidden from the list and from assigning, past patrols keep it), `POST /patrols` `{routeId, rangerIds, scheduledDate}` (one Planned patrol per ranger, returns the list), `GET /patrols?status=&date=` | MANAGER |
 | UC1 | `GET /me/patrols` (today's patrols, plus the ranger's active patrol if it started on an earlier day, listed first) | RANGER |
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
 | UC1 | `POST /patrols/{id}/points` `[{lat, lng, accuracyM, recordedAt, isWaypoint, note}]` | RANGER, batch upsert |
@@ -250,13 +250,13 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | UC2 | `POST /incidents` (multipart: `data` JSON with optional `clientId` + `photo`), `GET /me/incidents`, `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}` (both include `responderName` from the latest dispatch that was not declined), `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
 | Shared | `GET /responders?lat=&lng=`, which returns the park's active rangers: on-patrol rangers sorted by distance first, then the rest as offline. `GET /dispatches/{id}` and `GET /dispatches?sourceType=&sourceId=` only return a ranger's own dispatches, and staff only see dispatches in their park | — |
-| Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | staff except ADMIN |
+| Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | staff |
 | UC3 | `GET /alerts?status=` | staff |
 | UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, MANAGER |
-| UC3 | `GET /parks/{id}/camera-images?status=`, `GET /parks/{id}/camera-images/{imageId}/file?reason=` (audited if restricted) | MANAGER, ADMIN |
+| UC3 | `GET /parks/{id}/camera-images?status=`, `GET /parks/{id}/camera-images/{imageId}/file?reason=` (audited if restricted) | MANAGER |
 | UC3 | `POST /parks/{id}/camera-images/{imageId}/tag` `{status, species, animalCount}` | MANAGER |
 | UC3 sim | `POST /ingest/collar-fixes` `{collarCode, lat, lng, recordedAt, batteryPct}`, `POST /ingest/camera-images` (multipart `cameraCode`, `capturedAt`, `image`) | **api-key** |
-| UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}`, `POST /parks/{id}/simulator/camera-images` `{cameraCode, count}` | ADMIN, MANAGER |
+| UC3 sim | `POST /parks/{id}/simulator/collar-fixes` `{collarCode, scenario, lat, lng, zoneId}`, `POST /parks/{id}/simulator/camera-images` `{cameraCode, count}` | MANAGER |
 | UC4 | `POST /public/reports` (multipart), `GET /public/reports/{ref}`, `GET /public/parks/{id}/segments` | **public** |
 | UC4 sim | `POST /ingest/sms` `{from, body}` → `{reply}` | **api-key** |
 | UC4 | `GET /community-reports?status=`, `POST /community-reports/{id}/validate` `{severity}`, `POST /community-reports/{id}/invalidate` `{reason}`, `GET /community/hotspots` | CLO, MANAGER |
@@ -315,7 +315,7 @@ frontend/
 │  │  ├─ community/                            # UC4
 │  │  ├─ reports/                              # all four reports, tabs
 │  │  ├─ settings/            # sectors, zones/ (zones and alert rules, UC3), incident types, segments (GeoJSON paste)
-│  │  └─ users/               # ADMIN: user management (CMN-02)
+│  │  └─ users/               # MANAGER: user management (CMN-02)
 │  └─ report/                 # PUBLIC villager form; [ref]/page.tsx = status
 ├─ components/                # Map (Leaflet), StatusBadge, SeverityBadge, BigButton, PickList, DispatchDialog
 ├─ hooks/                     # one React Query hook per screen/resource (use-active-patrols.ts)
@@ -400,7 +400,7 @@ cd mobile && npx expo run:android
 - park **Yala**, with 2 zones (Kumbukgaha farmland, and a road);
 - alert rules, 5 incident types and 3 boundary segments (`KUMB`, `PAL`, `KAT`);
 - 1 collar on elephant "Gemunu" and 1 camera;
-- one user per role (`ranger@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `researcher@wildx.lk`, `admin@wildx.lk`), with the test password `password`.
+- one user per role (`ranger@wildx.lk`, `manager@wildx.lk`, `clo@wildx.lk`, `researcher@wildx.lk`), with the test password `password`.
 
 `config/PatrolSeeder` runs after it, only when there are no patrols, so it also fills an existing DB. It adds 4 sectors, 3 routes, 3 more rangers (`kasun@`, `nimal@`, `saman@wildx.lk`, same password) and 8 patrols relative to today: 2 active with GPS tracks (one offline for 20 min), 2 planned, 3 completed with tracks and 1 cancelled.
 
