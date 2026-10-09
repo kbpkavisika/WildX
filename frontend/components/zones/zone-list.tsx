@@ -2,6 +2,7 @@
 
 import { Pencil, Trash2 } from "lucide-react";
 import { QuietButton } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 import { useZonesPage } from "@/lib/zones/store";
 import type { ZoneRow } from "@/lib/zones/types";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,14 @@ function ZoneRowItem({ row, canManage, deleting, onEdit, onDelete }: ZoneRowItem
           <span className="text-label text-ink">{row.name}</span>
           <span className="text-caption text-ink-muted">{row.caption}</span>
         </span>
+        {row.rule ? (
+          <span className="inline-flex items-center gap-2 text-caption text-ink-body">
+            <Chip tone={row.rule.severity.tone} className="whitespace-nowrap">{row.rule.severity.label}</Chip>
+            {row.rule.caption}
+          </span>
+        ) : (
+          <span className="text-caption text-ink-muted">No alert rule</span>
+        )}
       </button>
       {canManage && (
         <>

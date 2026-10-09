@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchAlertRules } from "@/lib/api/alert-rules";
 import { createZone, deleteZone, fetchZones, updateZone } from "@/lib/api/zones";
 import { useAuthStore } from "@/lib/auth/store";
 import { ROLES } from "@/lib/enums";
@@ -23,6 +24,12 @@ export function useZones() {
     enabled: parkId !== null,
   });
 
+  const rules = useQuery({
+    queryKey: ["parks", parkId, "alert-rules"],
+    queryFn: () => fetchAlertRules(parkId as number),
+    enabled: parkId !== null,
+  });
+
   const save = useMutation({
     mutationFn: ({ zoneId, values }: SaveZone) =>
       zoneId === null ? createZone(parkId as number, toZoneRequest(values)) : updateZone(parkId as number, zoneId, toZoneRequest(values)),
@@ -40,10 +47,11 @@ export function useZones() {
   return {
     hasPark: parkId !== null,
     canManage,
-    isPending: zones.isPending,
-    isError: zones.isError,
+    isPending: zones.isPending || rules.isPending,
+    isError: zones.isError || rules.isError,
     zones: zones.data ?? [],
-    view: zones.data && toZonesView(zones.data),
+    rules: rules.data ?? [],
+    view: zones.data && rules.data && toZonesView(zones.data, rules.data),
     save,
     remove,
   };
