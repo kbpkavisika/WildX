@@ -2,6 +2,7 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.constant.PatrolConstants;
 import com.wildx.wildx.dto.BoundarySegmentResponse;
+import com.wildx.wildx.dto.CommunityReportPhoto;
 import com.wildx.wildx.dto.CommunityReportResponse;
 import com.wildx.wildx.dto.ConflictTrendReportResponse;
 import com.wildx.wildx.dto.HotspotResponse;
@@ -280,9 +281,27 @@ public class CommunityReportServiceImpl implements CommunityReportService {
     }
 
     private synchronized String generateReferenceCode() {
-        Optional<CommunityReport> top = reports.findTopByOrderByIdDesc();
-        long next = top.map(r -> Math.max(r.getId() + 1000, referenceCounter.incrementAndGet())).orElseGet(referenceCounter::incrementAndGet);
-        return "R-" + next;
+        long base = reports.findTopByOrderByIdDesc()
+                .map(r -> Math.max(extractRefNumber(r.getReferenceCode()), r.getId() + 1000))
+                .orElse(1000L);
+        long candidate = Math.max(base + 1, referenceCounter.incrementAndGet());
+        referenceCounter.set(candidate);
+        while (reports.findByReferenceCode("R-" + candidate).isPresent()) {
+            candidate = referenceCounter.incrementAndGet();
+        }
+        return "R-" + candidate;
+    }
+
+    private long extractRefNumber(String referenceCode) {
+        if (referenceCode == null) {
+            return 1000L;
+        }
+        try {
+            String digits = referenceCode.replaceAll("[^0-9]", "");
+            return digits.isBlank() ? 1000L : Long.parseLong(digits);
+        } catch (Exception ex) {
+            return 1000L;
+        }
     }
 
     private String savePhoto(MultipartFile file) {
@@ -454,6 +473,47 @@ public class CommunityReportServiceImpl implements CommunityReportService {
         );
         log.info("get sms help card completed parkId={} landmarkCount={}", parkId, landmarks.size());
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CommunityReportPhoto getPhoto(Long parkId, Long id) {
+        log.info("get community report photo started parkId={} id={}", parkId, id);
+        CommunityReport report = reports.findByIdAndParkId(id, parkId)
+                .orElseThrow(() -> new NotFoundException("Report not found"));
+        return readPhoto(report.getPhotoPath());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CommunityReportPhoto getPublicPhoto(String referenceCode) {
+        log.info("get public report photo started ref={}", referenceCode);
+        CommunityReport report = reports.findByReferenceCode(referenceCode.strip())
+                .orElseThrow(() -> new NotFoundException("Report not found"));
+        return readPhoto(report.getPhotoPath());
+    }
+
+    private CommunityReportPhoto readPhoto(String photoPath) {
+        if (photoPath == null || photoPath.isBlank()) {
+            throw new NotFoundException("Report has no photo");
+        }
+        Path path = Path.of(uploadDir, photoPath).normalize();
+        if (!Files.exists(path)) {
+            throw new NotFoundException("Photo file not found");
+        }
+        try {
+            byte[] bytes = Files.readAllBytes(path);
+            String lower = photoPath.toLowerCase();
+            String contentType = "image/jpeg";
+            if (lower.endsWith(".png")) {
+                contentType = "image/png";
+            } else if (lower.endsWith(".webp")) {
+                contentType = "image/webp";
+            }
+            return new CommunityReportPhoto(bytes, contentType);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to read photo", ex);
+        }
     }
 }
 
