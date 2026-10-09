@@ -5,6 +5,7 @@ import { ConflictChart } from "@/components/dashboard/conflict-chart";
 import { ParkActivity } from "@/components/dashboard/park-activity";
 import { PatrolSchedule } from "@/components/dashboard/patrol-schedule";
 import { PageHeader } from "@/components/layout/page-header";
+import { Can } from "@/components/auth/can";
 import { Button } from "@/components/ui/button";
 import { useDashboard } from "@/hooks/use-dashboard";
 
@@ -23,10 +24,12 @@ export default function DashboardPage() {
           )
         }
         action={
-          <Button>
-            <Plus className="size-[18px]" strokeWidth={2} />
-            Report incident
-          </Button>
+          <Can permission="incident.report">
+            <Button>
+              <Plus className="size-[18px]" strokeWidth={2} />
+              Report incident
+            </Button>
+          </Can>
         }
       />
       {isPending && <p className="text-body text-ink-muted">Loading park activity…</p>}

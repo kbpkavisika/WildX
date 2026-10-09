@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchDevices } from "@/lib/api/devices";
 import { simulateCameraImages, simulateCollarFixes } from "@/lib/api/simulator";
 import { fetchZones } from "@/lib/api/zones";
+import { useCan } from "@/hooks/use-can";
 import { useAuthStore } from "@/lib/auth/store";
-import { ROLES } from "@/lib/enums";
 import {
   toCameraSimulationRequest,
   toCollarSimulationRequest,
@@ -15,7 +15,7 @@ import { toCameraOptions, toCollarOptions, toZoneOptions } from "@/lib/simulator
 export function useSimulator() {
   const queryClient = useQueryClient();
   const parkId = useAuthStore((state) => state.user?.parkId ?? null);
-  const canSimulate = useAuthStore((state) => state.user?.role === ROLES.MANAGER);
+  const canSimulate = useCan("simulator.use");
   const enabled = parkId !== null && canSimulate;
 
   const devices = useQuery({

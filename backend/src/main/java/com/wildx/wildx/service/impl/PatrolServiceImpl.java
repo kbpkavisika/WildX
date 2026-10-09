@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import com.wildx.wildx.type.PatrolStatus;
@@ -49,8 +50,11 @@ public class PatrolServiceImpl implements PatrolService {
     @Transactional(readOnly = true)
     public List<PatrolResponse> today(UserResponse caller) {
         log.info("today patrols started rangerId={}", caller.id());
-        var response = repository.findByRangerIdAndRouteParkIdAndScheduledDateOrderByIdAsc(caller.id(), caller.parkId(),
-                LocalDate.now(clock.withZone(PatrolConstants.PARK_ZONE))).stream().map(PatrolResponse::from).toList();
+        LocalDate today = LocalDate.now(clock.withZone(PatrolConstants.PARK_ZONE));
+        List<Patrol> found = new ArrayList<>();
+        activePatrol(caller.id(), caller.parkId()).filter(active -> !active.getScheduledDate().equals(today)).ifPresent(found::add);
+        found.addAll(repository.findByRangerIdAndRouteParkIdAndScheduledDateOrderByIdAsc(caller.id(), caller.parkId(), today));
+        var response = found.stream().map(PatrolResponse::from).toList();
         log.info("today patrols completed rangerId={}", caller.id());
         return response;
     }

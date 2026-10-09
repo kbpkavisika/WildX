@@ -118,7 +118,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | Table | Columns |
 |---|---|
 | `incident_type` | park_id FK, name, default_severity, active |
-| `incident` | park_id FK, type_id FK, reporter_id FK, patrol_id FK NULL, lat, lng, location_source (`GPS/MANUAL`), sector_id FK NULL, description, photo_path, severity, status (`NEW/ASSIGNED/RESOLVED/DISMISSED`), occurred_at (device time), resolution_note |
+| `incident` | park_id FK, type_id FK, reporter_id FK, patrol_id FK NULL, lat, lng, location_source (`GPS/MANUAL`), sector_id FK NULL, description, photo_path, severity, status (`NEW/ASSIGNED/RESOLVED/DISMISSED`), occurred_at (device time; up to 2 min ahead of the server is saved as server time, more is rejected), resolution_note |
 
 **UC3**
 
@@ -214,23 +214,27 @@ For demos, `POST /parks/{id}/simulator/camera-images` with `{cameraCode, count}`
 
 `GET /reports/alerts?from=YYYY-MM-DD&to=YYYY-MM-DD` covers the alerts of the caller's park raised (`created_at`) on those Asia/Colombo days, inclusive; missing or reversed dates and formats other than `json`/`csv` return 400. The JSON response is `{from, to, total, medianAcknowledgeMinutes, medianResolveMinutes, rows}` with one row per alert type and zone (`{type, zoneId, zoneName, count, medianAcknowledgeMinutes, medianResolveMinutes}`; alerts without a zone share one row per type with no zone), highest count first. Time to acknowledge is `acknowledged_at` minus the raise time and time to resolve is `resolved_at` minus the raise time; medians are in minutes with one decimal, use only alerts that have the value, and are `null` when none do. `format=csv` downloads `type,zone,count,median_acknowledge_minutes,median_resolve_minutes` with an `ALL` totals row first, using the same escaping and spreadsheet-formula protection as the coverage report.
 
+### User management (CMN-02)
+
+There is no self sign-up: only an Admin creates accounts. `POST /admin/users` needs a password of 8–100 characters; on `PUT` a blank password keeps the current one. Every role except `ADMIN` needs a `parkId`, and an Admin has none. A duplicate email returns 409. `DELETE /admin/users/{id}` does not remove the row, because patrols, dispatches and audit logs reference users: it sets `active = false`, so the user can no longer log in, and `PUT` with `active: true` restores them. An Admin cannot deactivate or demote themselves. The list returns every user (active first, then by name) with `{id, name, email, phone, role, parkId, parkName, active}`.
+
 Every path starts with `/api/v1` and needs a JWT, except where a row says **public** or **api-key**. Roles are enforced with `@PreAuthorize`.
 
 | Module | Endpoint | Who |
 |---|---|---|
 | Auth | `POST /auth/login` → `{token, user}` | public |
-| Admin | `GET/POST/PUT /admin/parks`, `GET/POST/PUT /admin/users` | ADMIN |
+| Admin | `GET /admin/parks` → `[{id, name}]`, `GET/POST /admin/users`, `PUT/DELETE /admin/users/{id}` `{name, email, phone, password, role, parkId, active}` | ADMIN |
 | Park config | `GET/POST/PUT/DELETE /parks/{id}/sectors\|zones\|incident-types\|segments` | MANAGER (writes), staff (reads) |
 | UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | ADMIN, MANAGER (writes), staff (reads) |
 | UC3 | `GET /parks/{id}/alert-rules`, `PUT/DELETE /parks/{id}/alert-rules/{zoneType}` `{severity, cooldownMin, ackSlaMin}` | MANAGER (writes), staff (reads) |
 | UC1 | `GET/POST /routes`, `POST /patrols` (assign), `GET /patrols?status=&date=` | MANAGER |
-| UC1 | `GET /me/patrols` | RANGER |
+| UC1 | `GET /me/patrols` (today's patrols, plus the ranger's active patrol if it started on an earlier day, listed first) | RANGER |
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
 | UC1 | `POST /patrols/{id}/points` `[{lat, lng, accuracyM, recordedAt, isWaypoint, note}]` | RANGER, batch upsert |
 | UC1 | `GET /patrols/{id}/track`, `GET /monitor/live`, `GET /monitor/coverage` | MANAGER |
-| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}`, `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
+| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}` (both include `responderName` from the latest dispatch that was not declined), `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
-| Shared | `GET /responders?lat=&lng=`, which returns on-duty rangers sorted by distance | — |
+| Shared | `GET /responders?lat=&lng=`, which returns the park's active rangers: on-patrol rangers sorted by distance first, then the rest as offline. `GET /dispatches/{id}` and `GET /dispatches?sourceType=&sourceId=` only return a ranger's own dispatches, and staff only see dispatches in their park | — |
 | Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | staff except ADMIN |
 | UC3 | `GET /alerts?status=` | staff |
 | UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, MANAGER |
@@ -295,8 +299,8 @@ frontend/
 │  │  ├─ alerts/  images/  devices/  simulator/   # UC3 (simulator = demo collar and camera data)
 │  │  ├─ community/                            # UC4
 │  │  ├─ reports/                              # all four reports, tabs
-│  │  └─ settings/            # sectors, zones/ (zones and alert rules, UC3), incident types, segments (GeoJSON paste)
-│  ├─ admin/                  # parks, users
+│  │  ├─ settings/            # sectors, zones/ (zones and alert rules, UC3), incident types, segments (GeoJSON paste)
+│  │  └─ users/               # ADMIN: user management (CMN-02)
 │  └─ report/                 # PUBLIC villager form; [ref]/page.tsx = status
 ├─ components/                # Map (Leaflet), StatusBadge, SeverityBadge, BigButton, PickList, DispatchDialog
 ├─ hooks/                     # one React Query hook per screen/resource (use-active-patrols.ts)
@@ -306,7 +310,7 @@ frontend/
 │  ├─ <feature>/mappers.ts    # pure response → view mapping (types.ts, store.ts for UI state)
 │  ├─ auth/store.ts           # Zustand session store (token + user) persisted to localStorage
 │  ├─ enums.ts                # const objects mirroring backend enums
-│  ├─ geo.ts                  # watchPosition wrapper (60 s / 50 m)
+│  ├─ patrols/tracking.ts     # GPS sampling rule (60 s / 50 m); hooks/use-patrol-tracker.ts runs watchPosition from the ranger layout
 │  └─ i18n.ts                 # { en, si, ta } dictionaries + useT()
 ```
 

@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { NewPatrolForm } from "@/components/patrols/new-patrol-form";
 import { PatrolsTable } from "@/components/patrols/patrols-table";
+import { Can } from "@/components/auth/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FilterPill } from "@/components/ui/filter-pill";
@@ -26,10 +27,12 @@ export default function AllPatrolsPage() {
           )
         }
         action={
-          <Button onClick={() => setFormOpen(true)} disabled={!signedIn} aria-expanded={formOpen} className="disabled:opacity-60">
-            <Plus className="size-[18px]" strokeWidth={2} />
-            New patrol
-          </Button>
+          <Can permission="patrol.create">
+            <Button onClick={() => setFormOpen(true)} disabled={!signedIn} aria-expanded={formOpen} className="disabled:opacity-60">
+              <Plus className="size-[18px]" strokeWidth={2} />
+              New patrol
+            </Button>
+          </Can>
         }
       />
       {formOpen && <NewPatrolForm onClose={() => setFormOpen(false)} />}

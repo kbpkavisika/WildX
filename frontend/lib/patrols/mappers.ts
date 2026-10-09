@@ -3,9 +3,9 @@ import type { IncidentResponse } from "@/lib/api/incidents";
 import type { SectorResponse } from "@/lib/api/parks";
 import type { LivePatrolResponse, TrackPointResponse } from "@/lib/api/patrols";
 import { TRACK_COLOR_COUNT } from "@/lib/constants";
-import { INCIDENT_STATUSES } from "@/lib/enums";
+import { INCIDENT_STATUSES, WAYPOINT_TYPES, type WaypointType } from "@/lib/enums";
 import { formatAgo, formatTime } from "@/lib/format";
-import type { ActivePatrolsView, IncidentMarker, LatLng, LivePatrolView, SectorShape } from "./types";
+import type { ActivePatrolsView, IncidentMarker, LatLng, LivePatrolView, SectorShape, WaypointView } from "./types";
 
 const polygonSchema = z.object({
   type: z.literal("Polygon"),
@@ -34,6 +34,24 @@ export function toSectorShape(sector: SectorResponse): SectorShape | null {
 
 export function toTrack(points: TrackPointResponse[] | undefined): LatLng[] {
   return (points ?? []).map((point) => [point.lat, point.lng]);
+}
+
+export const WAYPOINT_TYPE_LABELS: Record<WaypointType, string> = {
+  [WAYPOINT_TYPES.CHECKPOINT]: "Checkpoint",
+  [WAYPOINT_TYPES.OBSERVATION]: "Observation",
+  [WAYPOINT_TYPES.REST]: "Rest",
+  [WAYPOINT_TYPES.OTHER]: "Other",
+};
+
+function waypointLabel(point: TrackPointResponse): string {
+  const parts = [formatTime(new Date(point.recordedAt)), point.waypointType ? WAYPOINT_TYPE_LABELS[point.waypointType] : "Waypoint"];
+  return [...parts, ...(point.note ? [point.note] : [])].join(" · ");
+}
+
+export function toWaypoints(points: TrackPointResponse[]): WaypointView[] {
+  return points
+    .filter((point) => point.isWaypoint)
+    .map((point) => ({ id: point.id, position: [point.lat, point.lng], label: waypointLabel(point) }));
 }
 
 function captionFor(live: LivePatrolResponse, now: Date): string {

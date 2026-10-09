@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createIncidentType, deleteIncidentType, fetchIncidentTypes, updateIncidentType } from "@/lib/api/incident-types";
+import { useCan } from "@/hooks/use-can";
 import { useAuthStore } from "@/lib/auth/store";
-import { ROLES } from "@/lib/enums";
 import { toIncidentTypeRequest, type IncidentTypeRequestValues } from "@/lib/incidents/incident-type-form";
 import { toIncidentTypesView } from "@/lib/incidents/mappers";
 
@@ -26,7 +26,7 @@ export function useParkIncidentTypes() {
 
 export function useIncidentTypes() {
   const queryClient = useQueryClient();
-  const canManage = useAuthStore((state) => state.user?.role === ROLES.MANAGER);
+  const canManage = useCan("settings.manage");
   const types = useParkIncidentTypes();
   const parkId = types.parkId as number;
 

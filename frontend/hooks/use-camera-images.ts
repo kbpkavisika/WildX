@@ -1,19 +1,18 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { fetchCameraBursts, fetchCameraImageFile } from "@/lib/api/camera-images";
+import { useCan } from "@/hooks/use-can";
 import { useAuthStore } from "@/lib/auth/store";
 import { toCameraView } from "@/lib/camera/mappers";
-import { canViewCameraImages } from "@/lib/camera/roles";
 import { useCameraPage } from "@/lib/camera/store";
 import { CAMERA_IMAGES_REFETCH_MS } from "@/lib/constants";
-import { ROLES } from "@/lib/enums";
 import { blobToDataUrl } from "@/lib/files";
 
 export function useCameraImages() {
   const parkId = useAuthStore((state) => state.user?.parkId ?? null);
-  const role = useAuthStore((state) => state.user?.role ?? null);
   const filter = useCameraPage((state) => state.filter);
   const selectedId = useCameraPage((state) => state.selectedId);
-  const canView = canViewCameraImages(role);
+  const canTag = useCan("image.tag");
+  const canView = useCan("image.view");
 
   const bursts = useQuery({
     queryKey: ["parks", parkId, "camera-images"],
@@ -39,7 +38,7 @@ export function useCameraImages() {
   return {
     parkId,
     canView,
-    canTag: role === ROLES.MANAGER,
+    canTag,
     isPending: bursts.isPending,
     isError: bursts.isError,
     view,

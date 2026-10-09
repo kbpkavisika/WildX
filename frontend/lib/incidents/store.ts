@@ -5,12 +5,16 @@ import { ALL, type IncidentQueueFilters } from "./types";
 
 interface IncidentQueueState {
   filters: IncidentQueueFilters;
+  selectedId: number | null;
   setFilter: (change: Partial<IncidentQueueFilters>) => void;
+  select: (id: number | null) => void;
 }
 
 export const useIncidentQueue = create<IncidentQueueState>()((set) => ({
   filters: { status: INCIDENT_STATUSES.NEW, typeId: ALL, severity: ALL },
+  selectedId: null,
   setFilter: (change) => set((state) => ({ filters: { ...state.filters, ...change } })),
+  select: (selectedId) => set({ selectedId }),
 }));
 
 interface IncidentReportState {

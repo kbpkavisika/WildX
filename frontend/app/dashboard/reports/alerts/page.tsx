@@ -18,7 +18,7 @@ export default function AlertReportPage() {
     return (
       <>
         <PageHeader title="Alert report" />
-        <p className="m-0 text-body text-ink-muted">Only park managers and supervisors can see the alert report.</p>
+        <p className="m-0 text-body text-ink-muted">Only park managers and researchers can see the alert report.</p>
       </>
     );
   }

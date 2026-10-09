@@ -2,13 +2,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchAlertReport, fetchAlertReportCsv } from "@/lib/api/alert-report";
 import { toAlertReportView } from "@/lib/alerts/report-mappers";
 import { useAlertReportRange } from "@/lib/alerts/report-store";
-import { canViewAlertReport } from "@/lib/alerts/roles";
-import { useAuthStore } from "@/lib/auth/store";
+import { useCan } from "@/hooks/use-can";
 import { downloadBlob } from "@/lib/files";
 import { reportRangeError } from "@/lib/incidents/report-mappers";
 
 export function useAlertReport() {
-  const canView = useAuthStore((state) => canViewAlertReport(state.user?.role ?? null));
+  const canView = useCan("report.alerts");
   const { from, to, setRange } = useAlertReportRange();
   const rangeError = reportRangeError(from, to);
   const enabled = canView && rangeError === null;

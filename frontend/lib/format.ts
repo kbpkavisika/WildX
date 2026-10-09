@@ -50,6 +50,10 @@ export function formatKm(metres: number): string {
   return `${(metres / METRES_PER_KM).toFixed(1)} km`;
 }
 
+export function formatLatLng([lat, lng]: [number, number], decimals: number): string {
+  return `${lat.toFixed(decimals)}, ${lng.toFixed(decimals)}`;
+}
+
 export function toIsoDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -67,4 +71,14 @@ export function initialsOf(name: string): string {
   const first = words[0][0];
   const last = words.length > 1 ? words[words.length - 1][0] : "";
   return `${first}${last}`.toUpperCase();
+}
+
+const MINUTES_PER_HOUR = 60;
+
+export function formatDuration(seconds: number): string {
+  const totalMinutes = Math.round(seconds / SECONDS_PER_MINUTE);
+  const hours = Math.floor(totalMinutes / MINUTES_PER_HOUR);
+  const minutes = totalMinutes % MINUTES_PER_HOUR;
+  if (hours === 0) return `${minutes} min`;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
 }

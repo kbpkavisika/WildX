@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { can } from "@/lib/auth/permissions";
+import { useAuthStore } from "@/lib/auth/store";
 import { cn } from "@/lib/utils";
 import { REPORT_TABS } from "./report-tab-items";
 
 export function ReportTabs() {
   const pathname = usePathname();
+  const role = useAuthStore((state) => state.user?.role);
   return (
     <nav aria-label="Reports" className="flex flex-wrap gap-2">
-      {REPORT_TABS.map((tab) => {
+      {REPORT_TABS.filter((tab) => can(role, tab.permission)).map((tab) => {
         const active = pathname === tab.href;
         return (
           <Link

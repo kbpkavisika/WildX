@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Camera, Check, ExternalLink, MapPin, MessageSquare, PhoneCall, Send, X } from "lucide-react";
+import { Can } from "@/components/auth/can";
 import { formatAgo } from "@/lib/format";
 import type { CommunityReport } from "@/lib/api/community";
 import { EvidenceDialog } from "./evidence-dialog";
@@ -166,14 +167,16 @@ export function CommunityTable({
                         )}
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => onOpenLocation(report)}
-                        className="inline-flex items-center gap-1 self-start rounded border border-negative-line bg-negative-bg px-2 py-0.5 text-caption font-medium text-negative hover:underline"
-                      >
-                        <MapPin className="size-3" />
-                        Assign segment
-                      </button>
+                      <Can permission="community.act">
+                        <button
+                          type="button"
+                          onClick={() => onOpenLocation(report)}
+                          className="inline-flex items-center gap-1 self-start rounded border border-negative-line bg-negative-bg px-2 py-0.5 text-caption font-medium text-negative hover:underline"
+                        >
+                          <MapPin className="size-3" />
+                          Assign segment
+                        </button>
+                      </Can>
                     )}
                     {report.lat !== null && report.lng !== null && (
                       <a
@@ -210,47 +213,51 @@ export function CommunityTable({
 
                 <td className="px-4 py-3.5 text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1.5">
-                    {report.status === "NEEDS_LOCATION" && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenLocation(report)}
-                        className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-caption font-medium text-ink hover:bg-surface-muted"
-                      >
-                        Set location
-                      </button>
-                    )}
-
-                    {report.status === "NEW" && (
-                      <>
+                    <Can permission="community.act">
+                      {report.status === "NEEDS_LOCATION" && (
                         <button
                           type="button"
-                          onClick={() => onOpenValidate(report)}
-                          className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-caption font-medium text-white hover:bg-primary-hover"
+                          onClick={() => onOpenLocation(report)}
+                          className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-caption font-medium text-ink hover:bg-surface-muted"
                         >
-                          <Check className="size-3.5" />
-                          Validate
+                          Set location
                         </button>
+                      )}
+
+                      {report.status === "NEW" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onOpenValidate(report)}
+                            className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-caption font-medium text-white hover:bg-primary-hover"
+                          >
+                            <Check className="size-3.5" />
+                            Validate
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenInvalidate(report)}
+                            className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-2.5 py-1.5 text-caption font-medium text-ink-muted hover:bg-surface-muted hover:text-negative"
+                          >
+                            <X className="size-3.5" />
+                            Invalid
+                          </button>
+                        </>
+                      )}
+                    </Can>
+
+                    <Can permission="dispatch.create">
+                      {report.status === "VALIDATED" && (
                         <button
                           type="button"
-                          onClick={() => onOpenInvalidate(report)}
-                          className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-2.5 py-1.5 text-caption font-medium text-ink-muted hover:bg-surface-muted hover:text-negative"
+                          onClick={() => onOpenDispatch(report)}
+                          className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-caption font-medium text-white hover:bg-primary-hover"
                         >
-                          <X className="size-3.5" />
-                          Invalid
+                          <Send className="size-3.5" />
+                          Dispatch responder
                         </button>
-                      </>
-                    )}
-
-                    {report.status === "VALIDATED" && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenDispatch(report)}
-                        className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-caption font-medium text-white hover:bg-primary-hover"
-                      >
-                        <Send className="size-3.5" />
-                        Dispatch responder
-                      </button>
-                    )}
+                      )}
+                    </Can>
                   </div>
                 </td>
               </tr>

@@ -1,11 +1,11 @@
 import type { PatrolHistoryResponse, PatrolResponse } from "@/lib/api/patrols";
 import { PATROL_STATUSES, type PatrolStatus } from "@/lib/enums";
-import { formatDayLabel, formatKm, formatTime, fromIsoDate, initialsOf, isSameDay } from "@/lib/format";
+import { formatDayLabel, formatDuration, formatKm, formatTime, fromIsoDate, initialsOf, isSameDay } from "@/lib/format";
 import { PATROL_FILTERS, type PatrolFilter, type PatrolFilterOption, type PatrolRow, type PatrolTableView } from "./types";
 
 const NO_VALUE = "—";
 
-const STATUS_DISPLAY: Record<PatrolStatus, Pick<PatrolRow, "status" | "filter">> = {
+export const STATUS_DISPLAY: Record<PatrolStatus, Pick<PatrolRow, "status" | "filter">> = {
   [PATROL_STATUSES.ACTIVE]: { status: { tone: "positive", label: "Active" }, filter: PATROL_FILTERS.ACTIVE },
   [PATROL_STATUSES.PLANNED]: { status: { tone: "neutral", label: "Scheduled" }, filter: PATROL_FILTERS.SCHEDULED },
   [PATROL_STATUSES.COMPLETED]: { status: { tone: "done", label: "Completed" }, filter: PATROL_FILTERS.COMPLETED },
@@ -19,14 +19,15 @@ const FILTER_LABELS: Record<PatrolFilter, string> = {
   [PATROL_FILTERS.COMPLETED]: "Completed",
 };
 
-function timeRange(patrol: PatrolResponse): string | null {
+export function timeRange(patrol: PatrolResponse): string | null {
   if (!patrol.startedAt) return null;
   const start = formatTime(new Date(patrol.startedAt));
   return patrol.endedAt ? `${start} – ${formatTime(new Date(patrol.endedAt))}` : `From ${start}`;
 }
 
-export function toPatrolRow(patrol: PatrolResponse, distanceM: number | undefined, now: Date): PatrolRow {
+export function toPatrolRow(patrol: PatrolResponse, history: PatrolHistoryResponse | undefined, now: Date): PatrolRow {
   const scheduled = fromIsoDate(patrol.scheduledDate);
+  const completed = patrol.status === PATROL_STATUSES.COMPLETED;
   return {
     id: patrol.id,
     title: patrol.route.name,
@@ -35,7 +36,9 @@ export function toPatrolRow(patrol: PatrolResponse, distanceM: number | undefine
     leaderInitials: initialsOf(patrol.rangerName),
     day: isSameDay(scheduled, now) ? "Today" : formatDayLabel(scheduled),
     time: timeRange(patrol),
-    distance: distanceM === undefined ? NO_VALUE : formatKm(distanceM),
+    distance: completed && history ? formatKm(history.distanceM) : NO_VALUE,
+    duration: completed && history ? formatDuration(history.durationSeconds) : null,
+    canReplay: completed,
     ...STATUS_DISPLAY[patrol.status],
   };
 }
@@ -54,8 +57,8 @@ export function toPatrolTableView(
   filter: PatrolFilter,
   now: Date,
 ): PatrolTableView {
-  const distances = new Map(history.map((entry) => [entry.patrol.id, entry.distanceM]));
-  const rows = patrols.map((patrol) => toPatrolRow(patrol, distances.get(patrol.id), now));
+  const histories = new Map(history.map((entry) => [entry.patrol.id, entry]));
+  const rows = patrols.map((patrol) => toPatrolRow(patrol, histories.get(patrol.id), now));
   const filters = filterOptions(rows);
   const countOf = (value: PatrolFilter) => filters.find((option) => option.value === value)?.count ?? 0;
   return {

@@ -16,14 +16,14 @@ import {
   type BoundarySegmentInput,
 } from "@/lib/api/boundary-segments";
 import { useAuthStore } from "@/lib/auth/store";
-import { ROLES } from "@/lib/enums";
+import { can } from "@/lib/auth/permissions";
 import { apiErrorMessage } from "@/lib/api/client";
 
 export default function BoundarySegmentsPage() {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const parkId = user?.parkId ?? 1;
-  const canManage = user?.role === ROLES.MANAGER || user?.role === ROLES.ADMIN;
+  const canManage = can(user?.role, "boundary.manage");
 
   const [formOpen, setFormOpen] = useState<boolean>(false);
   const [editing, setEditing] = useState<BoundarySegment | null>(null);

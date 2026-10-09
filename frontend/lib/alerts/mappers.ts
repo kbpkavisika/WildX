@@ -1,10 +1,10 @@
 import type { AlertResponse } from "@/lib/api/alerts";
 import type { ZoneResponse } from "@/lib/api/zones";
-import { ALERT_STATUSES, ALERT_TYPES, DISPOSITIONS, ROLES, type AlertType, type Disposition, type Role } from "@/lib/enums";
+import { ALERT_STATUSES, ALERT_TYPES, DISPOSITIONS, type AlertType, type Disposition, type Role } from "@/lib/enums";
 import { GOOGLE_MAPS_URL } from "@/lib/constants";
 import { formatDayTime } from "@/lib/format";
 import { SEVERITY_DISPLAY } from "@/lib/incidents/mappers";
-import { canViewCameraImages } from "@/lib/camera/roles";
+import { can } from "@/lib/auth/permissions";
 import { toSectorShape } from "@/lib/patrols/mappers";
 import type { LatLng } from "@/lib/patrols/types";
 import type { DetailFact } from "@/lib/incidents/types";
@@ -22,7 +22,6 @@ import {
 
 const UNKNOWN_DEVICE = "Unknown device";
 const NO_VALUE = "—";
-const HANDLER_ROLES = new Set<Role>([ROLES.RANGER, ROLES.MANAGER]);
 const ACTIVE_STATUSES = new Set<string>([ALERT_STATUSES.OPEN, ALERT_STATUSES.ACKNOWLEDGED]);
 
 export const ALERT_TYPE_LABELS: Record<AlertType, string> = {
@@ -106,7 +105,7 @@ function alertFacts(alert: AlertResponse, now: Date): DetailFact[] {
 }
 
 function isHandler(role: Role | null): boolean {
-  return role !== null && HANDLER_ROLES.has(role);
+  return can(role, "alert.handle");
 }
 
 function toAlertDetail(alert: AlertResponse, role: Role | null, now: Date): AlertDetailView {
@@ -121,8 +120,8 @@ function toAlertDetail(alert: AlertResponse, role: Role | null, now: Date): Aler
     position: positionOf(alert),
     canAcknowledge: handler && alert.status === ALERT_STATUSES.OPEN,
     canResolve: handler && unresolved,
-    canDispatch: role === ROLES.MANAGER && unresolved,
-    cameraImageId: canViewCameraImages(role) ? alert.cameraImageId : null,
+    canDispatch: can(role, "alert.dispatch") && unresolved,
+    cameraImageId: can(role, "image.view") ? alert.cameraImageId : null,
   };
 }
 
