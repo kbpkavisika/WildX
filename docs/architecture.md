@@ -311,6 +311,7 @@ frontend/
 ```
 
 - **Role guard:** each top-level layout redirects the user to `/login` if their role does not match. The backend is the real enforcement.
+- **Logout** is client-only, because the JWT is stateless: it clears the auth store and the React Query cache and redirects to `/login`. There is no logout endpoint, and the discarded token stays valid until it expires.
 - **Data fetching** goes through React Query (`useQuery`/`useMutation`, with `refetchInterval` for polling). `lib/api/*` only sends requests and returns the zod-validated raw response. Mapping and business logic live in separate mapper/service functions.
 - **Client state** (auth user, UI and filter state) lives in Zustand stores. Server data stays in React Query, not in Zustand.
 - **Status and severity** are always shown as **text plus a colour**, never colour alone.
