@@ -292,6 +292,8 @@ Screens designed so far (`docs/prototypes/`):
 - **Sign in** (`sign-in.html`): a bordered xl split card with a park photo panel and the email and password form.
 - **Alerts** (`alerts.html`): an alert map, the alert queue with status filters, the selected alert's detail with Acknowledge, Resolve and Dispatch, and the user's notifications.
 - **Ranger alerts** (`ranger-alerts.html`): the phone screen behind the ranger's Alerts tab, with the park's open alerts, large Acknowledge and Resolve buttons, and the ranger's notifications.
+- **Devices** (`devices.html`): every collar and camera trap of the park with its health, and inline forms to register an animal or a device.
+- **Simulator** (`simulator.html`): the demo tool that sends test collar fixes and camera images through the real ingest, in place of real hardware.
 
 ### Voice
 
@@ -429,6 +431,20 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Tapping a row opens it in place on the `surface-sunken` fill: a fact list (Occurred, Acknowledge by, Acknowledged) and stacked full-width buttons: Acknowledge (primary) while open, Resolve (secondary) until resolved, and Open in maps (secondary with a map icon), which opens the alert position in Google Maps in a new tab. Tapping the row again closes it.
   - Resolve opens the same outcome form as the dashboard, with Resolve alert and Cancel stacked full width. A failed action shows the server's message in negative red.
   - The **Notifications** card follows, the same as on the dashboard.
+- **Devices.**
+  - The sidebar's Sensors → Collars item opens it. The subtitle counts collars and cameras and how many need attention: "**3 collars** and 2 cameras, 2 need attention." (or "all healthy" when none do).
+  - Managers get Simulator (secondary link), New animal (secondary) and New device (primary 48px with a plus icon) on the right. Other roles only read the page.
+  - Filter pills: All, Collars, Cameras with counts.
+  - The table uses grid rows (`1.2fr 1.6fr 0.9fr 0.7fr 1.1fr 1fr`) and scrolls horizontally below 760px. Columns: Device (code, then "Collar" or "Camera" as a muted caption), Animal or location (animal name over its species for a collar, "6.3100, 81.4100" over "Camera location" for a camera), Reports every ("60 min"), Battery ("82%" or —), Last seen ("Today · 22:05" or "Never") and a Health chip.
+  - Health chips: Reporting (positive); Low battery (negative, below 15%); Not reporting (negative, nothing for more than 3 × the reporting interval); No data yet (neutral, never reported).
+  - New device and New animal open inline panels above the table, like the New patrol form, one at a time. New device asks for Type (pick-list), Code, Reports every (minutes, 1–10080), then Animal (pick-list of the park's animals) for a collar or Latitude and Longitude for a camera. When the park has no animals yet, a muted caption says "No animals yet. Add one with New animal first." New animal asks for Name and Species. Missing or invalid fields are outlined in negative red with a caption; a server error (such as a code already in use) shows in negative red above the buttons. Cancel and Register device (or Add animal) are right-aligned.
+- **Simulator.**
+  - Managers open it from the Devices page; it has Devices and Alerts as secondary links on the right. The subtitle says it sends test data through the real ingest.
+  - Two cards side by side: Collar fixes (`3 1 420px`) and Camera images (`2 1 340px`).
+  - Collar fixes: a Collar pick-list ("COL-001 · Gemunu") and the six scenarios as 48px radio rows with a muted one-line explanation each (Walk into zone, Night walk into zone, Single fix, Low battery, Not moving, Duplicate fix). The two walks show a Zone pick-list ("Kumbukgaha farmland · Farmland"); the other four show Latitude and Longitude fields. Send fixes is a 40px primary button.
+  - Camera images: a Camera pick-list, an Images pick-list (1–10), a muted line explaining the burst, and Send images.
+  - Without collars or cameras, a muted caption says "No collars yet. Register one on the Devices page." (or cameras). Other roles see "Only park managers can use the simulator."
+  - After sending, a positive line beside the button reports the result: "Sent 6 fixes · 6 stored · 0 duplicates." or "Sent 3 images · 3 stored." Errors show in negative red in the same place.
 
 ## Do's and Don'ts
 

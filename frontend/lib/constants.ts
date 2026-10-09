@@ -16,3 +16,7 @@ export const ALERTS_REFETCH_MS = 15_000;
 export const NOTIFICATIONS_REFETCH_MS = 15_000;
 export const MAP_MAX_ZOOM = 17;
 export const GOOGLE_MAPS_URL = "https://www.google.com/maps?q=";
+export const DEVICES_REFETCH_MS = 30_000;
+export const LOW_BATTERY_PCT = 15;
+export const NOT_REPORTING_FACTOR = 3;
+export const COORDINATE_DECIMALS = 4;
