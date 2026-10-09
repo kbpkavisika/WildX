@@ -411,6 +411,14 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Each panel row has a 24px numbered marker in the track colour, the patrol name (label), "leader · last ping" (caption, muted) and a status dot + word. The selected row uses the `surface-sunken` fill.
   - Incidents are red triangles with a white "!". An overdue team gets a dashed red ring around its marker.
   - A pulsing green **Live** chip sits next to the page title.
+- **Incident queue.**
+  - The incident queue card (`3 1 420px`) sits beside the incident detail card (`2 1 340px`), like the Alerts page; on a phone the detail drops below the queue.
+  - Filter pills (New / Assigned / Resolved / Dismissed / All with counts) and Type and Severity pick-lists sit above the table. Columns: Incident (type name over the `INC-` code), Sector, Reported by, Reported, Severity chip and Status chip. Under the status chip a muted caption (up to 2 lines, full text on hover) says who it was dispatched to ("To K. Bandara") while Assigned, the outcome once Resolved, or the reason once Dismissed. The table refreshes after each triage action.
+  - Selecting an incident's name selects its row (`surface-sunken` fill) and shows it in the detail card without leaving the page. Without a selection the card says "Select an incident to triage it."
+  - The detail card has the incident title with its status chip and a 32px quiet Close button, the subtitle as a muted caption, then the triage block (Severity pick-list, Dispatch responder primary 40px and Dismiss incident secondary, or "This incident is closed."), the 280px location map and the incident facts with the photo.
+  - The same card also renders on its own page (`/dashboard/incidents/{id}`) under an "Incidents" back link, for direct links.
+  - The facts include **Coordinates** as "6.3800, 81.4800" (latitude, longitude, 4 decimals, like camera locations).
+- **Incident maps** (location picker, incident detail, ranger dispatch and the incident report map) draw OpenStreetMap tiles under the incident markers, with no sector outlines (the map still frames the park's sectors), and a small "© OpenStreetMap" attribution bottom-right; `map-ground` shows only while tiles load. On the report form, the picked point's coordinates show as a muted caption under the location hint.
 - **Patrols table (All patrols).**
   - Filter pills (All / Active / Scheduled / Completed with counts; the active pill is ink-filled).
   - Columns: Patrol (route name + `PT-` ID), Leader (28px initials avatar + ranger name), Schedule (day, then the actual start – end time once started), Distance (covered km for completed patrols, with the duration as a muted caption below, e.g. "6.4 km" over "2 h 15 min"; otherwise —), Status chip (Active positive, Scheduled neutral, Completed done, Cancelled neutral), and a more-options button.
@@ -509,7 +517,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Edit and Add rule open the rule form in place of the row, one at a time, on `surface-form` with a "Village buffer rule" `form-title`: Severity (pick-list: Low, Medium, High, Critical), Cool-down (minutes, with the caption "0 to 1440. 0 raises an alert for every breach.") and Acknowledge within (minutes, 1 to 1440). Invalid numbers are outlined in negative red with "Enter 0 to 1440 minutes" or "Enter 1 to 1440 minutes". Remove rule (secondary with negative text, only for an existing rule, after a confirmation) sits on the left; Cancel and Save rule on the right. A server error shows in negative red above the buttons.
 
 - **Alert report.**
-  - The Analytics → Alerts tab opens it, after Incidents and Conflicts, and the Report button on the Alerts page links to it. Managers and supervisors can use it; other roles see "Only park managers and supervisors can see the alert report."
+  - The Analytics → Alerts tab opens it, after Incidents and Conflicts, and the Report button on the Alerts page links to it. Managers and researchers can use it; other roles see "Only park managers and researchers can see the alert report."
   - The subtitle counts the alerts: "**12 alerts** raised in this range." Download CSV (primary 48px with a download icon) is on the right; it downloads the server's CSV, with the ALL totals row first.
   - From and To date fields sit under the header, like the Incident report, covering the last six months by default. A reversed or empty range shows the error in negative red and loads nothing.
   - The Summary card has a muted caption "Times run from when each alert was raised, and count only alerts that got that far." and a metric strip: Alerts raised, Median time to acknowledge and Median time to resolve. Times show as "8.5 min" under an hour and "1.4 h" from an hour up, or "—" when no alert has the value yet.
@@ -518,7 +526,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
 - **Ranger app (phone).**
   - A single 640px-max column with the logo header and a sticky four-tab bottom nav (Patrols, Report, Tasks, Alerts). Tabs are 48px tall with a 20px icon over a caption label; the active tab gets the lime pill.
   - **Patrols** (`/ranger`): a "Patrols" page title with the subtitle "Today's assigned patrols.", a full-width 48px primary "Report incident" button, then a "Today's patrols" card. A patrol still active from an earlier day is listed first. Each row shows "Route name · PT-12", a muted caption with the start – end time once started (otherwise "Today"), and a status chip (Active positive, Scheduled neutral, Completed done, Cancelled neutral). Empty state: "No patrols assigned for today."
-  - **Alerts** (`/ranger/alerts`): an "Alerts" page title with the subtitle "Dispatches and alerts sent to you.", then the shared notifications card. Selecting a row marks it read and opens its link.
+  - **Alerts** (`/ranger/alerts`): see Ranger alerts above.
 
 ## Do's and Don'ts
 

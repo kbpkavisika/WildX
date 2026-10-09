@@ -228,7 +228,7 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
 | UC1 | `POST /patrols/{id}/points` `[{lat, lng, accuracyM, recordedAt, isWaypoint, note}]` | RANGER, batch upsert |
 | UC1 | `GET /patrols/{id}/track`, `GET /monitor/live`, `GET /monitor/coverage` | MANAGER |
-| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}`, `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
+| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}` (both include `responderName` from the latest dispatch that was not declined), `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
 | Shared | `GET /responders?lat=&lng=`, which returns the park's active rangers: on-patrol rangers sorted by distance first, then the rest as offline. `GET /dispatches/{id}` and `GET /dispatches?sourceType=&sourceId=` only return a ranger's own dispatches, and staff only see dispatches in their park | — |
 | Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | staff except ADMIN |
