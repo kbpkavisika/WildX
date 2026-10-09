@@ -77,6 +77,9 @@ export function CommunityTable({
   onOpenDispatch,
   emptyMessage,
 }: CommunityTableProps) {
+  const [evidenceReport, setEvidenceReport] = useState<CommunityReport | null>(null);
+  const now = new Date();
+
   if (reports.length === 0) {
     return (
       <div className="flex min-h-48 items-center justify-center p-8 text-center text-body text-ink-muted">
@@ -84,9 +87,6 @@ export function CommunityTable({
       </div>
     );
   }
-
-  const [evidenceReport, setEvidenceReport] = useState<CommunityReport | null>(null);
-  const now = new Date();
 
   return (
     <div className="overflow-x-auto">
