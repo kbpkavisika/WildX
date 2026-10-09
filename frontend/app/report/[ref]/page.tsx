@@ -4,13 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Clock, MapPin, Search } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, ExternalLink, MapPin, Search } from "lucide-react";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useT, type TranslationKey } from "@/lib/i18n";
 import { fetchPublicReport, type PublicReportResponse } from "@/lib/api/public-report";
 import { cn } from "@/lib/utils";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function getStatusBadgeConfig(status: string, t: (k: TranslationKey) => string) {
   switch (status) {
@@ -74,11 +72,19 @@ export default function PublicReportStatusPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = searchInput.trim();
+    let clean = searchInput.trim().toUpperCase();
     if (clean) {
+      if (!clean.startsWith("R-") && /^\d+$/.test(clean)) {
+        clean = `R-${clean}`;
+      }
       router.push(`/report/${encodeURIComponent(clean)}`);
     }
   };
+
+  const baseApiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1").replace(/\/api\/v1\/?$/, "");
+  const photoUrl = report
+    ? `${baseApiUrl}/api/v1/public/reports/${encodeURIComponent(report.referenceCode)}/photo`
+    : "";
 
   const statusConfig = report ? getStatusBadgeConfig(report.status, t) : null;
 
@@ -197,13 +203,23 @@ export default function PublicReportStatusPage() {
 
               {report.photoPath && (
                 <div className="mt-2">
-                  <span className="text-caption text-ink-muted">Photo</span>
-                  <div className="mt-1 overflow-hidden rounded-lg border border-line">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <div className="flex items-center justify-between pb-1.5">
+                    <span className="text-caption font-medium text-ink-muted">Photo Evidence</span>
+                    <a
+                      href={photoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-caption font-medium text-primary hover:underline"
+                    >
+                      <span>Open original</span>
+                      <ExternalLink className="size-3" />
+                    </a>
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-line bg-black/95">
                     <img
-                      src={`${API_URL}/files/${report.photoPath}`}
-                      alt="Incident photo"
-                      className="max-h-64 w-full object-cover"
+                      src={photoUrl}
+                      alt={`Evidence for ${report.referenceCode}`}
+                      className="max-h-80 w-full object-contain"
                     />
                   </div>
                 </div>

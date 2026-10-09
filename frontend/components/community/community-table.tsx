@@ -1,9 +1,11 @@
 "use client";
 
-import { Check, ExternalLink, MapPin, MessageSquare, PhoneCall, Send, X } from "lucide-react";
+import { useState } from "react";
+import { Camera, Check, ExternalLink, MapPin, MessageSquare, PhoneCall, Send, X } from "lucide-react";
 import { Can } from "@/components/auth/can";
 import { formatAgo } from "@/lib/format";
 import type { CommunityReport } from "@/lib/api/community";
+import { EvidenceDialog } from "./evidence-dialog";
 
 interface CommunityTableProps {
   reports: CommunityReport[];
@@ -11,6 +13,7 @@ interface CommunityTableProps {
   onOpenInvalidate: (report: CommunityReport) => void;
   onOpenLocation: (report: CommunityReport) => void;
   onOpenDispatch: (report: CommunityReport) => void;
+  emptyMessage?: string;
 }
 
 function StatusChip({ status, severity }: { status: string; severity?: string | null }) {
@@ -72,16 +75,18 @@ export function CommunityTable({
   onOpenInvalidate,
   onOpenLocation,
   onOpenDispatch,
+  emptyMessage,
 }: CommunityTableProps) {
+  const [evidenceReport, setEvidenceReport] = useState<CommunityReport | null>(null);
+  const now = new Date();
+
   if (reports.length === 0) {
     return (
       <div className="flex min-h-48 items-center justify-center p-8 text-center text-body text-ink-muted">
-        No community reports in this view.
+        {emptyMessage ?? "No community reports in this view."}
       </div>
     );
   }
-
-  const now = new Date();
 
   return (
     <div className="overflow-x-auto">
@@ -135,6 +140,16 @@ export function CommunityTable({
                       <span className="line-clamp-1 max-w-xs text-caption text-ink-body">
                         {report.description}
                       </span>
+                    )}
+                    {report.photoPath && (
+                      <button
+                        type="button"
+                        onClick={() => setEvidenceReport(report)}
+                        className="mt-1 inline-flex items-center gap-1 self-start rounded border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <Camera className="size-3" />
+                        View photo
+                      </button>
                     )}
                   </div>
                 </td>
@@ -250,6 +265,14 @@ export function CommunityTable({
           })}
         </tbody>
       </table>
+
+      <EvidenceDialog
+        report={evidenceReport}
+        open={Boolean(evidenceReport)}
+        onOpenChange={(open) => {
+          if (!open) setEvidenceReport(null);
+        }}
+      />
     </div>
   );
 }

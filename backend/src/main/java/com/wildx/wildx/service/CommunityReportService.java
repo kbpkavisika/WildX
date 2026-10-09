@@ -41,4 +41,8 @@ public interface CommunityReportService {
     List<ConflictTrendReportResponse> getConflictTrends(Long parkId, LocalDate from, LocalDate to);
 
     SmsHelpCardResponse getSmsHelpCard(Long parkId);
+
+    com.wildx.wildx.dto.CommunityReportPhoto getPhoto(Long parkId, Long id);
+
+    com.wildx.wildx.dto.CommunityReportPhoto getPublicPhoto(String referenceCode);
 }

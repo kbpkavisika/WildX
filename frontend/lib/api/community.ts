@@ -129,3 +129,8 @@ export function fetchSmsHelpCard(parkId?: number): Promise<SmsHelpCard> {
   const query = parkId ? `?parkId=${parkId}` : "";
   return apiGet(`/community/sms-help-card${query}`, smsHelpCardSchema);
 }
+
+export function fetchCommunityReportPhoto(id: number, parkId?: number): Promise<Blob> {
+  const query = parkId ? `?parkId=${parkId}` : "";
+  return apiGetBlob(`/community-reports/${id}/photo${query}`);
+}

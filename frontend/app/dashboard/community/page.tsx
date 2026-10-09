@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Printer, RefreshCw } from "lucide-react";
+import { Printer, RefreshCw, Search } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,6 +30,7 @@ const STATUS_FILTERS = [
 
 export default function CommunityDashboardPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { reports, hotspots, validate, invalidate, updateLocation } = useCommunityReports(selectedStatus);
 
@@ -41,6 +42,18 @@ export default function CommunityDashboardPage() {
   const [helpCardOpen, setHelpCardOpen] = useState<boolean>(false);
 
   const reportList = reports.data ?? [];
+  const filteredReports = reportList.filter((r) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    const refMatch = r.referenceCode?.toLowerCase().includes(q);
+    const phoneMatch = r.reporterPhone?.toLowerCase().includes(q);
+    const descMatch = r.description?.toLowerCase().includes(q);
+    const segmentNameMatch = r.segmentName?.toLowerCase().includes(q);
+    const segmentCodeMatch = r.segmentCode?.toLowerCase().includes(q);
+    const rawMatch = r.rawText?.toLowerCase().includes(q);
+    const typeMatch = r.type?.toLowerCase().includes(q);
+    return Boolean(refMatch || phoneMatch || descMatch || segmentNameMatch || segmentCodeMatch || rawMatch || typeMatch);
+  });
   const newCount = reportList.filter((r) => r.status === "NEW").length;
   const needsLocationCount = reportList.filter((r) => r.status === "NEEDS_LOCATION").length;
 
@@ -126,7 +139,7 @@ export default function CommunityDashboardPage() {
       <HotspotsStrip hotspots={hotspots.data ?? []} />
 
       <Card label="Community reports review queue">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+        <div className="flex flex-col gap-3 border-b border-line pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             {STATUS_FILTERS.map((filter) => {
               const count =
@@ -145,15 +158,27 @@ export default function CommunityDashboardPage() {
             })}
           </div>
 
-          <button
-            type="button"
-            onClick={() => reports.refetch()}
-            disabled={reports.isFetching}
-            className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-caption font-medium text-ink-muted hover:bg-surface-muted hover:text-ink disabled:opacity-50"
-          >
-            <RefreshCw className={`size-3.5 ${reports.isFetching ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search reference, phone, location..."
+                className="h-9 w-full rounded-md border border-line bg-surface pl-9 pr-3 text-caption text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => reports.refetch()}
+              disabled={reports.isFetching}
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface px-3 text-caption font-medium text-ink-muted hover:bg-surface-muted hover:text-ink disabled:opacity-50"
+            >
+              <RefreshCw className={`size-3.5 ${reports.isFetching ? "animate-spin" : ""}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
 
         {reports.isPending && <p className="py-8 text-center text-body text-ink-muted">Loading reports…</p>}
@@ -163,7 +188,8 @@ export default function CommunityDashboardPage() {
 
         {reports.data && (
           <CommunityTable
-            reports={reports.data}
+            reports={filteredReports}
+            emptyMessage={searchQuery.trim() ? `No community reports match "${searchQuery.trim()}".` : undefined}
             onOpenValidate={handleOpenValidate}
             onOpenInvalidate={handleOpenInvalidate}
             onOpenLocation={handleOpenLocation}

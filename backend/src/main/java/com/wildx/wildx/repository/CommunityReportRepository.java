@@ -15,6 +15,9 @@ public interface CommunityReportRepository extends JpaRepository<CommunityReport
     Optional<CommunityReport> findByReferenceCode(String referenceCode);
 
     @EntityGraph(attributePaths = {"park", "segment", "duplicateOf"})
+    Optional<CommunityReport> findByReferenceCodeIgnoreCase(String referenceCode);
+
+    @EntityGraph(attributePaths = {"park", "segment", "duplicateOf"})
     Optional<CommunityReport> findByIdAndParkId(Long id, Long parkId);
 
     @EntityGraph(attributePaths = {"park", "segment"})

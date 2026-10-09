@@ -36,6 +36,15 @@ public class PublicReportController {
         return reports.getPublicReportByRef(ref);
     }
 
+    @GetMapping("/reports/{ref}/photo")
+    public ResponseEntity<byte[]> getPhoto(@PathVariable String ref) {
+        com.wildx.wildx.dto.CommunityReportPhoto photo = reports.getPublicPhoto(ref);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(photo.contentType()))
+                .cacheControl(org.springframework.http.CacheControl.noCache().cachePrivate())
+                .body(photo.content());
+    }
+
     @GetMapping({"/parks/{parkId}/sms-help-card", "/reports/parks/{parkId}/sms-help-card"})
     public SmsHelpCardResponse getSmsHelpCard(@PathVariable Long parkId) {
         return reports.getSmsHelpCard(parkId);

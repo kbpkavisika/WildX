@@ -1,5 +1,6 @@
 package com.wildx.wildx.controller;
 
+import com.wildx.wildx.dto.CommunityReportPhoto;
 import com.wildx.wildx.dto.CommunityReportResponse;
 import com.wildx.wildx.dto.ConflictTrendReportResponse;
 import com.wildx.wildx.dto.HotspotResponse;
@@ -13,6 +14,7 @@ import com.wildx.wildx.type.CommunityReportStatus;
 import com.wildx.wildx.util.ConflictCsv;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -52,6 +54,21 @@ public class CommunityReportController {
     ) {
         Long resolvedParkId = resolveParkId(jwt, parkId);
         return reports.getReport(resolvedParkId, id);
+    }
+
+    @GetMapping("/community-reports/{id}/photo")
+    @PreAuthorize("hasAnyRole('CLO','MANAGER','ADMIN','SUPERVISOR')")
+    public ResponseEntity<byte[]> photo(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @RequestParam(required = false) Long parkId
+    ) {
+        Long resolvedParkId = resolveParkId(jwt, parkId);
+        CommunityReportPhoto photo = reports.getPhoto(resolvedParkId, id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(photo.contentType()))
+                .cacheControl(CacheControl.noCache().cachePrivate())
+                .body(photo.content());
     }
 
     @PutMapping("/community-reports/{id}/location")

@@ -455,6 +455,26 @@ class CommunityReportControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void cloCanGetCommunityReportPhoto() throws Exception {
+        UserResponse user = new UserResponse(4L, "CLO User", "clo@wildx.lk", Role.CLO, 1L);
+        when(auth.current(any())).thenReturn(user);
+        when(reports.getPhoto(1L, 10L)).thenReturn(new com.wildx.wildx.dto.CommunityReportPhoto(new byte[]{1, 2, 3}, "image/jpeg"));
+
+        mvc.perform(get("/api/v1/community-reports/10/photo")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_JPEG))
+                .andExpect(content().bytes(new byte[]{1, 2, 3}));
+    }
+
+    @Test
+    void rangerForbiddenFromGettingPhoto() throws Exception {
+        mvc.perform(get("/api/v1/community-reports/10/photo")
+                        .header("Authorization", token("RANGER", 1L)))
+                .andExpect(status().isForbidden());
+    }
+
     private String token(String role, Long parkId) {
         Instant now = Instant.now();
         var claims = JwtClaimsSet.builder().subject("4").issuedAt(now).expiresAt(now.plusSeconds(60))
