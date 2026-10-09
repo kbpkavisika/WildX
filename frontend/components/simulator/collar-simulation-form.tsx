@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
+import { ChoiceRow } from "@/components/forms/choice-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Field, fieldClass } from "@/components/ui/field";
@@ -69,16 +70,7 @@ export function CollarSimulationForm({ collars, zones, send }: CollarSimulationF
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
           <legend className="mb-1.5 p-0 text-field-label text-ink-body">Scenario</legend>
           {SCENARIO_OPTIONS.map((option) => (
-            <label
-              key={option.value}
-              className="flex min-h-12 cursor-pointer items-start gap-3 rounded-md border border-line bg-card p-3 hover:bg-surface-muted has-checked:border-primary has-checked:ring-3 has-checked:ring-lime-soft"
-            >
-              <input type="radio" value={option.value} className="m-0 mt-0.5 size-4 shrink-0 accent-primary" {...register("scenario")} />
-              <span className="flex flex-col gap-0.5">
-                <span className="text-body text-ink">{option.label}</span>
-                <span className="text-caption text-ink-muted">{option.caption}</span>
-              </span>
-            </label>
+            <ChoiceRow key={option.value} label={option.label} caption={option.caption} value={option.value} {...register("scenario")} />
           ))}
         </fieldset>
         <SimulationResult result={send.data ? collarResultText(send.data) : null} error={send.isError ? apiErrorMessage(send.error) : null}>

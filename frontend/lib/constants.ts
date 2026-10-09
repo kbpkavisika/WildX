@@ -20,3 +20,4 @@ export const DEVICES_REFETCH_MS = 30_000;
 export const LOW_BATTERY_PCT = 15;
 export const NOT_REPORTING_FACTOR = 3;
 export const COORDINATE_DECIMALS = 4;
+export const CAMERA_IMAGES_REFETCH_MS = 30_000;
