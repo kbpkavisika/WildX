@@ -45,6 +45,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { label: "Incident types", href: "/dashboard/settings/incident-types", count: 5 },
       { label: "Boundary segments", href: "/dashboard/settings/boundary-segments", count: 3 },
+      { label: "Zones and rules", href: "/dashboard/settings/zones", count: 2 },
     ],
   },
 ];

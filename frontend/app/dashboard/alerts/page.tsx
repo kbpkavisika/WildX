@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { AlertDetail } from "@/components/alerts/alert-detail";
 import { AlertList } from "@/components/alerts/alert-list";
+import { SecondaryLink } from "@/components/devices/secondary-link";
 import { PageHeader } from "@/components/layout/page-header";
 import { NotificationsCard } from "@/components/notifications/notifications-card";
 import { Card } from "@/components/ui/card";
@@ -44,7 +45,12 @@ export default function AlertsPage() {
 
   return (
     <>
-      <PageHeader title="Alerts" badge={<LiveChip />} subtitle={subtitle()} />
+      <PageHeader
+        title="Alerts"
+        badge={<LiveChip />}
+        subtitle={subtitle()}
+        action={hasPark && <SecondaryLink href="/dashboard/settings/zones">Zones and rules</SecondaryLink>}
+      />
       {hasPark && <AlertMap view={view ?? EMPTY_ALERTS} />}
       {view && (
         <div className="flex flex-wrap items-start gap-5">
