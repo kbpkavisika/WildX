@@ -45,7 +45,7 @@ Guiding rule: **simplest thing that satisfies the requirement.** This is a proto
 | Mobile | Expo SDK 57 (React Native, TypeScript), `expo-router` | Ranger role only, in `mobile/`. Same React Query, Zustand, zod and react-hook-form as the web |
 | Mobile storage | `expo-sqlite` (outbox table and `kv-store` for the query cache), `expo-secure-store` (JWT) | Offline outbox (CMN-04) |
 | Mobile device | `expo-location` + `expo-task-manager` (background GPS), `expo-image-picker` (camera), `expo-network`, `expo-file-system`, `expo-crypto` | Background tracking needs a development build |
-| Mobile maps and look | `react-native-maps` with an OpenStreetMap `UrlTile`, `@expo-google-fonts/geist`, `lucide-react-native` | Styled with `StyleSheet` from DESIGN.md tokens in `mobile/src/lib/theme.ts` |
+| Mobile maps and look | Leaflet (from the unpkg CDN) in a `react-native-webview` page with OpenStreetMap tiles, so maps work in Expo Go without a Google key. The page is loaded with a `https://wildx.lk/` base URL so tile requests carry the Referer that the OpenStreetMap tile policy requires; `@expo-google-fonts/geist`, `lucide-react-native` | Styled with `StyleSheet` from DESIGN.md tokens in `mobile/src/lib/theme.ts` |
 
 The project adds **no other dependencies** without team agreement. Phone camera and GPS use native browser features: `<input type="file" accept="image/*" capture="environment">` and `navigator.geolocation.watchPosition`.
 
@@ -340,7 +340,7 @@ frontend/
 
 ```
 mobile/
-├─ app.config.ts                 # permissions, background location, maps key
+├─ app.config.ts                 # permissions, background location
 └─ src/                          # imported as @/*
    ├─ app/                       # expo-router
    │  ├─ _layout.tsx             # fonts, React Query (persisted), DB init, sync engine, login/ranger guard
@@ -390,7 +390,7 @@ cd backend && ./mvnw spring-boot:run
 cd frontend && npm run dev
 ```
 
-The ranger mobile app reads `EXPO_PUBLIC_API_URL` from `mobile/.env.local` (`mobile/.env.example` lists the keys; for example `http://10.0.2.2:8080/api/v1` on the Android emulator, or the computer's LAN address on a phone). Background GPS needs a development build; an Android build also needs `GOOGLE_MAPS_API_KEY` for `react-native-maps`:
+The ranger mobile app reads `EXPO_PUBLIC_API_URL` from `mobile/.env.local` (`mobile/.env.example` lists the keys; for example `http://10.0.2.2:8080/api/v1` on the Android emulator, or the computer's LAN address on a phone). Background GPS needs a development build:
 
 ```bash
 cd mobile && npx expo run:android

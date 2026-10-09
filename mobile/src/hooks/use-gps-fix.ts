@@ -1,4 +1,4 @@
-import { Accuracy, getCurrentPositionAsync, requestForegroundPermissionsAsync } from "expo-location";
+import { Accuracy, getCurrentPositionAsync, getLastKnownPositionAsync, requestForegroundPermissionsAsync } from "expo-location";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GPS_TIMEOUT_MS, RECENT_FIX_MS } from "@/lib/constants";
 import type { LatLng } from "@/lib/geo";
@@ -15,7 +15,9 @@ async function currentPosition(): Promise<LatLng | null> {
   if (recent && Date.now() - recent.at < RECENT_FIX_MS) return recent.position;
   const permission = await requestForegroundPermissionsAsync();
   if (!permission.granted) return null;
-  const location = await Promise.race([getCurrentPositionAsync({ accuracy: Accuracy.High }).catch(() => null), timeout(GPS_TIMEOUT_MS)]);
+  const location =
+    (await Promise.race([getCurrentPositionAsync({ accuracy: Accuracy.High }).catch(() => null), timeout(GPS_TIMEOUT_MS)]))
+    ?? (await getLastKnownPositionAsync().catch(() => null));
   return location ? [location.coords.latitude, location.coords.longitude] : null;
 }
 

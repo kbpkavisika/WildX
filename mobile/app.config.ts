@@ -44,7 +44,6 @@ const config: ExpoConfig = {
       },
     ],
     ["expo-image-picker", { cameraPermission: "WildX uses the camera to photograph incidents.", microphonePermission: false }],
-    ["react-native-maps", { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? "" }],
   ],
 };
 
