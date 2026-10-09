@@ -69,7 +69,7 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(TRACKING_TASK, 
   recordLocations(data.locations);
 });
 
-export function recordWaypoint(fix: GpsFix, waypointType: WaypointType | null, note: string | null): number {
+export function recordWaypoint(fix: Pick<GpsFix, "position" | "accuracyM">, waypointType: WaypointType | null, note: string | null): number {
   const state = readState();
   if (!state) throw new Error("Start the patrol before adding a waypoint.");
   const at = Math.max(Date.now(), state.floorAt + 1);

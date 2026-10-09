@@ -1,37 +1,37 @@
 import { ROLES, type Role } from "@/lib/enums";
 
-const { ADMIN, MANAGER, CLO, RESEARCHER, RANGER } = ROLES;
+const { MANAGER, CLO, RESEARCHER, RANGER } = ROLES;
 
 export const PERMISSIONS = {
-  "nav.dashboard": [ADMIN, MANAGER, CLO, RESEARCHER],
+  "nav.dashboard": [MANAGER, CLO, RESEARCHER],
   "nav.patrols": [MANAGER],
   "nav.incidents": [MANAGER],
-  "nav.devices": [ADMIN, MANAGER, CLO],
-  "nav.images": [ADMIN, MANAGER],
+  "nav.devices": [MANAGER, CLO],
+  "nav.images": [MANAGER],
   "nav.alerts": [MANAGER, CLO],
-  "nav.community": [ADMIN, MANAGER, CLO],
-  "nav.reports": [ADMIN, MANAGER, CLO, RESEARCHER],
-  "nav.settings": [ADMIN, MANAGER, CLO],
-  "nav.users": [ADMIN],
-  "nav.simulator": [ADMIN, MANAGER],
+  "nav.community": [MANAGER, CLO],
+  "nav.reports": [MANAGER, CLO, RESEARCHER],
+  "nav.settings": [MANAGER, CLO],
+  "nav.users": [MANAGER],
+  "nav.simulator": [MANAGER],
   "report.incidents": [MANAGER, RESEARCHER],
   "report.coverage": [MANAGER, RESEARCHER],
   "report.alerts": [MANAGER, RESEARCHER],
-  "report.conflicts": [ADMIN, MANAGER, CLO, RESEARCHER],
+  "report.conflicts": [MANAGER, CLO, RESEARCHER],
   "patrol.create": [MANAGER],
   "route.create": [MANAGER],
-  "device.manage": [ADMIN, MANAGER],
-  "image.view": [ADMIN, MANAGER],
+  "device.manage": [MANAGER],
+  "image.view": [MANAGER],
   "image.tag": [MANAGER],
   "alert.handle": [MANAGER, RANGER],
   "alert.dispatch": [MANAGER],
   "incident.report": [RANGER],
   "community.act": [MANAGER, CLO],
-  "dispatch.create": [ADMIN, MANAGER, CLO],
+  "dispatch.create": [MANAGER, CLO],
   "settings.manage": [MANAGER],
   "boundary.manage": [MANAGER],
-  "simulator.use": [ADMIN, MANAGER],
-  "user.manage": [ADMIN],
+  "simulator.use": [MANAGER],
+  "user.manage": [MANAGER],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

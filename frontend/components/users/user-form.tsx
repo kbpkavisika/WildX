@@ -1,13 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Button, SecondaryButton } from "@/components/ui/button";
 import { Field, fieldClass } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import type { ParkOption } from "@/lib/api/users";
 import { ROLE_LABELS } from "@/lib/auth/roles";
-import { ROLES } from "@/lib/enums";
 import { userErrorMessage, userSchema, type UserValues } from "@/lib/users/user-form";
 
 interface UserFormProps {
@@ -15,19 +13,17 @@ interface UserFormProps {
   submitLabel: string;
   creating: boolean;
   defaultValues: UserValues;
-  parks: ParkOption[];
   saving: boolean;
   error: Error | null;
   onSubmit: (values: UserValues) => void;
   onClose: () => void;
 }
 
-export function UserForm({ title, submitLabel, creating, defaultValues, parks, saving, error, onSubmit, onClose }: UserFormProps) {
-  const { register, handleSubmit, control, formState: { errors } } = useForm<UserValues>({
+export function UserForm({ title, submitLabel, creating, defaultValues, saving, error, onSubmit, onClose }: UserFormProps) {
+  const { register, handleSubmit, formState: { errors } } = useForm<UserValues>({
     resolver: zodResolver(userSchema(creating)),
     defaultValues,
   });
-  const isAdminRole = useWatch({ control, name: "role" }) === ROLES.ADMIN;
 
   return (
     <Modal title={title} onClose={onClose}>
@@ -50,16 +46,6 @@ export function UserForm({ title, submitLabel, creating, defaultValues, parks, s
               ))}
             </select>
           </Field>
-          {!isAdminRole && (
-            <Field label="Park" error={errors.parkId?.message}>
-              <select {...register("parkId")} aria-invalid={!!errors.parkId} className={fieldClass(!!errors.parkId)}>
-                <option value="">Choose a park</option>
-                {parks.map((park) => (
-                  <option key={park.id} value={park.id}>{park.name}</option>
-                ))}
-              </select>
-            </Field>
-          )}
           <Field label="Password" error={errors.password?.message}>
             <input type="password" autoComplete="new-password" {...register("password")} aria-invalid={!!errors.password} className={fieldClass(!!errors.password)} />
             {!creating && !errors.password && (

@@ -1,12 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createUser, deactivateUser, fetchParks, fetchUsers, updateUser } from "@/lib/api/users";
+import { createUser, deactivateUser, fetchUsers, updateUser } from "@/lib/api/users";
 import { useCan } from "@/hooks/use-can";
 import { useAuthStore } from "@/lib/auth/store";
 import { toUsersView } from "@/lib/users/mappers";
 import { toUserRequest, type UserValues } from "@/lib/users/user-form";
 
-const USERS_KEY = ["admin", "users"];
-const PARKS_KEY = ["admin", "parks"];
+const USERS_KEY = ["users"];
 
 interface SaveInput {
   userId: number | null;
@@ -16,9 +15,8 @@ interface SaveInput {
 export function useUsers() {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const isAdmin = useCan("user.manage");
-  const users = useQuery({ queryKey: USERS_KEY, queryFn: fetchUsers, enabled: isAdmin });
-  const parks = useQuery({ queryKey: PARKS_KEY, queryFn: fetchParks, enabled: isAdmin });
+  const canManage = useCan("user.manage");
+  const users = useQuery({ queryKey: USERS_KEY, queryFn: fetchUsers, enabled: canManage });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: USERS_KEY });
 
@@ -33,11 +31,10 @@ export function useUsers() {
   const remove = useMutation({ mutationFn: deactivateUser, onSuccess: refresh });
 
   return {
-    isAdmin,
+    canManage,
     isPending: users.isPending,
     isError: users.isError,
     users: users.data ?? [],
-    parks: parks.data ?? [],
     view: users.data && toUsersView(users.data, user?.id ?? null),
     save,
     remove,

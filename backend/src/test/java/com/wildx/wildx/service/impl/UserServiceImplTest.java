@@ -19,18 +19,19 @@ class UserServiceImplTest {
     private final PasswordEncoder encoder = mock(PasswordEncoder.class);
     private final UserServiceImpl service = new UserServiceImpl(users, parks, encoder);
     private final Park park = Park.builder().id(1L).name("Yala").code("YALA").build();
+    private final UserResponse caller = new UserResponse(1L, "Manager", "m@wildx.lk", Role.MANAGER, 1L);
 
-    private static AdminUserRequest request(Role role, Long parkId, String password, boolean active) {
-        return new AdminUserRequest(" K. Bandara ", " Ranger2@WildX.lk ", " ", password, role, parkId, active);
+    private static UserAccountRequest request(Role role, String password, boolean active) {
+        return new UserAccountRequest(" K. Bandara ", " Ranger2@WildX.lk ", " ", password, role, active);
     }
 
-    private AppUser user(Long id, Role role) {
+    private AppUser user(Long id, Role role, Park userPark) {
         return AppUser.builder().id(id).name("Old").email("old@wildx.lk").passwordHash("old-hash")
-                .role(role).park(role == Role.ADMIN ? null : park).active(true).build();
+                .role(role).park(userPark).active(true).build();
     }
 
     @Test
-    void createsUserWithNormalisedFieldsAndHashedPassword() {
+    void createsUserInCallerParkWithNormalisedFieldsAndHashedPassword() {
         when(parks.require(1L)).thenReturn(park);
         when(encoder.encode("secret123")).thenReturn("hash");
         when(users.saveAndFlush(any())).thenAnswer(call -> {
@@ -38,30 +39,29 @@ class UserServiceImplTest {
             saved.setId(9L);
             return saved;
         });
-        var result = service.createUser(request(Role.RANGER, 1L, "secret123", true));
-        assertThat(result).isEqualTo(new AdminUserResponse(9L, "K. Bandara", "ranger2@wildx.lk", null,
+        var result = service.createUser(1L, request(Role.RANGER, "secret123", true));
+        assertThat(result).isEqualTo(new UserAccountResponse(9L, "K. Bandara", "ranger2@wildx.lk", null,
                 Role.RANGER, 1L, "Yala", true));
         verify(users).saveAndFlush(argThat(saved -> "hash".equals(saved.getPasswordHash())));
     }
 
     @Test
-    void rejectsMissingPasswordShortPasswordAndMissingPark() {
-        assertThatThrownBy(() -> service.createUser(request(Role.RANGER, 1L, null, true)))
+    void rejectsMissingAndShortPasswords() {
+        assertThatThrownBy(() -> service.createUser(1L, request(Role.RANGER, null, true)))
                 .hasMessage("Password is required");
-        assertThatThrownBy(() -> service.createUser(request(Role.RANGER, 1L, "short", true)))
+        when(parks.require(1L)).thenReturn(park);
+        assertThatThrownBy(() -> service.createUser(1L, request(Role.RANGER, "short", true)))
                 .hasMessage("Password must have at least 8 characters");
-        assertThatThrownBy(() -> service.createUser(request(Role.MANAGER, null, "secret123", true)))
-                .hasMessage("Choose a park for this role");
         verify(users, never()).saveAndFlush(any());
     }
 
     @Test
-    void updatesKeepingPasswordWhenBlankAndDropsParkForAdmin() {
-        AppUser existing = user(4L, Role.MANAGER);
+    void updatesKeepingPasswordWhenBlank() {
+        AppUser existing = user(4L, Role.RANGER, park);
         when(users.findWithParkById(4L)).thenReturn(Optional.of(existing));
-        var result = service.updateUser(1L, 4L, request(Role.ADMIN, 1L, "", false));
-        assertThat(result.role()).isEqualTo(Role.ADMIN);
-        assertThat(result.parkId()).isNull();
+        var result = service.updateUser(caller, 4L, request(Role.CLO, "", false));
+        assertThat(result.role()).isEqualTo(Role.CLO);
+        assertThat(result.parkId()).isEqualTo(1L);
         assertThat(result.active()).isFalse();
         assertThat(existing.getPasswordHash()).isEqualTo("old-hash");
         verify(encoder, never()).encode(any());
@@ -69,23 +69,26 @@ class UserServiceImplTest {
     }
 
     @Test
-    void listsAndDeactivatesUsers() {
-        AppUser existing = user(4L, Role.RANGER);
-        when(users.findAllByOrderByActiveDescNameAsc()).thenReturn(List.of(existing));
-        assertThat(service.users()).extracting(AdminUserResponse::parkName).containsExactly("Yala");
+    void listsAndDeactivatesParkUsers() {
+        AppUser existing = user(4L, Role.RANGER, park);
+        when(users.findByParkIdOrderByActiveDescNameAsc(1L)).thenReturn(List.of(existing));
+        assertThat(service.users(1L)).extracting(UserAccountResponse::parkName).containsExactly("Yala");
         when(users.findWithParkById(4L)).thenReturn(Optional.of(existing));
-        service.deactivateUser(1L, 4L);
+        service.deactivateUser(caller, 4L);
         assertThat(existing.isActive()).isFalse();
     }
 
     @Test
-    void protectsCallerAndMissingUsers() {
-        assertThatThrownBy(() -> service.deactivateUser(1L, 1L)).hasMessage("You cannot deactivate yourself");
-        assertThatThrownBy(() -> service.updateUser(1L, 1L, request(Role.MANAGER, 1L, null, true)))
+    void protectsCallerAndHidesMissingOrForeignUsers() {
+        assertThatThrownBy(() -> service.deactivateUser(caller, 1L)).hasMessage("You cannot deactivate yourself");
+        assertThatThrownBy(() -> service.updateUser(caller, 1L, request(Role.RANGER, null, true)))
                 .hasMessage("You cannot deactivate or demote yourself");
-        assertThatThrownBy(() -> service.updateUser(1L, 1L, request(Role.ADMIN, null, null, false)))
+        assertThatThrownBy(() -> service.updateUser(caller, 1L, request(Role.MANAGER, null, false)))
                 .hasMessage("You cannot deactivate or demote yourself");
         when(users.findWithParkById(7L)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.deactivateUser(1L, 7L)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.deactivateUser(caller, 7L)).isInstanceOf(NotFoundException.class);
+        Park other = Park.builder().id(2L).name("Wilpattu").code("WIL").build();
+        when(users.findWithParkById(8L)).thenReturn(Optional.of(user(8L, Role.RANGER, other)));
+        assertThatThrownBy(() -> service.deactivateUser(caller, 8L)).isInstanceOf(NotFoundException.class);
     }
 }

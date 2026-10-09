@@ -51,9 +51,10 @@ export function useRangerPatrol(id: number) {
   };
 
   const addWaypoint = (values: WaypointFormValues) => {
-    if (!fix) return;
+    const point = values.position ? { position: values.position, accuracyM: null } : fix;
+    if (!point) return;
     try {
-      const at = recordWaypoint(fix, values.waypointType === "" ? null : values.waypointType, values.note === "" ? null : values.note);
+      const at = recordWaypoint(point, values.waypointType === "" ? null : values.waypointType, values.note === "" ? null : values.note);
       setNotice(savedNotice(`Waypoint saved at ${formatTime(new Date(at))}`, online));
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not save the waypoint. Try again.");
@@ -67,7 +68,6 @@ export function useRangerPatrol(id: number) {
     view,
     sectors,
     position: fix?.position ?? null,
-    hasFix: fix !== null,
     gpsLost: active && gpsLost,
     start: () => saveTransition(OUTBOX_KINDS.PATROL_START),
     end: () => saveTransition(OUTBOX_KINDS.PATROL_END),

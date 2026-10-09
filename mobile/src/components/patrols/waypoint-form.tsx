@@ -1,11 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { LocationPicker } from "@/components/incidents/location-picker";
 import { Button, SecondaryButton } from "@/components/ui/button";
 import { Field, TextField } from "@/components/ui/field";
 import { FormPanel } from "@/components/ui/form-panel";
 import { Select } from "@/components/ui/select";
 import { AppText } from "@/components/ui/text";
 import { WAYPOINT_NOTE_MAX } from "@/lib/constants";
+import type { LatLng, SectorShape } from "@/lib/geo";
 import { WAYPOINT_TYPE_LABELS } from "@/lib/patrols/mappers";
 import { EMPTY_WAYPOINT, waypointFormSchema, type WaypointFormValues } from "@/lib/patrols/waypoint-form";
 import { colors } from "@/lib/theme";
@@ -14,26 +16,34 @@ const NO_TYPE = "";
 const TYPE_OPTIONS = [{ value: NO_TYPE, label: "No type" }, ...Object.entries(WAYPOINT_TYPE_LABELS).map(([value, label]) => ({ value, label }))];
 
 interface WaypointFormProps {
-  hasFix: boolean;
+  gpsPosition: LatLng | null;
+  sectors: SectorShape[];
   onSubmit: (values: WaypointFormValues) => void;
   onCancel: () => void;
 }
 
-export function WaypointForm({ hasFix, onSubmit, onCancel }: WaypointFormProps) {
+export function WaypointForm({ gpsPosition, sectors, onSubmit, onCancel }: WaypointFormProps) {
   const { control, handleSubmit, formState: { errors } } = useForm<WaypointFormValues>({
     resolver: zodResolver(waypointFormSchema),
     defaultValues: EMPTY_WAYPOINT,
   });
+  const picked = useWatch({ control, name: "position" });
+  const position = picked ?? gpsPosition;
 
   return (
     <FormPanel
       title="Add waypoint"
       caption={
-        <AppText variant="caption" color={hasFix ? colors.inkMuted : colors.negative}>
-          {hasFix ? "Uses your current position." : "Waiting for GPS. Save is ready once your position is found."}
+        <AppText variant="caption" color={position ? colors.inkMuted : colors.negative}>
+          {position ? "Tap the map to choose the location." : "Waiting for GPS. Tap the map to choose the location."}
         </AppText>
       }
     >
+      <Controller
+        control={control}
+        name="position"
+        render={({ field }) => <LocationPicker value={position} sectors={sectors} marker="waypoint" onPick={field.onChange} />}
+      />
       <Controller
         control={control}
         name="waypointType"
@@ -60,7 +70,7 @@ export function WaypointForm({ hasFix, onSubmit, onCancel }: WaypointFormProps) 
           </Field>
         )}
       />
-      <Button label="Save waypoint" disabled={!hasFix} onPress={handleSubmit(onSubmit)} />
+      <Button label="Save waypoint" disabled={!position} onPress={handleSubmit(onSubmit)} />
       <SecondaryButton label="Cancel" onPress={onCancel} />
     </FormPanel>
   );

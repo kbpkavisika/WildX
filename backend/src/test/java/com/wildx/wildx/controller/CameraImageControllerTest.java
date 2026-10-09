@@ -39,12 +39,12 @@ class CameraImageControllerTest {
     @MockitoBean CameraImageService images;
 
     @Test
-    void managerAndAdminSeeBurstsWithOptionalStatus() throws Exception {
+    void managerSeesBurstsWithOptionalStatus() throws Exception {
         when(images.bursts(eq(1L), any())).thenReturn(List.of(new CameraBurstResponse("CAM-001", AT, AT, List.of(IMAGE))));
         mvc.perform(get("/api/v1/parks/1/camera-images").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].cameraCode").value("CAM-001"))
                 .andExpect(jsonPath("$[0].images[0].species").value("Elephant"));
-        mvc.perform(get("/api/v1/parks/1/camera-images?status=PENDING").header("Authorization", token("ADMIN")))
+        mvc.perform(get("/api/v1/parks/1/camera-images?status=PENDING").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk());
         verify(images).bursts(1L, null);
         verify(images).bursts(1L, CameraImageStatus.PENDING);
@@ -62,7 +62,7 @@ class CameraImageControllerTest {
             mvc.perform(post("/api/v1/parks/1/camera-images/40/tag").header("Authorization", token("MANAGER"))
                     .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
         }
-        mvc.perform(post("/api/v1/parks/1/camera-images/40/tag").header("Authorization", token("ADMIN"))
+        mvc.perform(post("/api/v1/parks/1/camera-images/40/tag").header("Authorization", token("CLO"))
                 .contentType(MediaType.APPLICATION_JSON).content(TAG)).andExpect(status().isForbidden());
         verify(images, times(1)).tag(any(), any(), any(), any());
     }
@@ -88,7 +88,7 @@ class CameraImageControllerTest {
         mvc.perform(get("/api/v1/parks/1/camera-images/40/file?reason=Case 114").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(content().contentType("image/jpeg"))
                 .andExpect(content().bytes(jpeg)).andExpect(header().string("Cache-Control", "no-store"));
-        mvc.perform(get("/api/v1/parks/1/camera-images/41/file").header("Authorization", token("ADMIN")))
+        mvc.perform(get("/api/v1/parks/1/camera-images/41/file").header("Authorization", token("MANAGER")))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-cache, private"));
     }
 
@@ -105,7 +105,7 @@ class CameraImageControllerTest {
         mvc.perform(get("/api/v1/parks/1/camera-images/40/file").header("Authorization", token("MANAGER")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("A reason is required to view a restricted image"));
-        mvc.perform(get("/api/v1/parks/1/camera-images/41/file?reason=x").header("Authorization", token("ADMIN")))
+        mvc.perform(get("/api/v1/parks/1/camera-images/41/file?reason=x").header("Authorization", token("MANAGER")))
                 .andExpect(status().isNotFound());
     }
 

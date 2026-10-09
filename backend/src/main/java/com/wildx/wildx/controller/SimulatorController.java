@@ -20,7 +20,7 @@ public class SimulatorController {
     private final AuthService auth;
 
     @PostMapping("/collar-fixes")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER')")
     public SimulationResponse simulate(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt,
                                        @Valid @RequestBody SimulationRequest request) {
         auth.requireParkAccess(jwt, parkId);
@@ -28,7 +28,7 @@ public class SimulatorController {
     }
 
     @PostMapping("/camera-images")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER')")
     public SimulationResponse simulateCamera(@PathVariable Long parkId, @AuthenticationPrincipal Jwt jwt,
                                              @Valid @RequestBody CameraSimulationRequest request) {
         auth.requireParkAccess(jwt, parkId);

@@ -61,13 +61,14 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        userRepository.retireAdmins();
         if (userRepository.count() > 0) {
             return;
         }
         Park yala = parkRepository.save(Park.builder().name("Yala").code("YALA").build());
         String passwordHash = passwordEncoder.encode(TEST_PASSWORD);
         List<AppUser> users = Arrays.stream(Role.values())
-                .map(role -> seedUser(role, role == Role.ADMIN ? null : yala, passwordHash))
+                .map(role -> seedUser(role, yala, passwordHash))
                 .toList();
         userRepository.saveAll(users);
         seedDevices(yala);

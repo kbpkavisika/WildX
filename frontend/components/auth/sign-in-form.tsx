@@ -50,7 +50,7 @@ export function SignInForm() {
         {signIn.isPending ? "Signing in…" : "Sign in"}
       </Button>
       <p className="m-0 text-center text-body text-ink-muted">
-        Accounts are created by your park admin.
+        Accounts are created by your park manager.
       </p>
     </form>
   );

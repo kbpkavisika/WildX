@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { UseMutationResult } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -10,11 +9,10 @@ import { Field, fieldClass } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useParkSectors } from "@/hooks/use-park-sectors";
 import { apiErrorMessage } from "@/lib/api/client";
-import type { RouteResponse } from "@/lib/api/patrols";
 import { counted } from "@/lib/devices/mappers";
 import { formatKm } from "@/lib/format";
 import { parseLine, pathLengthM, toLineGeojson } from "@/lib/patrols/geo";
-import { EMPTY_ROUTE, routeFormSchema, type RouteFormValues } from "@/lib/patrols/route-form";
+import { routeFormSchema, type RouteFormValues } from "@/lib/patrols/route-form";
 import type { LatLng } from "@/lib/patrols/types";
 import { cn } from "@/lib/utils";
 
@@ -22,18 +20,23 @@ const RouteDrawMap = dynamic(() => import("./route-draw-map"), { ssr: false });
 
 const PATH_PLACEHOLDER = '{"type":"LineString","coordinates":[[81.40,6.31],[81.43,6.34]]}';
 
-interface NewRouteFormProps {
-  create: UseMutationResult<RouteResponse, Error, RouteFormValues>;
+interface RouteFormProps {
+  title: string;
+  submitLabel: string;
+  defaultValues: RouteFormValues;
+  saving: boolean;
+  error: Error | null;
+  onSubmit: (values: RouteFormValues) => void;
   onClose: () => void;
 }
 
-export function NewRouteForm({ create, onClose }: NewRouteFormProps) {
+export function RouteForm({ title, submitLabel, defaultValues, saving, error, onSubmit, onClose }: RouteFormProps) {
   const sectors = useParkSectors();
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState("");
   const { register, handleSubmit, setValue, control, formState: { errors, isSubmitted } } = useForm<RouteFormValues>({
     resolver: zodResolver(routeFormSchema),
-    defaultValues: EMPTY_ROUTE,
+    defaultValues,
   });
   const points = useWatch({ control, name: "points" });
   const pointsError = errors.points?.message ?? errors.points?.root?.message;
@@ -52,8 +55,8 @@ export function NewRouteForm({ create, onClose }: NewRouteFormProps) {
   };
 
   return (
-    <Modal title="New route" wide onClose={onClose}>
-      <form noValidate onSubmit={handleSubmit((values) => create.mutate(values, { onSuccess: onClose }))} className="flex flex-col gap-5">
+    <Modal title={title} wide onClose={onClose}>
+      <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         <Field label="Name" error={errors.name?.message}>
           <input {...register("name")} placeholder="e.g. Kumbukgaha river trail" aria-invalid={!!errors.name} className={fieldClass(!!errors.name)} />
         </Field>
@@ -94,11 +97,11 @@ export function NewRouteForm({ create, onClose }: NewRouteFormProps) {
           {pointsError && <span className="text-caption text-negative">{pointsError}</span>}
           {!pasting && !pointsError && <span className="text-caption text-ink-muted">Click the map to add each point of the path in order.</span>}
         </div>
-        {create.isError && <p role="alert" className="m-0 text-body text-negative">{apiErrorMessage(create.error)}</p>}
+        {error && <p role="alert" className="m-0 text-body text-negative">{apiErrorMessage(error)}</p>}
         <div className="flex flex-wrap justify-end gap-3">
           <SecondaryButton type="button" onClick={onClose}>Cancel</SecondaryButton>
-          <Button type="submit" disabled={create.isPending} className="h-10 px-[18px] disabled:opacity-60">
-            {create.isPending ? "Creating…" : "Create route"}
+          <Button type="submit" disabled={saving} className="h-10 px-[18px] disabled:opacity-60">
+            {saving ? "Saving…" : submitLabel}
           </Button>
         </div>
       </form>

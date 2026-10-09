@@ -56,6 +56,20 @@ class PatrolRouteControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isCreated());
     }
 
+    @Test
+    void onlyManagerCanEditAndArchive() throws Exception {
+        String body = "{\"name\":\"South\",\"pathGeojson\":\"geometry\"}";
+        when(routes.update(eq(1L), eq(2L), any())).thenReturn(new PatrolRouteResponse(2L, 1L, "South", "geometry"));
+        mvc.perform(put("/api/v1/routes/2").header("Authorization", token("RANGER"))
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/routes/2").header("Authorization", token("MANAGER"))
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("South"));
+        mvc.perform(delete("/api/v1/routes/2").header("Authorization", token("CLO"))).andExpect(status().isForbidden());
+        mvc.perform(delete("/api/v1/routes/2").header("Authorization", token("MANAGER"))).andExpect(status().isNoContent());
+        verify(routes).archive(1L, 2L);
+    }
+
     private String token(String role) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder().subject("7").issuedAt(now).expiresAt(now.plusSeconds(60))

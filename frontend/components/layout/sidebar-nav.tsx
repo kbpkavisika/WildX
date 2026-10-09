@@ -36,16 +36,16 @@ const ENTRY = "flex h-11 w-full cursor-pointer items-center gap-3 rounded-lg px-
 
 function NavGroup({ item, items, pathname }: { item: NavItem; items: NavChild[]; pathname: string }) {
   const Icon = item.icon;
-  const open = useNavStore((state) => !state.collapsed[item.label]);
-  const toggle = useNavStore((state) => state.toggle);
   const childActive = items.some((child) => child.href === pathname);
+  const open = useNavStore((state) => state.expanded[item.label] ?? childActive);
+  const setExpanded = useNavStore((state) => state.setExpanded);
   const Chevron = open ? ChevronUp : ChevronDown;
   return (
     <>
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => toggle(item.label)}
+        onClick={() => setExpanded(item.label, !open)}
         className={cn(ENTRY, childActive && "font-medium text-ink")}
       >
         <Icon className="size-5 shrink-0" strokeWidth={1.8} />

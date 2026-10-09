@@ -182,7 +182,7 @@ class CameraImageServiceImplTest {
     }
 
     @Test
-    void managersAndAdminsGetUnrestrictedFilesWithoutAudit() {
+    void managersGetUnrestrictedFilesWithoutAudit() {
         CameraImage jpeg = image(40L, camera, NOW);
         CameraImage png = image(41L, camera, NOW);
         png.setFilePath("camera/4/41.png");

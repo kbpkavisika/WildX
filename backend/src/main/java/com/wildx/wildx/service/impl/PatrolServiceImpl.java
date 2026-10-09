@@ -30,19 +30,21 @@ public class PatrolServiceImpl implements PatrolService {
 
     @Override
     @Transactional
-    public PatrolResponse assign(Long parkId, PatrolAssignRequest request) {
-        log.info("assign patrol started parkId={} rangerId={}", parkId, request.rangerId());
+    public List<PatrolResponse> assign(Long parkId, PatrolAssignRequest request) {
+        log.info("assign patrol started parkId={} rangerIds={}", parkId, request.rangerIds());
         if (request.scheduledDate().isBefore(LocalDate.now(clock.withZone(PatrolConstants.PARK_ZONE)))) {
             throw new IllegalArgumentException("Patrol date cannot be in the past");
         }
         var route = routes.require(request.routeId(), parkId);
-        var ranger = auth.requireRanger(request.rangerId(), parkId);
-        Patrol patrol = new Patrol();
-        patrol.setRoute(route);
-        patrol.setRanger(ranger);
-        patrol.setScheduledDate(request.scheduledDate());
-        PatrolResponse response = PatrolResponse.from(repository.save(patrol));
-        log.info("assign patrol completed patrolId={}", response.id());
+        List<Patrol> created = request.rangerIds().stream().distinct().map(rangerId -> {
+            Patrol patrol = new Patrol();
+            patrol.setRoute(route);
+            patrol.setRanger(auth.requireRanger(rangerId, parkId));
+            patrol.setScheduledDate(request.scheduledDate());
+            return patrol;
+        }).toList();
+        var response = repository.saveAll(created).stream().map(PatrolResponse::from).toList();
+        log.info("assign patrol completed count={}", response.size());
         return response;
     }
 

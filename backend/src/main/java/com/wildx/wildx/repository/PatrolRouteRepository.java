@@ -6,7 +6,7 @@ import java.util.*;
 
 public interface PatrolRouteRepository extends JpaRepository<PatrolRoute, Long> {
     @EntityGraph(attributePaths = "park")
-    List<PatrolRoute> findByParkIdOrderByNameAscIdAsc(Long parkId);
+    List<PatrolRoute> findByParkIdAndArchivedFalseOrderByNameAscIdAsc(Long parkId);
     @EntityGraph(attributePaths = "park")
-    Optional<PatrolRoute> findByIdAndParkId(Long id, Long parkId);
+    Optional<PatrolRoute> findByIdAndParkIdAndArchivedFalse(Long id, Long parkId);
 }

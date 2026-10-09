@@ -23,7 +23,7 @@ public class PatrolController {
 
     @PostMapping("/patrols")
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<PatrolResponse> assign(@AuthenticationPrincipal Jwt jwt,
+    public ResponseEntity<List<PatrolResponse>> assign(@AuthenticationPrincipal Jwt jwt,
                                                 @Valid @RequestBody PatrolAssignRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(patrols.assign(auth.current(jwt).parkId(), request));
     }

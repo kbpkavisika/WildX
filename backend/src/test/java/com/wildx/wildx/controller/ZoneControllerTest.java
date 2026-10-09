@@ -53,7 +53,7 @@ class ZoneControllerTest {
     void staffReadsButOnlyManagerWrites() throws Exception {
         when(zones.zones(1L)).thenReturn(List.of());
         mvc.perform(get("/api/v1/parks/1/zones").header("Authorization", token("RANGER"))).andExpect(status().isOk());
-        mvc.perform(post("/api/v1/parks/1/zones").header("Authorization", token("ADMIN"))
+        mvc.perform(post("/api/v1/parks/1/zones").header("Authorization", token("CLO"))
                 .contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isForbidden());
         mvc.perform(delete("/api/v1/parks/1/zones/3").header("Authorization", token("RESEARCHER")))
                 .andExpect(status().isForbidden());

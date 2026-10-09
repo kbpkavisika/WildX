@@ -22,7 +22,7 @@ import java.util.List;
 @RequestMapping("/api/v1/parks/{parkId}/camera-images")
 @RequiredArgsConstructor
 public class CameraImageController {
-    private static final String VIEWERS = "hasAnyRole('MANAGER','ADMIN')";
+    private static final String VIEWERS = "hasAnyRole('MANAGER')";
 
     private final CameraImageService images;
     private final AuthService auth;

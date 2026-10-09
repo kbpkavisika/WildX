@@ -12,7 +12,7 @@ import type { UserRow } from "@/lib/users/types";
 import { EMPTY_USER, toUserValues, userErrorMessage } from "@/lib/users/user-form";
 
 export default function UsersPage() {
-  const { isAdmin, isPending, isError, users, parks, view, save, remove } = useUsers();
+  const { canManage, isPending, isError, users, view, save, remove } = useUsers();
   const { formOpen, editingId, openNew, openEdit, close } = useUsersPage();
   const editing = users.find((user) => user.id === editingId) ?? null;
 
@@ -26,7 +26,7 @@ export default function UsersPage() {
     if (window.confirm(`Deactivate ${row.name}? They will no longer be able to sign in.`)) remove.mutate(row.id);
   };
 
-  if (!isAdmin) return <p className="text-body text-ink-muted">Only admins can manage users.</p>;
+  if (!canManage) return <p className="text-body text-ink-muted">Only park managers can manage users.</p>;
 
   return (
     <>
@@ -47,7 +47,6 @@ export default function UsersPage() {
           submitLabel={editing ? "Save changes" : "Create user"}
           creating={!editing}
           defaultValues={editing ? toUserValues(editing) : EMPTY_USER}
-          parks={parks}
           saving={save.isPending}
           error={save.error}
           onSubmit={(values) => save.mutate({ userId: editingId, values }, { onSuccess: close })}
