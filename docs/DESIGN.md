@@ -378,7 +378,9 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
 ## Components
 
 - **Sidebar.**
-  - Order: logo, then the park switcher (bordered 12px button: map icon tile, "Udawalawe NP / 30,821 ha", chevron), then the nav, then the user card pinned to the bottom above a top border (pine avatar with lime initials and an online dot, name, role, up/down chevron).
+  - Order: logo, then the park switcher (bordered 12px button: map icon tile, "Udawalawe NP / 30,821 ha", chevron), then the nav, then the user card pinned to the bottom above a top border (pine avatar with lime initials and an online dot, the signed-in user's name and role, up/down chevron).
+  - Clicking the user card toggles a "Log out" row directly above it: a 44px pill with a 20px log-out icon in `ink-body`, `surface-muted` on hover. Logging out returns to Sign in.
+- **Ranger header.** The logo on the left and a 40px circular "Log out" icon button on the right.
   - Nav items are 44px pills with a 20px icon and 12px gap. The active item gets the lime fill and 500 weight.
   - Expandable groups (Patrols → Active patrols, All patrols; Sensors → Collars, Camera traps) are buttons that expand and collapse their children on click, with a chevron pointing up when open and down when closed. Groups start open. Their children are indented 24px behind a 1px `line-strong` guide, as 38px items with a right-aligned muted count. The active child gets the lime pill, and its parent turns ink at weight 500.
   - Alerts carries a coral count badge.
