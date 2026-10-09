@@ -123,3 +123,12 @@ export const SIMULATION_SCENARIOS = {
   DUPLICATE: "DUPLICATE",
 } as const;
 export type SimulationScenario = (typeof SIMULATION_SCENARIOS)[keyof typeof SIMULATION_SCENARIOS];
+
+export const CAMERA_IMAGE_STATUSES = {
+  PENDING: "PENDING",
+  TAGGED: "TAGGED",
+  EMPTY: "EMPTY",
+  UNIDENTIFIABLE: "UNIDENTIFIABLE",
+  RESTRICTED: "RESTRICTED",
+} as const;
+export type CameraImageStatus = (typeof CAMERA_IMAGE_STATUSES)[keyof typeof CAMERA_IMAGE_STATUSES];

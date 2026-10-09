@@ -448,7 +448,7 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - After sending, a positive line beside the button reports the result: "Sent 6 fixes · 6 stored · 0 duplicates." or "Sent 3 images · 3 stored." Errors show in negative red in the same place.
 - **Camera traps.**
   - The sidebar's Sensors → Camera traps item opens it. Managers, Admins and the LEL can use it; other roles see "Only park managers and the LEL can review camera images." The LEL only ever sees restricted images.
-  - The subtitle counts the work: "**4 images** to review in 2 bursts." Managers get Simulator as a secondary link on the right.
+  - The subtitle counts the work: "**4 images** to review in 2 bursts." (for the LEL: "**1 restricted image.**") Managers get Simulator as a secondary link on the right.
   - The image queue (`3 1 420px`) sits beside the review card (`2 1 340px`). Filter pills: To review (the default), Tagged, Empty, Unidentifiable, Restricted and All, with counts. The LEL gets only the Restricted list, without pills.
   - Each burst has a "CAM-001 · Today · 21:40 – 21:42" label (one time for a single image) and a muted "3 images in 1 min" or "1 image" caption, then a grid of 4:3 image tiles (140px minimum) with the capture time and a status chip. The selected tile gets a 2px pine border and the lime-soft ring. A restricted tile never loads its picture: it shows a lock icon and "Restricted" in negative red on `surface-sunken`.
   - Status chips: To review (neutral), Tagged with the species and count, e.g. "Asian elephant · 2" (positive), Empty (neutral), Unidentifiable (neutral), Restricted (negative).
