@@ -13,21 +13,21 @@ import { colors, radii, sizes, space } from "@/lib/theme";
 import { ResolveForm } from "./resolve-form";
 
 interface AlertActions {
-  acknowledge: (id: number, title: string) => void;
-  resolve: (id: number, title: string, disposition: Disposition) => void;
+  acknowledge: (id: number) => void;
+  resolve: (id: number, disposition: Disposition) => void;
 }
 
 function RangerActions({ row, actions }: { row: AlertRow; actions: AlertActions }) {
   const { resolving, setResolving } = useAlertsPage();
 
   if (resolving) {
-    return <ResolveForm onSubmit={(disposition) => actions.resolve(row.id, row.title, disposition)} onCancel={() => setResolving(false)} />;
+    return <ResolveForm onSubmit={(disposition) => actions.resolve(row.id, disposition)} onCancel={() => setResolving(false)} />;
   }
 
   const mapsUrl = row.mapsUrl;
   return (
     <View style={styles.actions}>
-      {row.canAcknowledge && <Button label="Acknowledge" onPress={() => actions.acknowledge(row.id, row.title)} />}
+      {row.canAcknowledge && <Button label="Acknowledge" onPress={() => actions.acknowledge(row.id)} />}
       <SecondaryButton label="Resolve" onPress={() => setResolving(true)} />
       {mapsUrl && <SecondaryButton label="Open in maps" icon={MapIcon} onPress={() => void Linking.openURL(mapsUrl)} />}
     </View>
@@ -61,7 +61,7 @@ function RangerAlertItem({ row, open, actions }: { row: AlertRow; open: boolean;
   );
 }
 
-export function RangerAlertList({ view, actions }: { view: RangerAlertsView; actions: AlertActions }) {
+export function RangerAlertList({ view, error, actions }: { view: RangerAlertsView; error: string | null; actions: AlertActions }) {
   const selectedId = useAlertsPage((state) => state.selectedId);
   const notice = useAlertsPage((state) => state.notice);
 
@@ -69,6 +69,7 @@ export function RangerAlertList({ view, actions }: { view: RangerAlertsView; act
     <Card>
       <CardTitle>Open alerts</CardTitle>
       {notice && <Notice tone="positive">{notice}</Notice>}
+      {error && <Notice tone="negative">{error}</Notice>}
       {view.rows.length === 0 ? (
         <Notice tone="muted">No open alerts. You will be notified when one is raised.</Notice>
       ) : (

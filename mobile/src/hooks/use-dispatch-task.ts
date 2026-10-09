@@ -1,22 +1,23 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { fetchDispatch } from "@/lib/api/dispatches";
+import { apiErrorMessage } from "@/lib/api/client";
+import { acknowledgeDispatch, completeDispatch, declineDispatch, fetchDispatch } from "@/lib/api/dispatches";
 import { fetchIncident, incidentPhotoSource } from "@/lib/api/incidents";
 import { TASKS_REFETCH_MS } from "@/lib/constants";
-import { toDispatchView, withPendingDispatchChanges } from "@/lib/dispatch/mappers";
+import { toDispatchView } from "@/lib/dispatch/mappers";
 import { useDispatchTaskPage } from "@/lib/dispatch/store";
 import { SOURCE_TYPES } from "@/lib/enums";
 import { toIncidentDetailView } from "@/lib/incidents/mappers";
-import { savedNotice } from "@/lib/outbox/overlay";
-import { useConnection, useOutbox } from "@/lib/outbox/store";
-import { save } from "@/lib/outbox/sync";
-import { OUTBOX_KINDS, type OutboxKind } from "@/lib/outbox/types";
 import { useParkSectors } from "./use-park-data";
 
+interface DispatchAction {
+  send: () => Promise<unknown>;
+  done: string;
+}
+
 export function useDispatchTask(id: number) {
+  const queryClient = useQueryClient();
   const sectors = useParkSectors();
-  const rows = useOutbox((state) => state.rows);
-  const online = useConnection((state) => state.online);
   const setNotice = useDispatchTaskPage((state) => state.setNotice);
 
   const dispatch = useQuery({ queryKey: ["dispatches", id], queryFn: () => fetchDispatch(id), refetchInterval: TASKS_REFETCH_MS });
@@ -27,16 +28,16 @@ export function useDispatchTask(id: number) {
     enabled: incidentId !== null,
   });
 
-  const view = useMemo(
-    () => dispatch.data && toDispatchView(withPendingDispatchChanges(dispatch.data, rows), incident.data, new Date()),
-    [dispatch.data, incident.data, rows],
-  );
+  const view = useMemo(() => dispatch.data && toDispatchView(dispatch.data, incident.data, new Date()), [dispatch.data, incident.data]);
   const detail = useMemo(() => incident.data && toIncidentDetailView(incident.data), [incident.data]);
 
-  const act = (kind: OutboxKind, body: unknown, action: string) => {
-    save({ kind, targetId: id, label: view?.title ?? `Dispatch ${id}`, body });
-    setNotice(savedNotice(action, online));
-  };
+  const action = useMutation({
+    mutationFn: ({ send }: DispatchAction) => send(),
+    onSuccess: (_, { done }) => {
+      setNotice(done);
+      ["dispatches", "incidents", "alerts"].forEach((key) => void queryClient.invalidateQueries({ queryKey: [key] }));
+    },
+  });
 
   return {
     isPending: dispatch.isPending,
@@ -45,8 +46,9 @@ export function useDispatchTask(id: number) {
     incident: detail,
     photoSource: incidentId !== null && detail?.hasPhoto ? incidentPhotoSource(incidentId) : null,
     sectors,
-    acknowledge: () => act(OUTBOX_KINDS.DISPATCH_ACK, {}, "Acknowledged"),
-    complete: (outcome: string) => act(OUTBOX_KINDS.DISPATCH_COMPLETE, { outcome }, "Completed"),
-    decline: (reason: string | null) => act(OUTBOX_KINDS.DISPATCH_DECLINE, { reason }, "Declined"),
+    error: action.error ? apiErrorMessage(action.error) : null,
+    acknowledge: () => action.mutate({ send: () => acknowledgeDispatch(id), done: "Acknowledged." }),
+    complete: (outcome: string) => action.mutate({ send: () => completeDispatch(id, outcome), done: "Completed." }),
+    decline: (reason: string | null) => action.mutate({ send: () => declineDispatch(id, reason), done: "Declined." }),
   };
 }

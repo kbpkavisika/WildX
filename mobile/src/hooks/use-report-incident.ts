@@ -1,53 +1,49 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { randomUUID } from "expo-crypto";
-import { File, Paths } from "expo-file-system";
 import { useState } from "react";
-import { toIncidentCreateRequest, type ReportIncidentSubmit, type TakenPhoto } from "@/lib/incidents/report-form";
-import { savedNotice } from "@/lib/outbox/overlay";
-import { useConnection } from "@/lib/outbox/store";
-import { save } from "@/lib/outbox/sync";
-import { OUTBOX_KINDS } from "@/lib/outbox/types";
+import { apiErrorMessage, NetworkError } from "@/lib/api/client";
+import { reportIncident } from "@/lib/api/incidents";
+import { toIncidentCreateRequest, type ReportIncidentSubmit } from "@/lib/incidents/report-form";
+import { saveOffline } from "@/lib/offline-reports/sender";
 import { useIncidentTypeOptions, useParkSectors } from "./use-park-data";
 
-const PNG_TYPE = "image/png";
-
-async function keepPhoto(clientId: string, photo: TakenPhoto): Promise<string> {
-  const extension = photo.mimeType === PNG_TYPE ? "png" : "jpg";
-  const kept = new File(Paths.document, `incident-${clientId}.${extension}`);
-  await new File(photo.uri).copy(kept, { overwrite: true });
-  return kept.uri;
-}
+const REPORTED_NOTICE = "Incident reported.";
+const SAVED_OFFLINE_NOTICE = "Saved on this phone. It will be sent when you're back online.";
 
 export function useReportIncident() {
+  const queryClient = useQueryClient();
   const types = useIncidentTypeOptions();
   const sectors = useParkSectors();
-  const online = useConnection((state) => state.online);
-  const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
 
-  const submit = async (values: ReportIncidentSubmit) => {
-    setSaving(true);
-    setError(null);
-    try {
-      const clientId = randomUUID();
-      const typeName = types.options.find((type) => String(type.id) === values.typeId)?.name ?? "Incident";
-      const photoUri = values.photo ? await keepPhoto(clientId, values.photo) : null;
-      save({
-        id: clientId,
-        kind: OUTBOX_KINDS.INCIDENT,
-        label: typeName,
-        body: toIncidentCreateRequest(clientId, values, new Date()),
-        photoUri,
-      });
-      setNotice(online ? `Saved · ${typeName} reported.` : savedNotice("Saved", false));
+  const report = useMutation({
+    mutationFn: async (values: ReportIncidentSubmit) => {
+      const request = toIncidentCreateRequest(randomUUID(), values, new Date());
+      const photoUri = values.photo?.uri ?? null;
+      try {
+        await reportIncident(request, photoUri);
+        return REPORTED_NOTICE;
+      } catch (error) {
+        if (!(error instanceof NetworkError)) throw error;
+        const typeName = types.options.find((type) => String(type.id) === values.typeId)?.name ?? "Incident";
+        await saveOffline(typeName, request, photoUri);
+        return SAVED_OFFLINE_NOTICE;
+      }
+    },
+    onSuccess: () => {
       setFormKey((key) => key + 1);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save the report. Try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    },
+  });
 
-  return { typeOptions: types.options, typesError: types.isError, sectors, saving, notice, error, formKey, submit };
+  return {
+    typeOptions: types.options,
+    typesError: types.isError,
+    sectors,
+    saving: report.isPending,
+    notice: report.data ?? null,
+    error: report.error ? apiErrorMessage(report.error) : null,
+    formKey,
+    submit: (values: ReportIncidentSubmit) => report.mutate(values),
+  };
 }

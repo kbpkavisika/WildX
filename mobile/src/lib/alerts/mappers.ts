@@ -3,8 +3,6 @@ import { GOOGLE_MAPS_URL } from "@/lib/constants";
 import { ALERT_STATUSES, ALERT_TYPES, DISPOSITIONS, type AlertType, type Disposition } from "@/lib/enums";
 import { formatAgo, formatDayTime } from "@/lib/format";
 import { SEVERITY_DISPLAY } from "@/lib/incidents/mappers";
-import { pendingFor } from "@/lib/outbox/overlay";
-import { OUTBOX_KINDS, type OutboxRow } from "@/lib/outbox/types";
 import { NO_VALUE, type ChipView, type DetailFact, type StatusView } from "@/lib/view-types";
 
 const UNKNOWN_DEVICE = "Unknown device";
@@ -49,13 +47,6 @@ export interface NotificationRow {
   time: string;
   unread: boolean;
   link: string | null;
-}
-
-export function withPendingAlertChanges(alert: AlertResponse, rows: OutboxRow[], userName: string): AlertResponse | null {
-  if (pendingFor(rows, OUTBOX_KINDS.ALERT_RESOLVE, alert.id)) return null;
-  const acknowledged = pendingFor(rows, OUTBOX_KINDS.ALERT_ACK, alert.id);
-  if (!acknowledged || alert.status !== ALERT_STATUSES.OPEN) return alert;
-  return { ...alert, status: ALERT_STATUSES.ACKNOWLEDGED, acknowledgedByName: userName, acknowledgedAt: new Date(acknowledged.createdAt).toISOString() };
 }
 
 function deviceLabel(alert: AlertResponse): string {

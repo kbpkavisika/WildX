@@ -1,5 +1,6 @@
 package com.wildx.wildx.service.impl;
 
+import com.wildx.wildx.constant.PatrolConstants;
 import com.wildx.wildx.dto.*;
 import com.wildx.wildx.model.*;
 import com.wildx.wildx.repository.TrackPointRepository;
@@ -94,7 +95,7 @@ public class PatrolTrackServiceImpl implements PatrolTrackService {
                 || request.accuracyM() != null && (!Double.isFinite(request.accuracyM()) || request.accuracyM() < 0)) {
             throw new IllegalArgumentException("Invalid track point coordinates or accuracy");
         }
-        if (request.recordedAt().isBefore(patrol.getStartedAt()) || request.recordedAt().isAfter(clock.instant())) {
+        if (request.recordedAt().isBefore(patrol.getStartedAt()) || request.recordedAt().isAfter(clock.instant().plus(PatrolConstants.DEVICE_CLOCK_SKEW))) {
             throw new IllegalArgumentException("Track timestamp must be within the active patrol and not in the future");
         }
         if (request.note() != null && request.note().length() > 1000

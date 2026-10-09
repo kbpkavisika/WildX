@@ -91,7 +91,7 @@ public class PatrolServiceImpl implements PatrolService {
             }
             LocalDate today = LocalDate.now(clock.withZone(PatrolConstants.PARK_ZONE));
             if (!patrol.getScheduledDate().equals(today) || request.at() == null
-                    || request.at().isAfter(clock.instant())
+                    || request.at().isAfter(clock.instant().plus(PatrolConstants.DEVICE_CLOCK_SKEW))
                     || !request.at().atZone(PatrolConstants.PARK_ZONE).toLocalDate().equals(today)) {
                 throw new IllegalArgumentException("Start time must be on the scheduled date and not in the future");
             }
@@ -140,7 +140,8 @@ public class PatrolServiceImpl implements PatrolService {
             if (patrol.getStatus() != PatrolStatus.ACTIVE || patrol.getStartedAt() == null) {
                 throw new IllegalArgumentException("Only an active patrol can be completed");
             }
-            if (request.at() == null || request.at().isBefore(patrol.getStartedAt()) || request.at().isAfter(clock.instant())
+            if (request.at() == null || request.at().isBefore(patrol.getStartedAt())
+                    || request.at().isAfter(clock.instant().plus(PatrolConstants.DEVICE_CLOCK_SKEW))
                     || tracks.findFirstByPatrolIdOrderByRecordedAtDescIdDesc(id)
                     .filter(point -> point.getRecordedAt().isAfter(request.at())).isPresent()) {
                 throw new IllegalArgumentException("End time must follow all track points and not be in the future");

@@ -1,6 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/lib/auth/store";
-import { refreshOutbox } from "@/lib/outbox/store";
 import { stopTracking } from "@/lib/tracking/task";
 
 export function useLogout() {
@@ -9,6 +8,5 @@ export function useLogout() {
     void stopTracking();
     useSession.getState().clearSession();
     queryClient.clear();
-    refreshOutbox();
   };
 }

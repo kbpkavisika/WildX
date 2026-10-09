@@ -97,7 +97,7 @@ class PatrolServiceImplTest {
         when(repository.findLockedByIdAndRouteParkId(3L, 1L)).thenReturn(Optional.of(patrol));
         assertThatThrownBy(() -> service.end(caller, 3L, new PatrolTimeRequest(start.minusSeconds(1))))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> service.end(caller, 3L, new PatrolTimeRequest(clock.instant().plusSeconds(1))))
+        assertThatThrownBy(() -> service.end(caller, 3L, new PatrolTimeRequest(clock.instant().plusSeconds(121))))
                 .isInstanceOf(IllegalArgumentException.class);
         TrackPoint last = new TrackPoint();
         last.setRecordedAt(start.plusSeconds(60));
@@ -139,7 +139,7 @@ class PatrolServiceImplTest {
     void rejectsFutureTimesWrongDatesAndCancelledPatrols() {
         Patrol patrol = patrol(PatrolStatus.PLANNED);
         when(repository.findLockedByIdAndRouteParkId(3L, 1L)).thenReturn(Optional.of(patrol));
-        assertThatThrownBy(() -> service.start(caller, 3L, new PatrolTimeRequest(clock.instant().plusSeconds(1))))
+        assertThatThrownBy(() -> service.start(caller, 3L, new PatrolTimeRequest(clock.instant().plusSeconds(121))))
                 .isInstanceOf(IllegalArgumentException.class);
         patrol.setScheduledDate(LocalDate.of(2026, 10, 8));
         assertThatThrownBy(() -> service.start(caller, 3L, new PatrolTimeRequest(clock.instant())))

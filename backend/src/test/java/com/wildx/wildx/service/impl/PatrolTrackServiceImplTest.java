@@ -44,6 +44,12 @@ class PatrolTrackServiceImplTest {
     }
 
     @Test
+    void acceptsPointsFromPhoneClockSlightlyAheadOfServer() {
+        assertThat(service.record(caller, 3L, List.of(point(6, 80, 610)))).extracting(TrackPointResponse::recordedAt)
+                .containsExactly(start.plusSeconds(610));
+    }
+
+    @Test
     void retriesAreIdempotentAndConflictingCoordinatesAreRejected() {
         TrackPoint saved = saved(6, 80, 0);
         when(repository.findByPatrolIdAndRecordedAtIn(eq(3L), anyCollection())).thenReturn(List.of(saved));
@@ -55,7 +61,7 @@ class PatrolTrackServiceImplTest {
     @Test
     void rejectsInvalidPointsTimesAndInactivePatrolBeforeSaving() {
         for (PatrolPointRequest point : List.of(point(Double.NaN, 80, 0), point(91, 80, 0),
-                point(6, 181, 0), point(6, 80, -1), point(6, 80, 601))) {
+                point(6, 181, 0), point(6, 80, -1), point(6, 80, 721))) {
             assertThatThrownBy(() -> service.record(caller, 3L, List.of(point))).isInstanceOf(IllegalArgumentException.class);
         }
         assertThatThrownBy(() -> service.record(caller, 3L, List.of())).isInstanceOf(IllegalArgumentException.class);

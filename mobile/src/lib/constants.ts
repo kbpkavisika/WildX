@@ -1,4 +1,6 @@
 export const API_TIMEOUT_MS = 20_000;
+export const UPLOAD_TIMEOUT_MS = 120_000;
+export const OFFLINE_REPORTS_RETRY_MS = 30_000;
 export const GPS_INTERVAL_S = 60;
 export const GPS_SAMPLE_METRES = 50;
 export const GPS_TIMEOUT_MS = 15_000;
@@ -7,8 +9,6 @@ export const GPS_CHECK_MS = 15_000;
 export const TRACKING_UPDATE_MS = 10_000;
 export const TRACKING_DISTANCE_M = 10;
 export const RECENT_FIX_MS = 60_000;
-export const SYNC_RETRY_MS = 30_000;
-export const POINT_BATCH_MAX = 1000;
 export const PATROLS_REFETCH_MS = 15_000;
 export const TASKS_REFETCH_MS = 15_000;
 export const ALERTS_REFETCH_MS = 15_000;

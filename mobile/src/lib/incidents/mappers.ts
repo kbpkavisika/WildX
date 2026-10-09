@@ -3,9 +3,7 @@ import { COORDINATE_DECIMALS } from "@/lib/constants";
 import { INCIDENT_STATUSES, LOCATION_SOURCES, SEVERITIES, type IncidentStatus, type LocationSource, type Severity } from "@/lib/enums";
 import { formatDayTime, formatLatLng } from "@/lib/format";
 import type { LatLng } from "@/lib/geo";
-import { pendingCaption, pendingOfKind } from "@/lib/outbox/overlay";
-import { OUTBOX_KINDS, type OutboxRow } from "@/lib/outbox/types";
-import { NO_VALUE, PENDING_CHIP, type ChipView, type DetailFact, type TaskRow } from "@/lib/view-types";
+import { NO_VALUE, type ChipView, type DetailFact, type TaskRow } from "@/lib/view-types";
 
 const NO_SECTOR = "Outside sectors";
 
@@ -38,22 +36,14 @@ export function toActiveTypeOptions(types: IncidentTypeResponse[]): IncidentType
   return types.filter((type) => type.active).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function toMyIncidentRows(incidents: IncidentResponse[], rows: OutboxRow[], now: Date): TaskRow[] {
-  const pending = pendingOfKind(rows, OUTBOX_KINDS.INCIDENT).map((row) => ({
-    key: row.id,
-    dispatchId: null,
-    title: row.label,
-    caption: pendingCaption(row),
-    status: PENDING_CHIP,
-  }));
-  const saved = incidents.map((incident) => ({
+export function toMyIncidentRows(incidents: IncidentResponse[], now: Date): TaskRow[] {
+  return incidents.map((incident) => ({
     key: `s${incident.id}`,
     dispatchId: null,
     title: `${incident.typeName} · INC-${incident.id}`,
     caption: `${incident.sectorName ?? NO_SECTOR} · ${formatDayTime(new Date(incident.occurredAt), now)}`,
     status: INCIDENT_STATUS_DISPLAY[incident.status],
   }));
-  return [...pending.reverse(), ...saved];
 }
 
 function closingFact(incident: IncidentResponse): DetailFact[] {

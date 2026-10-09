@@ -145,11 +145,17 @@ export function toIncidentDetailView(incident: IncidentResponse, now: Date): Inc
   };
 }
 
+const STATUS_ORDER: IncidentStatus[] = Object.values(INCIDENT_STATUSES);
+
+function byStatus(a: IncidentResponse, b: IncidentResponse): number {
+  return STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
+}
+
 export function toIncidentQueueView(incidents: IncidentResponse[], filters: IncidentQueueFilters, now: Date): IncidentQueueView {
   const narrowed = incidents.filter((incident) => matchesTypeAndSeverity(incident, filters));
   const shown = filters.status === ALL ? narrowed : narrowed.filter((incident) => incident.status === filters.status);
   return {
-    rows: shown.map((incident) => toIncidentRow(incident, now)),
+    rows: [...shown].sort(byStatus).map((incident) => toIncidentRow(incident, now)),
     statusOptions: statusOptions(narrowed),
     newCount: incidents.filter((incident) => incident.status === INCIDENT_STATUSES.NEW).length,
   };

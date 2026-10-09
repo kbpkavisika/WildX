@@ -3,8 +3,6 @@ import { z } from "zod";
 import { INCIDENT_STATUSES, LOCATION_SOURCES, SEVERITIES, type LocationSource } from "@/lib/enums";
 import { apiGet, apiPostForm, apiUrl, authHeaders } from "./client";
 
-const JSON_TYPE = "application/json";
-
 const incidentSchema = z.object({
   id: z.number(),
   typeId: z.number(),
@@ -46,11 +44,6 @@ export interface IncidentCreateRequest {
   occurredAt: string;
 }
 
-export interface LocalPhoto {
-  uri: string;
-  mimeType: string;
-}
-
 export function fetchMyIncidents(): Promise<IncidentResponse[]> {
   return apiGet("/me/incidents", z.array(incidentSchema));
 }
@@ -71,12 +64,12 @@ export function fetchSectors(parkId: number): Promise<SectorResponse[]> {
   return apiGet(`/parks/${parkId}/sectors`, z.array(sectorSchema));
 }
 
-export async function reportIncident(request: IncidentCreateRequest, photo: LocalPhoto | null): Promise<IncidentResponse> {
+export async function reportIncident(request: IncidentCreateRequest, photoUri: string | null): Promise<IncidentResponse> {
   const data = new File(Paths.cache, `incident-${request.clientId}.json`);
   data.write(JSON.stringify(request));
   const body = new FormData();
-  body.append("data", { uri: data.uri, name: "data.json", type: JSON_TYPE } as unknown as Blob);
-  if (photo) body.append("photo", { uri: photo.uri, name: photo.uri.split("/").pop(), type: photo.mimeType } as unknown as Blob);
+  body.append("data", data);
+  if (photoUri) body.append("photo", new File(photoUri));
   try {
     return await apiPostForm("/incidents", body, incidentSchema);
   } finally {
