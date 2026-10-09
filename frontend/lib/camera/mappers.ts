@@ -2,6 +2,7 @@ import type { CameraBurstResponse, CameraImageResponse } from "@/lib/api/camera-
 import { CAMERA_IMAGE_STATUSES } from "@/lib/enums";
 import { formatDayLabel, formatDayTime, formatTime, isSameDay } from "@/lib/format";
 import type { ChipView } from "@/lib/incidents/types";
+import { toTagValues } from "./tag-form";
 import { CAMERA_FILTERS, type BurstView, type CameraFilter, type CameraFilterOption, type CameraView, type ImageTile, type SelectedImageView } from "./types";
 
 const LOCALE = "en-US";
@@ -91,6 +92,7 @@ function toSelected(image: CameraImageResponse, now: Date): SelectedImageView {
       { label: "Reviewed", value: reviewedText(image, now) },
     ],
     restricted: image.status === CAMERA_IMAGE_STATUSES.RESTRICTED,
+    tag: toTagValues(image),
   };
 }
 

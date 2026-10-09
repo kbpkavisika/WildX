@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { ChoiceRow } from "@/components/forms/choice-row";
 import { Button, SecondaryButton } from "@/components/ui/button";
 import { DISPOSITION_LABELS } from "@/lib/alerts/mappers";
 import { resolveSchema, type ResolveValues } from "@/lib/alerts/resolve-form";
@@ -38,13 +39,7 @@ export function ResolveForm({ saving, stacked = false, onSubmit, onCancel }: Res
         <legend className="mb-1.5 p-0 text-field-label text-ink-body">Outcome</legend>
         <div className={cn("flex flex-col gap-2", errors.disposition && "rounded-md outline outline-negative")}>
           {Object.entries(DISPOSITION_LABELS).map(([value, label]) => (
-            <label
-              key={value}
-              className="flex min-h-12 cursor-pointer items-center gap-3 rounded-md border border-line bg-card px-3 has-checked:border-primary has-checked:ring-3 has-checked:ring-lime-soft"
-            >
-              <input type="radio" value={value} className="m-0 size-4 accent-primary" {...register("disposition")} />
-              <span className="text-body text-ink">{label}</span>
-            </label>
+            <ChoiceRow key={value} label={label} value={value} {...register("disposition")} />
           ))}
         </div>
         {errors.disposition && <span id={OUTCOME_ERROR_ID} className="text-caption text-negative">{errors.disposition.message}</span>}

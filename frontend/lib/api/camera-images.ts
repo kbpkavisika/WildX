@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { CAMERA_IMAGE_STATUSES } from "@/lib/enums";
-import { apiGet, apiGetBlob } from "./client";
+import { CAMERA_IMAGE_STATUSES, type CameraImageStatus } from "@/lib/enums";
+import { apiGet, apiGetBlob, apiPost } from "./client";
 
 const timestamp = z.iso.datetime({ offset: true });
 
@@ -25,10 +25,20 @@ const cameraBurstSchema = z.object({
 export type CameraImageResponse = z.infer<typeof cameraImageSchema>;
 export type CameraBurstResponse = z.infer<typeof cameraBurstSchema>;
 
+export interface CameraTagRequest {
+  status: CameraImageStatus;
+  species: string | null;
+  animalCount: number | null;
+}
+
 export function fetchCameraBursts(parkId: number): Promise<CameraBurstResponse[]> {
   return apiGet(`/parks/${parkId}/camera-images`, z.array(cameraBurstSchema));
 }
 
 export function fetchCameraImageFile(parkId: number, imageId: number): Promise<Blob> {
   return apiGetBlob(`/parks/${parkId}/camera-images/${imageId}/file`);
+}
+
+export function tagCameraImage(parkId: number, imageId: number, request: CameraTagRequest): Promise<CameraImageResponse> {
+  return apiPost(`/parks/${parkId}/camera-images/${imageId}/tag`, request, cameraImageSchema);
 }

@@ -2,6 +2,7 @@
 
 import { ImageQueue } from "@/components/camera/image-queue";
 import { ImageReview } from "@/components/camera/image-review";
+import { TagImageForm } from "@/components/camera/tag-image-form";
 import { SecondaryLink } from "@/components/devices/secondary-link";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
@@ -58,7 +59,9 @@ export default function CameraTrapsPage() {
             <ImageQueue bursts={view.bursts} pictures={pictures} emptyLabel={emptyLabel} />
           </Card>
           <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-5">
-            <ImageReview view={view.selected} picture={view.selected ? pictures.get(view.selected.id) : undefined} />
+            <ImageReview view={view.selected} picture={view.selected ? pictures.get(view.selected.id) : undefined}>
+              {canTag && view.selected && <TagImageForm key={view.selected.id} imageId={view.selected.id} defaults={view.selected.tag} />}
+            </ImageReview>
           </div>
         </div>
       )}
