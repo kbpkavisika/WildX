@@ -567,5 +567,50 @@ class CommunityReportServiceImplTest {
         assertThat(result.landmarks().get(0).code()).isEqualTo("KUMB");
         assertThat(result.landmarks().get(1).code()).isEqualTo("NORT");
     }
+
+    @Test
+    void getPhotoThrowsWhenReportNotFoundOrNoPhoto() {
+        when(reports.findByIdAndParkId(99L, 1L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.getPhoto(1L, 99L))
+                .isInstanceOf(com.wildx.wildx.exception.NotFoundException.class);
+
+        CommunityReport noPhoto = new CommunityReport();
+        noPhoto.setId(10L);
+        when(reports.findByIdAndParkId(10L, 1L)).thenReturn(Optional.of(noPhoto));
+        assertThatThrownBy(() -> service.getPhoto(1L, 10L))
+                .isInstanceOf(com.wildx.wildx.exception.NotFoundException.class);
+    }
+
+    @Test
+    void getPublicPhotoThrowsWhenRefNotFoundOrNoPhoto() {
+        when(reports.findByReferenceCode("R-MISSING")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.getPublicPhoto("R-MISSING"))
+                .isInstanceOf(com.wildx.wildx.exception.NotFoundException.class);
+    }
+
+    @Test
+    void generatesUniqueReferenceCodeSkippingExistingCode() {
+        when(parks.require(1L)).thenReturn(park);
+
+        CommunityReport existing = new CommunityReport();
+        existing.setId(13L);
+        existing.setReferenceCode("R-1013");
+        when(reports.findTopByOrderByIdDesc()).thenReturn(Optional.of(existing));
+
+        when(reports.findByReferenceCode("R-1014")).thenReturn(Optional.of(existing));
+        when(reports.findByReferenceCode("R-1015")).thenReturn(Optional.empty());
+
+        when(reports.save(any())).thenAnswer(call -> {
+            CommunityReport r = call.getArgument(0);
+            r.setId(14L);
+            return r;
+        });
+
+        PublicReportCreateRequest req = new PublicReportCreateRequest(
+                1L, ReportType.SIGHTING, 1, "Elephant", "0771122334", null, null, null, null);
+
+        PublicReportResponse resp = service.submitPublicReport(req, null);
+        assertThat(resp.referenceCode()).isEqualTo("R-1015");
+    }
 }
 

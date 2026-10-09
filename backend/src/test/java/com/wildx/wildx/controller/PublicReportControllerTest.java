@@ -187,4 +187,14 @@ class PublicReportControllerTest {
                 .andExpect(jsonPath("$.keywords[0].english").value("ELE"))
                 .andExpect(jsonPath("$.landmarks[0].code").value("KUMB"));
     }
+
+    @Test
+    void returnsPublicReportPhoto() throws Exception {
+        when(reports.getPublicPhoto("R-1042")).thenReturn(new com.wildx.wildx.dto.CommunityReportPhoto(new byte[]{4, 5, 6}, "image/jpeg"));
+
+        mvc.perform(get("/api/v1/public/reports/R-1042/photo"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentType(MediaType.IMAGE_JPEG))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes(new byte[]{4, 5, 6}));
+    }
 }
