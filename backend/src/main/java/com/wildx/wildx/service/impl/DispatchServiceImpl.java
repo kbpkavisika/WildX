@@ -212,6 +212,9 @@ public class DispatchServiceImpl implements DispatchService {
         if (caller.role() == Role.RANGER && !caller.id().equals(dispatch.getResponder().getId())) {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
+        if (dispatch.getStatus() == DispatchStatus.ACKNOWLEDGED) {
+            return DispatchResponse.from(dispatch);
+        }
         if (dispatch.getStatus() != DispatchStatus.ASSIGNED) {
             throw new IllegalStateException("Dispatch cannot be acknowledged in status " + dispatch.getStatus());
         }
@@ -231,7 +234,10 @@ public class DispatchServiceImpl implements DispatchService {
         if (caller.role() == Role.RANGER && !caller.id().equals(dispatch.getResponder().getId())) {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
-        if (dispatch.getStatus() == DispatchStatus.COMPLETED || dispatch.getStatus() == DispatchStatus.DECLINED) {
+        if (dispatch.getStatus() == DispatchStatus.COMPLETED) {
+            return DispatchResponse.from(dispatch);
+        }
+        if (dispatch.getStatus() == DispatchStatus.DECLINED) {
             throw new IllegalStateException("Dispatch is already " + dispatch.getStatus());
         }
 
@@ -275,7 +281,10 @@ public class DispatchServiceImpl implements DispatchService {
         if (caller.role() == Role.RANGER && !caller.id().equals(dispatch.getResponder().getId())) {
             throw new AccessDeniedException("Cannot act on another responder's dispatch");
         }
-        if (dispatch.getStatus() == DispatchStatus.COMPLETED || dispatch.getStatus() == DispatchStatus.DECLINED) {
+        if (dispatch.getStatus() == DispatchStatus.DECLINED) {
+            return DispatchResponse.from(dispatch);
+        }
+        if (dispatch.getStatus() == DispatchStatus.COMPLETED) {
             throw new IllegalStateException("Dispatch is already " + dispatch.getStatus());
         }
 

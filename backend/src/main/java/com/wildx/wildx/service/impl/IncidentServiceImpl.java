@@ -57,6 +57,14 @@ public class IncidentServiceImpl implements IncidentService {
     @Transactional
     public IncidentResponse report(UserResponse caller, IncidentCreateRequest request, byte[] photo) {
         log.info("report incident started reporterId={} typeId={}", caller.id(), request.typeId());
+        String clientId = request.clientId() == null ? null : request.clientId().toString();
+        if (clientId != null) {
+            var existing = incidents.findByClientIdAndReporterId(clientId, caller.id());
+            if (existing.isPresent()) {
+                log.info("report incident replayed incidentId={} clientId={}", existing.get().getId(), clientId);
+                return IncidentResponse.from(existing.get());
+            }
+        }
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Instant occurredAt = request.occurredAt() == null ? now : request.occurredAt().truncatedTo(ChronoUnit.MICROS);
         if (occurredAt.isAfter(now.plus(CLOCK_SKEW))) {
@@ -72,6 +80,7 @@ public class IncidentServiceImpl implements IncidentService {
             throw new IllegalArgumentException("Incident type is not active");
         }
         Incident incident = new Incident();
+        incident.setClientId(clientId);
         incident.setReporter(auth.requireRanger(caller.id(), caller.parkId()));
         incident.setPatrol(patrols.activePatrol(caller.id(), caller.parkId()).orElse(null));
         incident.setPark(type.getPark());

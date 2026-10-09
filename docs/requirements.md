@@ -11,17 +11,18 @@ Technical design is in [architecture.md](architecture.md).
 
 ## 1. Scope
 
-- There is one responsive web app (Next.js). Rangers and villagers use it on a phone, and managers use it on a desktop. There is no separate native app.
+- There is one responsive web app (Next.js). Villagers use it on a phone, and managers use it on a desktop.
+- Rangers also have a native mobile app (React Native, Expo) for their field work. It covers every ranger step in this document and works offline (§4 CMN-04, CMN-05).
 - Each park is configured separately, so it has its own sectors, zones, incident types, alert rules and boundary segments. Adding a park or hazard type needs no code change (fixes W4).
 - The collar feed, camera trap network and SMS gateway are **simulated** through HTTP endpoints. No real hardware or telco integration is built.
 
-**Out of scope:** native apps, real SMS/telco integration, automatic image recognition, route optimisation, multi-tenant hosting, and fully offline map tiles for a whole park.
+**Out of scope:** native apps for roles other than Ranger, real SMS/telco integration, automatic image recognition, route optimisation, multi-tenant hosting, and fully offline map tiles for a whole park.
 
 ## 2. Actors
 
 | Actor | Role | Main device |
 |---|---|---|
-| Ranger | Patrols, reports incidents, responds to dispatches and alerts | Phone |
+| Ranger | Patrols, reports incidents, responds to dispatches and alerts | Phone (mobile app or web) |
 | Park Manager | Plans routes, monitors patrols, triages incidents, configures the park, receives alert escalations, and views reports | Desktop / phone |
 | Community Liaison Officer (CLO) | Validates community reports and dispatches responders to conflicts | Desktop / phone |
 | Researcher | Views analytics and reports (read only) | Desktop |
@@ -53,6 +54,8 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | CMN-01 | Users log in with email and password. The system restricts each route and screen by role (§2). *(UC1)* | M |
 | CMN-02 | An Admin can create, edit and deactivate parks and users, and assign each user a role and a park. *(UC1)* | M |
 | CMN-03 | A Park Manager can define sectors as polygons for their park by pasting GeoJSON. *(UC1)* | M |
+| CMN-04 | Offline outbox (mobile app): every ranger write (patrol start/end, track points, waypoints, incidents, dispatch and alert actions) is saved in a SQLite database on the device first, then sent in order. A write that does not reach the server stays on the device and is resent automatically when the connection returns. A resent write is never stored twice. *(UC2)* | M |
+| CMN-05 | A sync bar is always visible on the mobile app's ranger screens and shows *Online/Offline*, the number of items waiting to sync and the last sync time. A write the server rejects stays on the device and is shown with the server's message until the ranger discards it. *(UC2)* | M |
 | CMN-06 | **Dispatch Responder** (shared): a manager or CLO assigns a responder to an incident, alert or conflict report. The responder is notified and can then Acknowledge it, Complete it with an outcome, or Decline it. *(UC2)* | M |
 | CMN-07 | In-app notifications: each user has a notification list. The app polls it while online and shows an unread badge. *(UC3)* | M |
 | CMN-08 | SMS fallback: a High or Critical dispatch or alert sent to a ranger who has been offline for more than 5 minutes is also sent by SMS (simulated). *(UC4)* | S |
@@ -95,6 +98,7 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 | INC-01 | A Park Manager manages the incident types for their park: name, default severity and active flag. Example types are Snare, Carcass, Illegal campsite, At-risk species sign and Human-wildlife conflict (fixes W4). | M |
 | INC-02 | A ranger reports an incident by choosing the type from a pick-list, attaching a photo with the phone camera (optional), entering a short description and having the location captured automatically. | M |
 | INC-03 | When GPS fails, the ranger taps the incident location on the map instead. | M |
+| INC-04 | In the mobile app an incident is saved on the device first, so **Submit** works offline. The report is marked *Pending sync* until the server accepts it (fixes W17). | M |
 | INC-05 | The form highlights missing required fields: type and location. | M |
 | INC-06 | An incident is linked to the ranger's active patrol, if there is one. | S |
 | INC-07 | When a High or Critical incident is submitted, the system notifies the park's Managers automatically, with no manual refresh needed (fixes W16). | M |
@@ -177,23 +181,15 @@ Each common requirement has one owner, shown in brackets. The other devs use it 
 
 | ID | Requirement |
 |---|---|
-| NFR-01 | Ranger screens work on a 360 px wide phone in Chrome for Android. Dashboards are designed for ≥1280 px but stay usable on a phone. |
+| NFR-01 | Ranger screens work on a 360 px wide phone in Chrome for Android and in the mobile app. Dashboards are designed for ≥1280 px but stay usable on a phone. |
+| NFR-02 | The mobile app opens offline after the first sign-in and shows the last data it loaded. A record resent from the offline outbox is stored once only (idempotent). |
 | NFR-03 | No accepted field data is lost. |
 | NFR-04 | Dashboard data is no more than 30 s old, refreshed by polling. |
 | NFR-05 | Passwords are hashed with BCrypt, and every API except the public villager and simulator endpoints needs a JWT. |
 | NFR-06 | Restricted images are never sent to a user who is not authorised to see them. |
 
-## 10. On hold
+## 10. Mobile app (ranger)
 
-Offline saving and syncing when the connection is available are on hold. They are not part of the current build and are removed from architecture.md.
+The mobile app makes ranger field work work offline (fixes W17): PAT-04 to PAT-08, INC-02 to INC-06, the dispatch steps of CMN-06 and the alert steps of SEN-08 and SEN-10 all save on the device first (CMN-04) and sync later. During an active patrol it keeps recording GPS points while the screen is locked. Only the Ranger role can sign in to it; other roles use the web app.
 
-| ID | Requirement | Pri |
-|---|---|---|
-| – | Ranger field work works offline: data is saved on the device first and synced later (fixes W17). This also covers offline start/tracking in PAT-04/PAT-05 and the offline steps of F1.2 and F2.1. | – |
-| CMN-04 | Offline outbox: any ranger write made while offline is saved on the device and replayed automatically when the app is back online. A replayed write is never stored twice. *(UC2)* | M |
-| CMN-05 | A sync bar is always visible on ranger screens and shows *Online/Offline*, the number of items waiting to sync, and the last sync time. *(UC2)* | M |
-| INC-04 | An incident is saved locally first, so the "Submit" action works offline. The report is marked *Pending sync* until the server accepts it (fixes W17). | M |
-| NFR-02 | The app shell for ranger pages loads offline after the first online visit. | – |
-| NFR-03 (part) | A record replayed from the offline outbox is stored once only (idempotent). | – |
-
-**Known limitation:** a browser cannot track GPS in the background when the screen is locked, so rangers keep the patrol screen open. A native app would be needed to remove this limitation.
+**Known limitation:** the web ranger pages are online only and cannot track GPS when the screen is locked. Rangers who need offline work or locked-screen tracking use the mobile app.

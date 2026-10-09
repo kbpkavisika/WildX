@@ -229,12 +229,11 @@ class AlertServiceImplTest {
     }
 
     @Test
-    void acknowledgeRejectsResolvedAndOtherParkAlerts() {
+    void acknowledgeReturnsResolvedAlertUnchangedAndRejectsOtherParkAlerts() {
         Alert resolved = openAlert();
         resolved.setStatus(AlertStatus.RESOLVED);
         when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(resolved));
-        assertThatThrownBy(() -> service.acknowledge(1L, 20L, 4L))
-                .isInstanceOf(IllegalArgumentException.class).hasMessage("Alert is already resolved");
+        assertThat(service.acknowledge(1L, 20L, 4L).status()).isEqualTo(AlertStatus.RESOLVED);
         when(alerts.findLockedByIdAndParkId(20L, 2L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.acknowledge(2L, 20L, 4L))
                 .isInstanceOf(NotFoundException.class).hasMessage("Alert not found");
@@ -274,14 +273,16 @@ class AlertServiceImplTest {
     }
 
     @Test
-    void resolveRejectsResolvedAndOtherParkAlerts() {
+    void resolveReturnsResolvedAlertUnchangedAndRejectsOtherParkAlerts() {
         Alert resolved = openAlert();
         resolved.setStatus(AlertStatus.RESOLVED);
         resolved.setDisposition(Disposition.NO_ACTION);
         when(alerts.findLockedByIdAndParkId(20L, 1L)).thenReturn(Optional.of(resolved));
-        assertThatThrownBy(() -> service.resolve(1L, 20L, 6L, Disposition.FALSE_ALARM))
-                .isInstanceOf(IllegalArgumentException.class).hasMessage("Alert is already resolved");
+        var replayed = service.resolve(1L, 20L, 6L, Disposition.FALSE_ALARM);
+        assertThat(replayed.disposition()).isEqualTo(Disposition.NO_ACTION);
         assertThat(resolved.getDisposition()).isEqualTo(Disposition.NO_ACTION);
+        assertThat(resolved.getResolvedAt()).isNull();
+        verifyNoInteractions(entityManager);
         when(alerts.findLockedByIdAndParkId(20L, 2L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.resolve(2L, 20L, 6L, Disposition.FALSE_ALARM))
                 .isInstanceOf(NotFoundException.class).hasMessage("Alert not found");

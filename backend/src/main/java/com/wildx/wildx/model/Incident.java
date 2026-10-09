@@ -15,6 +15,8 @@ public class Incident extends Auditable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(length = 36, unique = true)
+    private String clientId;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Park park;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -14,6 +14,8 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     Optional<Incident> findByIdAndParkId(Long id, Long parkId);
     @EntityGraph(attributePaths = {"park", "type", "reporter", "patrol", "sector"})
     List<Incident> findByReporterIdOrderByOccurredAtDescIdDesc(Long reporterId);
+    @EntityGraph(attributePaths = {"park", "type", "reporter", "patrol", "sector"})
+    Optional<Incident> findByClientIdAndReporterId(String clientId, Long reporterId);
     @EntityGraph(attributePaths = {"type", "sector"})
     List<Incident> findByParkIdAndOccurredAtGreaterThanEqualAndOccurredAtLessThanOrderByOccurredAtAscIdAsc(
             Long parkId, Instant from, Instant until);
