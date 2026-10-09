@@ -26,7 +26,7 @@ const HANDLER_ROLES = new Set<Role>([ROLES.RANGER, ROLES.SUPERVISOR, ROLES.MANAG
 const DISPATCHER_ROLES = new Set<Role>([ROLES.SUPERVISOR, ROLES.MANAGER]);
 const ACTIVE_STATUSES = new Set<string>([ALERT_STATUSES.OPEN, ALERT_STATUSES.ACKNOWLEDGED]);
 
-const TYPE_LABELS: Record<AlertType, string> = {
+export const ALERT_TYPE_LABELS: Record<AlertType, string> = {
   [ALERT_TYPES.ZONE_BREACH]: "Zone breach",
   [ALERT_TYPES.MORTALITY]: "Mortality",
   [ALERT_TYPES.DEVICE_HEALTH]: "Device health",
@@ -59,7 +59,7 @@ function deviceLabel(alert: AlertResponse): string {
 }
 
 function alertTitle(alert: AlertResponse): string {
-  return `${TYPE_LABELS[alert.type]} · ${alert.zoneName ?? alert.collarCode ?? UNKNOWN_DEVICE}`;
+  return `${ALERT_TYPE_LABELS[alert.type]} · ${alert.zoneName ?? alert.collarCode ?? UNKNOWN_DEVICE}`;
 }
 
 function alertStatus(alert: AlertResponse): AlertStatusView {

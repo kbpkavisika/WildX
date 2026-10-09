@@ -296,6 +296,7 @@ Screens designed so far (`docs/prototypes/`):
 - **Simulator** (`simulator.html`): the demo tool that sends test collar fixes and camera images through the real ingest, in place of real hardware.
 - **Camera traps** (`camera-review.html`): the image review queue grouped into bursts, the selected image with its tag form, and the reason prompt for a restricted image.
 - **Zones and rules** (`zones.html`): the park's high-risk zones on a map and in a list, the inline zone form with a GeoJSON boundary, and the alert rule for each zone type.
+- **Alert report** (`alert-report.html`): alert counts by type and zone with the median times to acknowledge and resolve for a date range, and a CSV download.
 
 ### Voice
 
@@ -467,6 +468,13 @@ Corners are soft and consistent by size. The bigger the element, the rounder the
   - Delete asks first: "Delete Kumbukgaha farmland? Collars inside it will no longer raise alerts." A zone that already has alerts cannot be deleted, and a negative line says "Kumbukgaha farmland has alerts, so it cannot be deleted."
   - The Alert rules card has the muted caption "One rule per zone type. Breaches between 18:00 and 06:00 go up one level." and one row per zone type (Farmland, Road, Village buffer, Restricted): the type (label) with its severity chip over a "Cool-down 30 min · acknowledge within 15 min" caption, or "No rule, so these zones raise no alerts." Managers get a quiet Edit (or Add rule) button.
   - Edit and Add rule open the rule form in place of the row, one at a time, on `surface-form` with a "Village buffer rule" `form-title`: Severity (pick-list: Low, Medium, High, Critical), Cool-down (minutes, with the caption "0 to 1440. 0 raises an alert for every breach.") and Acknowledge within (minutes, 1 to 1440). Invalid numbers are outlined in negative red with "Enter 0 to 1440 minutes" or "Enter 1 to 1440 minutes". Remove rule (secondary with negative text, only for an existing rule, after a confirmation) sits on the left; Cancel and Save rule on the right. A server error shows in negative red above the buttons.
+
+- **Alert report.**
+  - The Analytics → Alerts tab opens it, after Incidents and Conflicts, and the Report button on the Alerts page links to it. Managers and supervisors can use it; other roles see "Only park managers and supervisors can see the alert report."
+  - The subtitle counts the alerts: "**12 alerts** raised in this range." Download CSV (primary 48px with a download icon) is on the right; it downloads the server's CSV, with the ALL totals row first.
+  - From and To date fields sit under the header, like the Incident report, covering the last six months by default. A reversed or empty range shows the error in negative red and loads nothing.
+  - The Summary card has a muted caption "Times run from when each alert was raised, and count only alerts that got that far." and a metric strip: Alerts raised, Median time to acknowledge and Median time to resolve. Times show as "8.5 min" under an hour and "1.4 h" from an hour up, or "—" when no alert has the value yet.
+  - The By type and zone card has a grid table (`1.2fr 1.6fr 0.7fr 1fr 1fr`) that scrolls horizontally below 640px: Alert type, Zone ("No zone" in muted text for device health, mortality and human detected alerts), Alerts, Median to acknowledge and Median to resolve, highest count first. Without alerts it says "No alerts raised in this range."
 
 ## Do's and Don'ts
 
