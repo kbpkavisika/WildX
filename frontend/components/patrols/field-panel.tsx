@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPanel } from "@/components/map/map-panel";
 import { StatusDot } from "@/components/ui/status-dot";
 import { usePatrolSelection } from "@/lib/patrols/store";
 import type { LivePatrolView } from "@/lib/patrols/types";
@@ -30,15 +31,11 @@ function PatrolRow({ patrol }: { patrol: LivePatrolView }) {
 
 export function FieldPanel({ patrols }: { patrols: LivePatrolView[] }) {
   return (
-    <div className="absolute top-4 right-4 z-[1000] flex w-[340px] max-w-[calc(100%-32px)] flex-col gap-1 rounded-[14px] border border-line bg-card px-2 py-3 shadow-float">
-      <span className="flex px-3 pt-1 pb-1.5 text-field-label font-normal text-ink-muted">
-        <span className="mr-auto">In the field</span>
-        <span>{patrols.length}</span>
-      </span>
+    <MapPanel title="In the field" count={patrols.length}>
       {patrols.length === 0 && <p className="m-0 px-3 py-2 text-body text-ink-muted">No teams in the field right now.</p>}
       {patrols.map((patrol) => (
         <PatrolRow key={patrol.id} patrol={patrol} />
       ))}
-    </div>
+    </MapPanel>
   );
 }

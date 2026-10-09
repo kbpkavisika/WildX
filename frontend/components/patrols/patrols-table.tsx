@@ -22,12 +22,20 @@ function PatrolTableRow({ row }: { row: PatrolRow }) {
         <span>{row.day}</span>
         {row.time && <span className="text-caption text-ink-muted">{row.time}</span>}
       </span>
-      <span role="cell" className="text-ink-body">{row.distance}</span>
+      <span role="cell" className="flex flex-col gap-0.5">
+        <span className="text-ink-body">{row.distance}</span>
+        {row.duration && <span className="text-caption text-ink-muted">{row.duration}</span>}
+      </span>
       <span role="cell">
         <Chip tone={row.status.tone}>{row.status.label}</Chip>
       </span>
       <span role="cell">
-        <MoreButton label={`Options for ${row.code}`} className="size-7" />
+        <MoreButton
+          label={row.canReplay ? `Replay ${row.code}` : `No replay for ${row.code}`}
+          href={row.canReplay ? `/dashboard/patrols/${row.id}` : undefined}
+          disabled={!row.canReplay}
+          className="size-7"
+        />
       </span>
     </div>
   );
