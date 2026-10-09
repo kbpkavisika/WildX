@@ -77,11 +77,11 @@ class IncidentControllerTest {
     }
 
     @Test
-    void supervisorsAndManagersTriageTheParkQueue() throws Exception {
-        UserResponse supervisor = new UserResponse(5L, "Supervisor", "supervisor@wildx.lk", Role.MANAGER, 1L);
-        when(auth.current(any())).thenReturn(supervisor);
+    void managersTriageTheParkQueue() throws Exception {
+        UserResponse manager = new UserResponse(5L, "Manager", "manager@wildx.lk", Role.MANAGER, 1L);
+        when(auth.current(any())).thenReturn(manager);
         when(incidents.list(1L, IncidentStatus.NEW, 4L, Severity.HIGH)).thenReturn(List.of(incident(IncidentStatus.NEW, null)));
-        when(incidents.get(supervisor, 10L)).thenReturn(incident(IncidentStatus.NEW, null));
+        when(incidents.get(manager, 10L)).thenReturn(incident(IncidentStatus.NEW, null));
         when(incidents.changeSeverity(1L, 10L, Severity.CRITICAL)).thenReturn(incident(IncidentStatus.NEW, null));
         when(incidents.dismiss(1L, 10L, "Old snare")).thenReturn(incident(IncidentStatus.DISMISSED, "Old snare"));
 
@@ -135,7 +135,7 @@ class IncidentControllerTest {
 
     private IncidentResponse incident(IncidentStatus status, String resolutionNote) {
         return new IncidentResponse(10L, 1L, 4L, "Snare", 7L, "Ranger", 3L, 6.5, 81.5, LocationSource.GPS, null, null,
-                "Snare", "incidents/1/a.jpg", Severity.HIGH, status, Instant.parse("2026-10-08T04:00:00Z"), resolutionNote);
+                "Snare", "incidents/1/a.jpg", Severity.HIGH, status, Instant.parse("2026-10-08T04:00:00Z"), resolutionNote, null);
     }
 
     private MockMultipartFile data(String json) {

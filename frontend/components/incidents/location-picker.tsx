@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { MapContainer, Marker, useMap, useMapEvents } from "react-leaflet";
 import { BaseTiles } from "@/components/map/base-tiles";
 import { FitToData } from "@/components/map/fit-to-data";
-import { SectorLayer } from "@/components/map/sector-layer";
 import { incidentIcon } from "@/components/patrols/map-icons";
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants";
 import type { LatLng, SectorShape } from "@/lib/patrols/types";
@@ -43,7 +42,6 @@ export default function LocationPicker({ value, sectors, invalid = false, onPick
       >
         <BaseTiles />
         <FitToData points={sectors.flatMap((sector) => sector.rings.flat())} />
-        <SectorLayer sectors={sectors} />
         {value && <Marker position={value} icon={incidentIcon} title="Incident location" />}
         {onPick && <TapToPick onPick={onPick} />}
         <FollowValue value={value} />

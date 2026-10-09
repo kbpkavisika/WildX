@@ -162,6 +162,19 @@ class PatrolServiceImplTest {
     }
 
     @Test
+    void listsAnActivePatrolFromAnEarlierDayBeforeToday() {
+        Patrol earlier = patrol(PatrolStatus.ACTIVE);
+        earlier.setId(1L);
+        earlier.setScheduledDate(LocalDate.of(2026, 10, 6));
+        when(repository.findFirstByRangerIdAndRouteParkIdAndStatusOrderByStartedAtDescIdDesc(7L, 1L, PatrolStatus.ACTIVE))
+                .thenReturn(Optional.of(earlier));
+        when(repository.findByRangerIdAndRouteParkIdAndScheduledDateOrderByIdAsc(7L, 1L, LocalDate.of(2026, 10, 7)))
+                .thenReturn(List.of(patrol(PatrolStatus.PLANNED)));
+
+        assertThat(service.today(caller)).extracting(PatrolResponse::id).containsExactly(1L, 3L);
+    }
+
+    @Test
     void staffListsFilterByStatusAndDateWithinPark() {
         when(repository.findByRouteParkIdOrderByScheduledDateDescIdDesc(1L))
                 .thenReturn(List.of(patrol(PatrolStatus.PLANNED), patrol(PatrolStatus.ACTIVE)));

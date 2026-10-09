@@ -39,6 +39,7 @@ export interface IncidentRow {
   reported: string;
   severity: ChipView;
   status: ChipView;
+  statusNote: string | null;
 }
 
 export interface DetailFact {

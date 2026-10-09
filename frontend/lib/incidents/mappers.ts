@@ -8,7 +8,9 @@ import {
   type LocationSource,
   type Severity,
 } from "@/lib/enums";
-import { formatDayTime } from "@/lib/format";
+import { COORDINATE_DECIMALS } from "@/lib/constants";
+import { formatDayTime, formatLatLng } from "@/lib/format";
+import type { LatLng } from "@/lib/patrols/types";
 import {
   ALL,
   type ChipView,
@@ -78,7 +80,14 @@ function toIncidentRow(incident: IncidentResponse, now: Date): IncidentRow {
     reported: formatDayTime(new Date(incident.occurredAt), now),
     severity: SEVERITY_DISPLAY[incident.severity],
     status: INCIDENT_STATUS_DISPLAY[incident.status],
+    statusNote: statusNote(incident),
   };
+}
+
+function statusNote(incident: IncidentResponse): string | null {
+  if (incident.status === INCIDENT_STATUSES.ASSIGNED) return incident.responderName && `To ${incident.responderName}`;
+  if (incident.status === INCIDENT_STATUSES.NEW) return null;
+  return incident.resolutionNote;
 }
 
 function matchesTypeAndSeverity(incident: IncidentResponse, filters: IncidentQueueFilters): boolean {
@@ -114,16 +123,18 @@ function closingFact(incident: IncidentResponse): DetailFact[] {
 }
 
 export function toIncidentDetailView(incident: IncidentResponse, now: Date): IncidentDetailView {
+  const position: LatLng | null = incident.lat !== null && incident.lng !== null ? [incident.lat, incident.lng] : null;
   return {
     id: incident.id,
     title: incident.typeName,
     subtitle: `INC-${incident.id} · reported by ${incident.reporterName} · ${formatDayTime(new Date(incident.occurredAt), now)}`,
     status: INCIDENT_STATUS_DISPLAY[incident.status],
     severity: incident.severity,
-    position: incident.lat !== null && incident.lng !== null ? [incident.lat, incident.lng] : null,
+    position,
     facts: [
       { label: "Sector", value: incident.sectorName ?? NO_SECTOR },
       { label: "Location", value: LOCATION_SOURCE_LABELS[incident.locationSource] },
+      { label: "Coordinates", value: position ? formatLatLng(position, COORDINATE_DECIMALS) : NO_VALUE },
       { label: "Patrol", value: incident.patrolId === null ? NO_VALUE : `PT-${incident.patrolId}` },
       { label: "Description", value: incident.description ?? NO_VALUE },
       ...closingFact(incident),

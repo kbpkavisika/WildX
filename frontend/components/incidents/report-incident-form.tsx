@@ -8,7 +8,8 @@ import { Field, fieldClass } from "@/components/ui/field";
 import { useGpsFix, type GpsStatus } from "@/hooks/use-gps-fix";
 import type { IncidentTypeResponse } from "@/lib/api/incident-types";
 import { apiErrorMessage } from "@/lib/api/client";
-import { INCIDENT_DESCRIPTION_MAX } from "@/lib/constants";
+import { COORDINATE_DECIMALS, INCIDENT_DESCRIPTION_MAX } from "@/lib/constants";
+import { formatLatLng } from "@/lib/format";
 import { LOCATION_SOURCES } from "@/lib/enums";
 import {
   EMPTY_REPORT,
@@ -79,6 +80,9 @@ export function ReportIncidentForm({ typeOptions, sectors, saving, error, onSubm
         />
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-caption font-normal text-ink-muted">{locationHint(gps.status, location)}</span>
+          {location && (
+            <span className="text-caption font-normal text-ink-muted">{formatLatLng(location.position, COORDINATE_DECIMALS)}</span>
+          )}
           {gps.status === "failed" && (
             <SecondaryButton onClick={gps.retry} className={LARGE_FIELD}>Try GPS again</SecondaryButton>
           )}

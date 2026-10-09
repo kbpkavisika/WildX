@@ -23,6 +23,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class IncidentServiceImplTest {
@@ -91,7 +92,7 @@ class IncidentServiceImplTest {
     }
 
     @Test
-    void notifiesSupervisorsAndManagersOfHighAndCriticalIncidents() {
+    void notifiesManagersOfHighAndCriticalIncidents() {
         Sector sector = new Sector();
         sector.setId(2L);
         sector.setName("Sector 3");
@@ -139,8 +140,18 @@ class IncidentServiceImplTest {
     }
 
     @Test
+    void savesDeviceTimeSlightlyAheadOfServerAsServerTime() {
+        when(parks.sectorShapes(1L)).thenReturn(List.of());
+        when(patrols.activePatrol(7L, 1L)).thenReturn(Optional.empty());
+
+        var result = service.report(ranger, request(4L, NOW.plusSeconds(30)), null);
+
+        assertThat(result.occurredAt()).isEqualTo(NOW);
+    }
+
+    @Test
     void rejectsFutureTimeBadPhotoAndUnknownOrInactiveTypeBeforeSaving() {
-        assertThatThrownBy(() -> service.report(ranger, request(4L, NOW.plusSeconds(1)), null))
+        assertThatThrownBy(() -> service.report(ranger, request(4L, NOW.plusSeconds(121)), null))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Incident time must not be in the future");
         assertThatThrownBy(() -> service.report(ranger, request(4L, null), new byte[] {1, 2, 3}))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Only JPEG and PNG images are accepted");
@@ -170,6 +181,27 @@ class IncidentServiceImplTest {
         assertThat(service.list(1L, null, 4L, null)).extracting(IncidentResponse::id).containsExactly(1L, 3L);
         assertThat(service.list(1L, IncidentStatus.NEW, 4L, Severity.HIGH)).extracting(IncidentResponse::id).containsExactly(1L);
         assertThat(service.list(1L, null, null, Severity.LOW)).isEmpty();
+    }
+
+    @Test
+    void listAndGetShowTheLatestRespondersName() {
+        Incident assigned = stored(1L, snare, Severity.HIGH, IncidentStatus.ASSIGNED);
+        Incident fresh = stored(2L, snare, Severity.HIGH, IncidentStatus.NEW);
+        AppUser kasun = AppUser.builder().id(8L).name("K. Bandara").role(Role.RANGER).park(park).active(true).build();
+        AppUser nimal = AppUser.builder().id(9L).name("N. Perera").role(Role.RANGER).park(park).active(true).build();
+        Dispatch first = new Dispatch();
+        first.setSourceId(1L);
+        first.setResponder(kasun);
+        Dispatch latest = new Dispatch();
+        latest.setSourceId(1L);
+        latest.setResponder(nimal);
+        when(incidents.findByParkIdOrderByOccurredAtDescIdDesc(1L)).thenReturn(List.of(assigned, fresh));
+        when(incidents.findByIdAndParkId(1L, 1L)).thenReturn(Optional.of(assigned));
+        when(dispatches.findBySourceTypeAndSourceIdInAndStatusNotOrderByAssignedAtAsc(eq(SourceType.INCIDENT), any(), eq(DispatchStatus.DECLINED)))
+                .thenReturn(List.of(first, latest));
+
+        assertThat(service.list(1L, null, null, null)).extracting(IncidentResponse::responderName).containsExactly("N. Perera", null);
+        assertThat(service.get(manager(), 1L).responderName()).isEqualTo("N. Perera");
     }
 
     @Test

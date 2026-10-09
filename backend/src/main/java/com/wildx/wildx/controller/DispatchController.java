@@ -31,8 +31,11 @@ public class DispatchController {
             @RequestParam(required = false) Long parkId,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        Long resolvedParkId = parkId != null ? parkId : auth.current(jwt).parkId();
-        return dispatches.getResponders(resolvedParkId, lat, lng);
+        if (parkId == null) {
+            return dispatches.getResponders(auth.current(jwt).parkId(), lat, lng);
+        }
+        auth.requireParkAccess(jwt, parkId);
+        return dispatches.getResponders(parkId, lat, lng);
     }
 
     @PostMapping("/dispatches")
@@ -54,17 +57,18 @@ public class DispatchController {
 
     @GetMapping("/dispatches/{id}")
     @PreAuthorize("hasAnyRole('RANGER','MANAGER','CLO','ADMIN')")
-    public DispatchResponse get(@PathVariable Long id) {
-        return dispatches.getDispatch(id);
+    public DispatchResponse get(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return dispatches.getDispatch(auth.current(jwt), id);
     }
 
     @GetMapping("/dispatches")
     @PreAuthorize("hasAnyRole('RANGER','MANAGER','CLO','ADMIN')")
     public List<DispatchResponse> list(
             @RequestParam SourceType sourceType,
-            @RequestParam Long sourceId
+            @RequestParam Long sourceId,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        return dispatches.getDispatches(sourceType, sourceId);
+        return dispatches.getDispatches(auth.current(jwt), sourceType, sourceId);
     }
 
     @PostMapping("/dispatches/{id}/acknowledge")

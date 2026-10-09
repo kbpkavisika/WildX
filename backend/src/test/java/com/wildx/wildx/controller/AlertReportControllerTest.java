@@ -38,7 +38,7 @@ class AlertReportControllerTest {
     @MockitoBean AlertReportService reports;
 
     @Test
-    void managersAndSupervisorsGetJsonOrCsvForTheirPark() throws Exception {
+    void managersAndResearchersGetJsonOrCsvForTheirPark() throws Exception {
         when(auth.current(any())).thenReturn(new UserResponse(6L, "Manager", "m@wildx.lk", Role.MANAGER, 1L));
         when(reports.report(1L, FROM, TO)).thenReturn(REPORT);
         mvc.perform(get("/api/v1/reports/alerts?from=2026-10-01&to=2026-10-07").header("Authorization", token("MANAGER")))

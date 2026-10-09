@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -26,6 +27,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -61,6 +64,17 @@ class DispatchControllerTest {
                 .andExpect(jsonPath("$[1].id").value(101));
 
         verify(dispatches).getResponders(1L, 6.3150, 81.4100);
+    }
+
+    @Test
+    void respondersForAnotherParkAreDenied() throws Exception {
+        doThrow(new AccessDeniedException("Access denied")).when(auth).requireParkAccess(any(), eq(2L));
+
+        mvc.perform(get("/api/v1/responders?parkId=2")
+                        .header("Authorization", token("CLO", 1L)))
+                .andExpect(status().isForbidden());
+
+        verify(dispatches, never()).getResponders(any(), any(), any());
     }
 
     @Test

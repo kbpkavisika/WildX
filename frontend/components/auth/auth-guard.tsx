@@ -18,7 +18,8 @@ function RoleGuard({ allows, children }: RoleGuardProps) {
 
   useEffect(() => {
     const current = useAuthStore.getState().user;
-    if (current === null || !allows(current.role)) router.replace(LOGIN_PATH);
+    if (current === null) router.replace(LOGIN_PATH);
+    else if (!allows(current.role)) router.replace(homePath(current.role));
   }, [user, router, allows]);
 
   return children;

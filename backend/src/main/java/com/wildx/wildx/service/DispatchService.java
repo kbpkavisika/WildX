@@ -12,9 +12,9 @@ public interface DispatchService {
 
     List<DispatchResponse> getMyDispatches(Long responderId);
 
-    List<DispatchResponse> getDispatches(SourceType sourceType, Long sourceId);
+    List<DispatchResponse> getDispatches(UserResponse caller, SourceType sourceType, Long sourceId);
 
-    DispatchResponse getDispatch(Long id);
+    DispatchResponse getDispatch(UserResponse caller, Long id);
 
     DispatchResponse acknowledgeDispatch(UserResponse caller, Long id);
 

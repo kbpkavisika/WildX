@@ -4,7 +4,6 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker } from "react-leaflet";
 import { BaseTiles } from "@/components/map/base-tiles";
 import { FitToData } from "@/components/map/fit-to-data";
-import { SectorLayer } from "@/components/map/sector-layer";
 import { incidentIcon } from "@/components/patrols/map-icons";
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants";
 import type { ReportPoint } from "@/lib/incidents/report-mappers";
@@ -28,7 +27,6 @@ export default function IncidentPointsMap({ points, sectors }: IncidentPointsMap
       >
         <BaseTiles />
         <FitToData points={fitPoints} />
-        <SectorLayer sectors={sectors} />
         {points.map((point) => (
           <Marker key={point.id} position={point.position} icon={incidentIcon} title={point.label} />
         ))}

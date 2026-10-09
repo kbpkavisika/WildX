@@ -50,6 +50,10 @@ export function formatKm(metres: number): string {
   return `${(metres / METRES_PER_KM).toFixed(1)} km`;
 }
 
+export function formatLatLng([lat, lng]: [number, number], decimals: number): string {
+  return `${lat.toFixed(decimals)}, ${lng.toFixed(decimals)}`;
+}
+
 export function toIsoDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
