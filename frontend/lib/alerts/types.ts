@@ -37,6 +37,7 @@ export interface AlertDetailView {
   canAcknowledge: boolean;
   canResolve: boolean;
   canDispatch: boolean;
+  cameraImageId: number | null;
 }
 
 export interface AlertsView {

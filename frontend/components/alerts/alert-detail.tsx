@@ -1,5 +1,7 @@
 "use client";
 
+import { Camera } from "lucide-react";
+import { SecondaryLink } from "@/components/devices/secondary-link";
 import { DispatchForm } from "@/components/dispatch/dispatch-form";
 import { Button, SecondaryButton } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -9,6 +11,7 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { useAlertActions } from "@/hooks/use-alert-actions";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useAlertsPage } from "@/lib/alerts/store";
+import { useCameraPage } from "@/lib/camera/store";
 import type { AlertDetailView } from "@/lib/alerts/types";
 import { SOURCE_TYPES } from "@/lib/enums";
 import { ResolveForm } from "./resolve-form";
@@ -67,6 +70,16 @@ function AlertActions({ view }: { view: AlertDetailView }) {
   );
 }
 
+function ViewImageLink({ imageId }: { imageId: number }) {
+  const focus = useCameraPage((state) => state.focus);
+  return (
+    <SecondaryLink href="/dashboard/images" onClick={() => focus(imageId)} className="self-start">
+      <Camera className="size-[18px]" strokeWidth={1.8} />
+      View image
+    </SecondaryLink>
+  );
+}
+
 export function AlertDetail({ view }: { view: AlertDetailView | null }) {
   if (!view) {
     return (
@@ -86,6 +99,7 @@ export function AlertDetail({ view }: { view: AlertDetailView | null }) {
         </span>
       </div>
       <FactList facts={view.facts} />
+      {view.cameraImageId !== null && <ViewImageLink imageId={view.cameraImageId} />}
       <AlertActions view={view} />
     </Card>
   );

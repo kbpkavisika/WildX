@@ -4,6 +4,7 @@ import { ALERT_STATUSES, ALERT_TYPES, DISPOSITIONS, ROLES, type AlertType, type 
 import { GOOGLE_MAPS_URL } from "@/lib/constants";
 import { formatDayTime } from "@/lib/format";
 import { SEVERITY_DISPLAY } from "@/lib/incidents/mappers";
+import { canViewCameraImages } from "@/lib/camera/roles";
 import { toSectorShape } from "@/lib/patrols/mappers";
 import type { LatLng } from "@/lib/patrols/types";
 import type { DetailFact } from "@/lib/incidents/types";
@@ -122,6 +123,7 @@ function toAlertDetail(alert: AlertResponse, role: Role | null, now: Date): Aler
     canAcknowledge: handler && alert.status === ALERT_STATUSES.OPEN,
     canResolve: handler && unresolved,
     canDispatch: role !== null && DISPATCHER_ROLES.has(role) && unresolved,
+    cameraImageId: canViewCameraImages(role) ? alert.cameraImageId : null,
   };
 }
 
