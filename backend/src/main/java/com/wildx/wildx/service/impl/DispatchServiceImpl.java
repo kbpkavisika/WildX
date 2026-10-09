@@ -70,9 +70,8 @@ public class DispatchServiceImpl implements DispatchService {
             result.add(new ResponderResponse(rangerId, live.patrol().rangerName(), phone, rangerLat, rangerLng, distance, live.offline(), live.lastSeenAt()));
         }
 
-        if (result.isEmpty()) {
-            List<AppUser> rangers = appUserRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, Role.RANGER);
-            for (AppUser ranger : rangers) {
+        for (AppUser ranger : appUserRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(parkId, Role.RANGER)) {
+            if (seenRangers.add(ranger.getId())) {
                 result.add(new ResponderResponse(ranger.getId(), ranger.getName(), ranger.getPhone(), null, null, null, true, null));
             }
         }
@@ -178,19 +177,30 @@ public class DispatchServiceImpl implements DispatchService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DispatchResponse> getDispatches(SourceType sourceType, Long sourceId) {
+    public List<DispatchResponse> getDispatches(UserResponse caller, SourceType sourceType, Long sourceId) {
         return dispatchRepository.findBySourceTypeAndSourceIdOrderByAssignedAtDesc(sourceType, sourceId)
                 .stream()
+                .filter(dispatch -> visibleTo(caller, dispatch))
                 .map(DispatchResponse::from)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public DispatchResponse getDispatch(Long id) {
+    public DispatchResponse getDispatch(UserResponse caller, Long id) {
         Dispatch dispatch = dispatchRepository.findWithDetailsById(id)
+                .filter(found -> visibleTo(caller, found))
                 .orElseThrow(() -> new NotFoundException("Dispatch not found"));
         return DispatchResponse.from(dispatch);
+    }
+
+    private boolean visibleTo(UserResponse caller, Dispatch dispatch) {
+        AppUser responder = dispatch.getResponder();
+        return switch (caller.role()) {
+            case ADMIN -> true;
+            case RANGER -> responder.getId().equals(caller.id());
+            default -> responder.getPark() != null && responder.getPark().getId().equals(caller.parkId());
+        };
     }
 
     @Override

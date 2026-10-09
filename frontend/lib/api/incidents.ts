@@ -18,6 +18,7 @@ const incidentSchema = z.object({
   status: z.enum(INCIDENT_STATUSES),
   occurredAt: z.iso.datetime({ offset: true }),
   resolutionNote: z.string().nullable(),
+  responderName: z.string().nullable(),
 });
 
 export type IncidentResponse = z.infer<typeof incidentSchema>;

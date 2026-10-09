@@ -2,6 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { fetchIncidents } from "@/lib/api/incidents";
 import { fetchSectors } from "@/lib/api/parks";
 import { fetchLivePatrols, fetchTrack, type TrackPointResponse } from "@/lib/api/patrols";
+import { canViewIncidents } from "@/lib/auth/routes";
 import { useAuthStore } from "@/lib/auth/store";
 import { LIVE_PATROLS_REFETCH_MS } from "@/lib/constants";
 import { toActivePatrolsView } from "@/lib/patrols/mappers";
@@ -9,6 +10,7 @@ import { toActivePatrolsView } from "@/lib/patrols/mappers";
 export function useActivePatrols() {
   const signedIn = useAuthStore((state) => state.token !== null);
   const parkId = useAuthStore((state) => state.user?.parkId ?? null);
+  const incidentsAllowed = useAuthStore((state) => canViewIncidents(state.user?.role));
 
   const live = useQuery({
     queryKey: ["patrols", "live"],
@@ -42,7 +44,7 @@ export function useActivePatrols() {
     queryKey: ["incidents"],
     queryFn: fetchIncidents,
     refetchInterval: LIVE_PATROLS_REFETCH_MS,
-    enabled: signedIn,
+    enabled: signedIn && incidentsAllowed,
   });
 
   return {

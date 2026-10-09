@@ -118,6 +118,47 @@ class DispatchServiceImplTest {
     }
 
     @Test
+    void getRespondersAddsRangersNotOnPatrolAfterLiveOnes() {
+        PatrolRouteResponse route = new PatrolRouteResponse(1L, 1L, "Route 1", "{\"type\":\"LineString\",\"coordinates\":[[81.4,6.3],[81.41,6.31]]}");
+        PatrolResponse p1 = new PatrolResponse(10L, route, 101L, "Ranger One", LocalDate.now(), PatrolStatus.ACTIVE, Instant.now(), null, true);
+        TrackPointResponse tp1 = new TrackPointResponse(1L, 6.320, 81.415, 5.0, Instant.now(), false, null, null, null);
+        when(patrolMonitorService.live(1L)).thenReturn(List.of(new PatrolLiveResponse(p1, tp1, Instant.now(), false)));
+        when(appUserRepository.findById(101L)).thenReturn(Optional.of(ranger1));
+        when(appUserRepository.findByParkIdAndRoleAndActiveTrueOrderByIdAsc(1L, Role.RANGER)).thenReturn(List.of(ranger1, ranger2));
+
+        List<ResponderResponse> responders = service.getResponders(1L, 6.3150, 81.4100);
+
+        assertThat(responders).extracting(ResponderResponse::id).containsExactly(101L, 102L);
+        assertThat(responders.get(1).offline()).isTrue();
+        assertThat(responders.get(1).distanceM()).isNull();
+    }
+
+    @Test
+    void rangersOnlySeeTheirOwnDispatchesAndStaffOnlyTheirPark() {
+        Park other = new Park();
+        other.setId(2L);
+        AppUser outsider = new AppUser();
+        outsider.setId(201L);
+        outsider.setPark(other);
+        Dispatch own = incidentDispatch();
+        Dispatch foreign = incidentDispatch();
+        foreign.setId(98L);
+        foreign.setResponder(outsider);
+        UserResponse otherRanger = new UserResponse(102L, "Ranger Two", "ranger2@wildx.lk", Role.RANGER, 1L);
+        UserResponse manager = new UserResponse(5L, "Manager", "manager@wildx.lk", Role.MANAGER, 1L);
+        UserResponse admin = new UserResponse(1L, "Admin", "admin@wildx.lk", Role.ADMIN, null);
+        when(dispatchRepository.findWithDetailsById(99L)).thenReturn(Optional.of(own));
+        when(dispatchRepository.findBySourceTypeAndSourceIdOrderByAssignedAtDesc(SourceType.INCIDENT, 60L))
+                .thenReturn(List.of(own, foreign));
+
+        assertThatThrownBy(() -> service.getDispatch(otherRanger, 99L)).isInstanceOf(NotFoundException.class);
+        assertThat(service.getDispatch(manager, 99L).id()).isEqualTo(99L);
+        assertThat(service.getDispatches(otherRanger, SourceType.INCIDENT, 60L)).isEmpty();
+        assertThat(service.getDispatches(manager, SourceType.INCIDENT, 60L)).extracting(DispatchResponse::id).containsExactly(99L);
+        assertThat(service.getDispatches(admin, SourceType.INCIDENT, 60L)).hasSize(2);
+    }
+
+    @Test
     void createDispatchForIncidentAssignsItAndUsesItsSeverity() {
         IncidentType snare = new IncidentType();
         snare.setName("Snare");

@@ -118,7 +118,7 @@ All tables have `id BIGSERIAL PK` and the audit columns `created_at`, `modified_
 | Table | Columns |
 |---|---|
 | `incident_type` | park_id FK, name, default_severity, active |
-| `incident` | park_id FK, type_id FK, reporter_id FK, patrol_id FK NULL, lat, lng, location_source (`GPS/MANUAL`), sector_id FK NULL, description, photo_path, severity, status (`NEW/ASSIGNED/RESOLVED/DISMISSED`), occurred_at (device time), resolution_note |
+| `incident` | park_id FK, type_id FK, reporter_id FK, patrol_id FK NULL, lat, lng, location_source (`GPS/MANUAL`), sector_id FK NULL, description, photo_path, severity, status (`NEW/ASSIGNED/RESOLVED/DISMISSED`), occurred_at (device time; up to 2 min ahead of the server is saved as server time, more is rejected), resolution_note |
 
 **UC3**
 
@@ -228,13 +228,13 @@ Every path starts with `/api/v1` and needs a JWT, except where a row says **publ
 | UC3 | `GET/POST/PUT /parks/{id}/animals` `{name, species}`, `GET/POST/PUT /parks/{id}/devices` `{type, code, expectedIntervalMin, animalId, lat, lng}` | ADMIN, MANAGER (writes), staff (reads) |
 | UC3 | `GET /parks/{id}/alert-rules`, `PUT/DELETE /parks/{id}/alert-rules/{zoneType}` `{severity, cooldownMin, ackSlaMin}` | MANAGER (writes), staff (reads) |
 | UC1 | `GET/POST /routes`, `POST /patrols` (assign), `GET /patrols?status=&date=` | MANAGER |
-| UC1 | `GET /me/patrols` | RANGER |
+| UC1 | `GET /me/patrols` (today's patrols, plus the ranger's active patrol if it started on an earlier day, listed first) | RANGER |
 | UC1 | `POST /patrols/{id}/start` `{at}`, `POST /patrols/{id}/end` `{at}` | RANGER, idempotent |
 | UC1 | `POST /patrols/{id}/points` `[{lat, lng, accuracyM, recordedAt, isWaypoint, note}]` | RANGER, batch upsert |
 | UC1 | `GET /patrols/{id}/track`, `GET /monitor/live`, `GET /monitor/coverage` | MANAGER |
-| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}`, `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
+| UC2 | `POST /incidents` (multipart: `data` JSON + `photo`), `GET /incidents?status=&type=&severity=`, `GET /incidents/{id}` (both include `responderName` from the latest dispatch that was not declined), `PATCH /incidents/{id}` (severity), `POST /incidents/{id}/dismiss` | RANGER creates, MANAGER triages |
 | Shared | `POST /dispatches` `{sourceType, sourceId, responderId}`, `GET /me/dispatches`, `POST /dispatches/{id}/acknowledge\|complete\|decline` | — |
-| Shared | `GET /responders?lat=&lng=`, which returns on-duty rangers sorted by distance | — |
+| Shared | `GET /responders?lat=&lng=`, which returns the park's active rangers: on-patrol rangers sorted by distance first, then the rest as offline. `GET /dispatches/{id}` and `GET /dispatches?sourceType=&sourceId=` only return a ranger's own dispatches, and staff only see dispatches in their park | — |
 | Shared | `GET /me/notifications` → `{unreadCount, notifications}`, `POST /notifications/{id}/read` | staff except ADMIN |
 | UC3 | `GET /alerts?status=` | staff |
 | UC3 | `POST /alerts/{id}/acknowledge`, `POST /alerts/{id}/resolve` `{disposition}` | RANGER, MANAGER |
