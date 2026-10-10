@@ -11,6 +11,7 @@ import com.wildx.wildx.repository.AlertRepository;
 import com.wildx.wildx.repository.AppUserRepository;
 import com.wildx.wildx.repository.CommunityReportRepository;
 import com.wildx.wildx.repository.DispatchRepository;
+import com.wildx.wildx.repository.IncidentRepository;
 import com.wildx.wildx.service.AlertService;
 import com.wildx.wildx.service.DispatchService;
 import com.wildx.wildx.service.IncidentService;
@@ -38,6 +39,7 @@ public class DispatchServiceImpl implements DispatchService {
     private final AppUserRepository appUserRepository;
     private final CommunityReportRepository communityReportRepository;
     private final AlertRepository alertRepository;
+    private final IncidentRepository incidentRepository;
     private final AlertService alertService;
     private final IncidentService incidentService;
     private final PatrolMonitorService patrolMonitorService;
@@ -192,6 +194,20 @@ public class DispatchServiceImpl implements DispatchService {
                 .filter(found -> visibleTo(caller, found))
                 .orElseThrow(() -> new NotFoundException("Dispatch not found"));
         return response(dispatch);
+    }
+
+    private DispatchResponse response(Dispatch dispatch) {
+        Optional<GeoUtil.Point> location = switch (dispatch.getSourceType()) {
+            case INCIDENT -> incidentRepository.findById(dispatch.getSourceId()).map(found -> point(found.getLat(), found.getLng()));
+            case ALERT -> alertRepository.findById(dispatch.getSourceId()).map(found -> point(found.getLat(), found.getLng()));
+            case COMMUNITY_REPORT -> communityReportRepository.findById(dispatch.getSourceId()).map(found -> point(found.getLat(), found.getLng()));
+        };
+        GeoUtil.Point point = location.orElse(null);
+        return DispatchResponse.from(dispatch, point == null ? null : point.lat(), point == null ? null : point.lng());
+    }
+
+    private GeoUtil.Point point(Double lat, Double lng) {
+        return lat == null || lng == null ? null : new GeoUtil.Point(lng, lat);
     }
 
     private boolean visibleTo(UserResponse caller, Dispatch dispatch) {

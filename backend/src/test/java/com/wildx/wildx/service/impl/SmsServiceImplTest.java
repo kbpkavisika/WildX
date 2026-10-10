@@ -2,7 +2,6 @@ package com.wildx.wildx.service.impl;
 
 import com.wildx.wildx.dto.SmsIngestRequest;
 import com.wildx.wildx.dto.SmsIngestResponse;
-import com.wildx.wildx.model.BoundarySegment;
 import com.wildx.wildx.model.CommunityReport;
 import com.wildx.wildx.model.Park;
 import com.wildx.wildx.repository.ParkRepository;

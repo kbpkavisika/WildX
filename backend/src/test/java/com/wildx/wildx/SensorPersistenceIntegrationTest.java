@@ -134,7 +134,7 @@ class SensorPersistenceIntegrationTest {
         assertThat(first.stored()).isTrue();
         assertThat(cameraImages.ingest(camera, shot, JPEG)).extracting(CameraImageUploadResponse::stored,
                 CameraImageUploadResponse::imageId).containsExactly(false, first.imageId());
-        Long open = cameraImages.ingest(camera, shot.plusSeconds(20), JPEG).imageId();
+        cameraImages.ingest(camera, shot.plusSeconds(20), JPEG);
         entities.flush();
         entities.clear();
         assertThat(cameraImages.bursts(park.getId(), null)).singleElement()

@@ -19,9 +19,11 @@ public record DispatchResponse(
         Instant acknowledgedAt,
         Instant completedAt,
         String outcome,
-        String note
+        String note,
+        Double lat,
+        Double lng
 ) {
-    public static DispatchResponse from(Dispatch dispatch) {
+    public static DispatchResponse from(Dispatch dispatch, Double lat, Double lng) {
         return new DispatchResponse(
                 dispatch.getId(),
                 dispatch.getSourceType(),
@@ -35,7 +37,9 @@ public record DispatchResponse(
                 dispatch.getAcknowledgedAt(),
                 dispatch.getCompletedAt(),
                 dispatch.getOutcome(),
-                dispatch.getNote()
+                dispatch.getNote(),
+                lat,
+                lng
         );
     }
 }
